@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import FeedbackPage from './pages/feedback/FeedbackPage';
 import SortPage from './pages/sort/SortPage';
+import CarWashPage from './pages/carwash/CarWashPage';
+import CarHistoryPage from './pages/carwash/CarHistoryPage';
 
 function App() {
   return (
@@ -17,6 +19,8 @@ function App() {
             </>
           } />
           <Route path="sort" element={<SortPage />} />
+          <Route path="carwash" element={<CarWashPage />} />
+          <Route path="car-history" element={<CarHistoryPage />} />
         </Route>
       </Routes>
     </Router>

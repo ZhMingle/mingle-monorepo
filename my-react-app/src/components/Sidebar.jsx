@@ -14,6 +14,16 @@ const Sidebar = () => {
       path: '/sort',
       name: 'Sort Articles',
       icon: '📊'
+    },
+    {
+      path: '/carwash',
+      name: 'Car Wash Record',
+      icon: '🚗'
+    },
+    {
+      path: '/car-history',
+      name: 'Vehicle History',
+      icon: '📋'
     }
   ];
 
