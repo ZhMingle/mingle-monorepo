@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './CarWashPage.css';
 import CameraCapture from '../../components/CameraCapture';
 import BottomNav from '../../components/BottomNav';
@@ -13,6 +13,7 @@ const CarWashPage = () => {
   const [capturedImage, setCapturedImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const containerRef = useRef(null);
   const [serviceRecord, setServiceRecord] = useState({
     mileage: 'normal', // 里程: 正常(默认) / 超了
     tires: 'normal', // 轮胎: 正常(默认) / 平了
@@ -22,6 +23,48 @@ const CarWashPage = () => {
     exterior: [], // 外观: 多选
     notes: '', // 备注
   });
+
+  // 动态获取并设置顶部和底部的安全区域高度
+  useEffect(() => {
+    const adjustPadding = () => {
+      if (containerRef.current) {
+        // 获取视口顶部偏移（状态栏高度）
+        const rect = containerRef.current.getBoundingClientRect();
+        const topOffset = rect.top;
+
+        // 获取底部导航栏高度
+        const bottomNav = document.querySelector('.bottom-nav');
+        const bottomHeight = bottomNav ? bottomNav.offsetHeight : 60;
+
+        // 动态设置 padding
+        containerRef.current.style.paddingTop = `${Math.max(20, topOffset + 10)}px`;
+        containerRef.current.style.paddingBottom = `${bottomHeight + 20}px`;
+
+        console.log('📏 页面间距调整:', {
+          顶部偏移: topOffset,
+          底部导航高度: bottomHeight,
+          设置顶部间距: Math.max(20, topOffset + 10),
+          设置底部间距: bottomHeight + 20,
+        });
+      }
+    };
+
+    // 初始调整
+    adjustPadding();
+
+    // 监听窗口大小变化
+    window.addEventListener('resize', adjustPadding);
+    window.addEventListener('orientationchange', adjustPadding);
+
+    // 延迟调整，确保 DOM 完全加载
+    const timer = setTimeout(adjustPadding, 100);
+
+    return () => {
+      window.removeEventListener('resize', adjustPadding);
+      window.removeEventListener('orientationchange', adjustPadding);
+      clearTimeout(timer);
+    };
+  }, [activeTab]);
 
   // 打开摄像头
   const handleOpenCamera = async () => {
@@ -385,7 +428,7 @@ const CarWashPage = () => {
   );
 
   return (
-    <div className="car-wash-container">
+    <div className="car-wash-container" ref={containerRef}>
       {/* 根据选中的 tab 显示不同内容 */}
       {activeTab === 'carwash' && renderCarWashForm()}
       {activeTab === 'history' && <HistoryTab />}

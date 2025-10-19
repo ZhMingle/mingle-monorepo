@@ -17,6 +17,13 @@ body {
   overflow-y: auto; /* 允许垂直滚动 */
 }
 
+/* 移动端状态栏适配 */
+@media (max-width: 768px) {
+  body {
+    padding-top: env(safe-area-inset-top, 20px); /* 为iOS状态栏留出空间 */
+  }
+}
+
 #root {
   height: 100%;
 }

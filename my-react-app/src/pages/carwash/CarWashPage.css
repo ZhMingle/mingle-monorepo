@@ -3,6 +3,7 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 15px;
+  padding-top: 20px; /* 增加顶部空间，为状态栏留出空间 */
   padding-bottom: 100px; /* 增加底部空间，为底部导航留出足够空间 */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   min-height: 100vh;
@@ -132,6 +133,7 @@
 
   .car-wash-container {
     padding: 10px;
+    padding-top: 30px; /* 移动端需要更多顶部空间，为状态栏留出空间 */
     padding-bottom: 100px; /* 移动端需要更多底部空间 */
   }
 

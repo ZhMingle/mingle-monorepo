@@ -52,7 +52,7 @@ class LicensePlateService {
 
   // 模拟车牌识别（开发测试用）
   simulateRecognition() {
-    const mockPlates = ['ABC123', 'DEF456', 'GHI789', 'JKL012', 'MNO345', 'PQR678', 'STU901', 'VWX234'];
+    const mockPlates = ['ABC123', 'DEF456', 'GHI789', 'JKL012', 'MNO345', 'PQR678', 'VWX234'];
 
     return new Promise(resolve => {
       setTimeout(() => {
