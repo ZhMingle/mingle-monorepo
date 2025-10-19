@@ -102,7 +102,7 @@ class LicensePlateService {
       // If license plate OCR fails with target recognition error, try general OCR
       if (result.error_code === 282103) {
         console.log('License plate OCR failed, trying general OCR for international plates...');
-        
+
         const generalResponse = await fetch(generalOcrUrl, {
           method: 'POST',
           headers: {
@@ -115,7 +115,7 @@ class LicensePlateService {
         });
 
         result = await generalResponse.json();
-        
+
         // Process general OCR results
         if (result.words_result && result.words_result.length > 0) {
           // Look for text that looks like a license plate (alphanumeric, 3-8 characters)
@@ -129,17 +129,17 @@ class LicensePlateService {
 
           if (plateTexts.length > 0) {
             // Return the most likely plate (longest match)
-            const bestPlate = plateTexts.reduce((a, b) => a.length > b.length ? a : b);
+            const bestPlate = plateTexts.reduce((a, b) => (a.length > b.length ? a : b));
             return {
               success: true,
               plateNumber: bestPlate.toUpperCase(),
               confidence: 0.8, // General OCR confidence
               color: 'unknown',
-              method: 'general_ocr'
+              method: 'general_ocr',
             };
           }
         }
-        
+
         return {
           success: false,
           error: '未识别到车牌，请确保图片清晰且包含车牌',
