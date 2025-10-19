@@ -1,0 +1,133 @@
+/* Custom styles for Feedback System */
+.w-mx-1200 {
+  max-width: 1200px;
+}
+
+.mt-30 {
+  margin-top: 30px;
+}
+
+.gap-30 {
+  gap: 30px;
+}
+
+.w-300 {
+  width: 300px;
+}
+
+.pa-10 {
+  padding: 10px;
+}
+
+.py-10 {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.px-15 {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.my-10 {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.my-30 {
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+.mx-0 {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.my-0 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card h2 {
+  color: #333;
+  margin: 0 0 20px 0;
+  font-size: 1.5rem;
+}
+
+.card p {
+  color: #666;
+  font-size: 1rem;
+}
+
+.card button {
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+  background-color: #4CAF50;
+  color: white;
+}
+
+.card button:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.card button.danger {
+  background-color: #f44336;
+}
+
+.flex {
+  display: flex;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.justify-content-center {
+  justify-content: center;
+}
+
+.justify-content-around {
+  justify-content: space-around;
+}
+
+.text-center {
+  text-align: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    background: #1e1e1e;
+    border-color: #333;
+  }
+  
+  .card h2 {
+    color: #fff;
+  }
+  
+  .card p {
+    color: #ccc;
+  }
+}
