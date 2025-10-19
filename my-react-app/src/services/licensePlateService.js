@@ -118,25 +118,53 @@ class LicensePlateService {
 
         // Process general OCR results
         if (result.words_result && result.words_result.length > 0) {
-          // Look for text that looks like a license plate (alphanumeric, 3-8 characters)
+          // Filter and process OCR results for international license plates
           const plateTexts = result.words_result
             .map(item => item.words)
             .filter(text => {
-              // Match patterns like ABC123, 123ABC, ABC123D, etc.
-              const platePattern = /^[A-Z0-9]{3,8}$/i;
-              return platePattern.test(text.replace(/\s/g, ''));
+              // Remove spaces and convert to uppercase
+              const cleanText = text.replace(/\s/g, '').toUpperCase();
+
+              // Check if text contains Chinese characters
+              const hasChinese = /[\u4e00-\u9fff]/.test(cleanText);
+              if (hasChinese) {
+                console.log('Filtered out Chinese text:', cleanText);
+                return false;
+              }
+
+              // Match patterns for international license plates:
+              // - 3-8 characters (including spaces)
+              // - Only English letters and numbers
+              // - Common patterns: ABC123, 123ABC, PI AB, A1B2C3, etc.
+              // - Allow spaces in the middle (like "PI AB")
+              const platePattern = /^[A-Z0-9\s]{3,8}$/;
+              const isValid = platePattern.test(cleanText);
+
+              // Additional check: ensure it's not just spaces
+              const hasNonSpace = /[A-Z0-9]/.test(cleanText);
+
+              if (isValid && hasNonSpace) {
+                console.log('Found valid license plate:', cleanText);
+              } else {
+                console.log('Filtered out invalid text:', cleanText);
+              }
+
+              return isValid && hasNonSpace;
             });
 
           if (plateTexts.length > 0) {
             // Return the most likely plate (longest match)
             const bestPlate = plateTexts.reduce((a, b) => (a.length > b.length ? a : b));
+            console.log('Selected best plate:', bestPlate);
             return {
               success: true,
-              plateNumber: bestPlate.toUpperCase(),
+              plateNumber: bestPlate,
               confidence: 0.8, // General OCR confidence
               color: 'unknown',
               method: 'general_ocr',
             };
+          } else {
+            console.log('No valid international license plates found in OCR results');
           }
         }
 

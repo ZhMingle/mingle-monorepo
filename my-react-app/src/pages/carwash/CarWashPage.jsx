@@ -229,7 +229,7 @@ const CarWashPage = () => {
             type="text"
             value={licensePlate}
             onChange={handleLicensePlateChange}
-            placeholder="输入车牌号或拍照识别"
+            placeholder="请输入车牌号"
             maxLength="10"
             className="license-plate-input"
           />

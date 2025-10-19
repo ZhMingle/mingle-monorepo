@@ -26,6 +26,9 @@ export default async function handler(req, res) {
       body: new URLSearchParams({
         image: image,
         language_type: 'ENG', // English for international plates
+        detect_direction: 'true', // Enable text direction detection
+        paragraph: 'false', // Don't group into paragraphs
+        probability: 'true', // Return confidence scores
       }),
     });
 
