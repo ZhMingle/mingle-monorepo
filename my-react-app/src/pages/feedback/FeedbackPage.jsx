@@ -7,6 +7,7 @@ const FeedbackPage = () => {
     0,0,0,0,0,0,0,0,0,0
   ])
   const handleUpOrDown = (i) => {
+    console.log('Button clicked:', i); // 调试用
     setRealTimeData((j) => {
       return j.map((h,idx) => {
         if(idx === i) {
@@ -25,13 +26,33 @@ const FeedbackPage = () => {
             <div key={idx} className="pa-10 w-300 card">
             <h2>{i}</h2>
             <div className="flex my-30 mx-0 justify-content-around">
-              <button className="py-10 px-15" data-testid={`upvote-btn-${idx}`}
-                onClick={() => { handleUpOrDown(idx*2) }}
+              <button 
+                className="py-10 px-15" 
+                data-testid={`upvote-btn-${idx}`}
+                onClick={(e) => { 
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleUpOrDown(idx*2);
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  handleUpOrDown(idx*2);
+                }}
               >
-                👍 Upvote11
+                👍 Upvote
               </button>
-              <button className="py-10 px-15 danger" data-testid={`downvote-btn-${idx}`}
-                onClick={() => {handleUpOrDown(idx*2 + 1)}}
+              <button 
+                className="py-10 px-15 danger" 
+                data-testid={`downvote-btn-${idx}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleUpOrDown(idx*2 + 1);
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  handleUpOrDown(idx*2 + 1);
+                }}
               >
                 👎 Downvote
               </button>
