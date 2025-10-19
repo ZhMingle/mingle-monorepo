@@ -7,6 +7,11 @@ const Sidebar = () => {
   const menuItems = [
     {
       path: '/',
+      name: 'Car Wash Record',
+      icon: '🚗'
+    },
+    {
+      path: '/feedback',
       name: 'Feedback System',
       icon: '💬'
     },
@@ -16,11 +21,6 @@ const Sidebar = () => {
       icon: '📊'
     },
     {
-      path: '/carwash',
-      name: 'Car Wash Record',
-      icon: '🚗'
-    },
-    {
       path: '/car-history',
       name: 'Vehicle History',
       icon: '📋'
@@ -28,7 +28,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="w-64 bg-white dark:bg-gray-800 shadow-lg h-screen fixed left-0 top-0 z-10 overflow-y-auto">
+    <div className="w-64 bg-white dark:bg-gray-800 shadow-lg h-screen overflow-y-auto">
       <div className="p-6">
         <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-8">
           React Learning

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './CarHistoryPage.css';
+import dataStorage from '../../services/dataStorage';
 
 const CarHistoryPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -7,71 +8,22 @@ const CarHistoryPage = () => {
   const [allRecords, setAllRecords] = useState([]);
   const [selectedRecord, setSelectedRecord] = useState(null);
 
-  // 模拟数据 - 实际应用中会从数据库获取
+  // 加载数据
   useEffect(() => {
-    const mockRecords = [
-      {
-        id: 1,
-        licensePlate: 'ABC123',
-        date: '2024-01-15',
-        timestamp: '2024-01-15T10:30:00Z',
-        image: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...',
-        serviceRecord: {
-          rego: 'better',
-          engineOil: 'add',
-          wipers: 'normal',
-          tires: '',
-          interior: 'staff1',
-          exterior: 'staff2'
-        }
-      },
-      {
-        id: 2,
-        licensePlate: 'ABC123',
-        date: '2024-01-10',
-        timestamp: '2024-01-10T14:20:00Z',
-        image: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...',
-        serviceRecord: {
-          rego: 'add',
-          engineOil: 'better',
-          wipers: 'damaged',
-          tires: 'replace',
-          interior: 'staff2',
-          exterior: 'staff1'
-        }
-      },
-      {
-        id: 3,
-        licensePlate: 'DEF456',
-        date: '2024-01-12',
-        timestamp: '2024-01-12T09:15:00Z',
-        image: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...',
-        serviceRecord: {
-          rego: 'better',
-          engineOil: 'better',
-          wipers: 'normal',
-          tires: '',
-          interior: 'staff1',
-          exterior: 'staff1'
-        }
-      }
-    ];
-    setAllRecords(mockRecords);
-    setSearchResults(mockRecords);
+    loadRecords();
   }, []);
+
+  const loadRecords = () => {
+    const records = dataStorage.getAllRecords();
+    setAllRecords(records);
+    setSearchResults(records);
+  };
 
   // 搜索功能
   const handleSearch = (term) => {
     setSearchTerm(term);
-    if (!term.trim()) {
-      setSearchResults(allRecords);
-      return;
-    }
-
-    const filtered = allRecords.filter(record =>
-      record.licensePlate.toLowerCase().includes(term.toLowerCase())
-    );
-    setSearchResults(filtered);
+    const results = dataStorage.searchByLicensePlate(term);
+    setSearchResults(results);
   };
 
   // 获取车牌号的历史记录
@@ -127,7 +79,7 @@ const CarHistoryPage = () => {
       </div>
 
       {/* 结果列表 */}
-      <div className="results-section">
+      {/* <div className="results-section">
         {Object.keys(groupedResults).length === 0 ? (
           <div className="no-results">
             <p>没有找到相关记录</p>
@@ -169,10 +121,10 @@ const CarHistoryPage = () => {
             </div>
           ))
         )}
-      </div>
+      </div> */}
 
       {/* 详情弹窗 */}
-      {selectedRecord && (
+      {/* {selectedRecord && (
         <div className="modal-overlay" onClick={() => setSelectedRecord(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -229,7 +181,7 @@ const CarHistoryPage = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

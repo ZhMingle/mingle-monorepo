@@ -10,7 +10,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={
+          <Route index element={<CarWashPage />} />
+          <Route path="feedback" element={
             <>
               <h1 className="text-4xl font-bold text-center mb-8 text-gray-800 dark:text-white">
                 Code Review Feedback System

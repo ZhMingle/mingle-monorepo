@@ -3,7 +3,9 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+  padding-bottom: 120px; /* 增加底部空间，为底部导航和保存按钮留出空间 */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  min-height: 100vh;
 }
 
 .page-title {
@@ -36,8 +38,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 15px;
   margin-bottom: 20px;
+}
+
+.camera-buttons {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 15px;
+  justify-content: center;
+  width: 100%;
+  max-width: 600px;
 }
 
 .capture-btn {
@@ -45,13 +56,14 @@
   color: white;
   border: none;
   border-radius: 25px;
-  padding: 15px 30px;
-  font-size: 1.1rem;
+  padding: 15px 20px;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  min-width: 200px;
+  flex: 1;
+  min-width: 0;
 }
 
 .capture-btn:hover:not(:disabled) {
@@ -60,6 +72,32 @@
 }
 
 .capture-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.upload-btn {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 15px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  flex: 1;
+  min-width: 0;
+}
+
+.upload-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.upload-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
@@ -80,14 +118,17 @@
 
 .license-input {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;
+  align-items: center;
+  gap: 15px;
 }
 
 .license-input label {
   font-weight: 600;
   color: #495057;
   font-size: 1.1rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .license-plate-input {
@@ -99,6 +140,7 @@
   text-align: center;
   letter-spacing: 2px;
   transition: border-color 0.3s ease;
+  flex: 1;
 }
 
 .license-plate-input:focus {
@@ -128,26 +170,31 @@
 .service-form {
   display: flex;
   flex-direction: column;
-  gap: 25px;
 }
 
 .service-item {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 15px;
+  margin-bottom: 15px;
 }
 
 .service-item label {
   font-weight: 600;
   color: #495057;
   font-size: 1.1rem;
-  min-width: 80px;
+  min-width: 100px;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .service-options {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  flex: 1;
 }
 
 .option-btn {
@@ -175,6 +222,72 @@
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
+/* 备注字段样式 */
+.notes-item {
+  margin-top: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.notes-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notes-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+  height: 44px;
+  box-sizing: border-box;
+}
+
+.notes-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.notes-input::placeholder {
+  color: #adb5bd;
+}
+
+/* 快捷标签样式 */
+.quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quick-tag-btn {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.quick-tag-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.quick-tag-btn.active {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
 .save-btn {
   background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
   color: white;
@@ -186,12 +299,15 @@
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-  margin-top: 20px;
+  margin-top: 30px;
+  margin-bottom: 30px;
   width: 100%;
   max-width: 300px;
   margin-left: auto;
   margin-right: auto;
   display: block;
+  position: relative;
+  z-index: 10;
 }
 
 .save-btn:hover:not(:disabled) {
@@ -209,6 +325,7 @@
 @media (max-width: 768px) {
   .car-wash-container {
     padding: 15px;
+    padding-bottom: 140px; /* 移动端需要更多底部空间 */
   }
   
   .page-title {
@@ -220,17 +337,31 @@
     padding: 20px;
   }
   
-  .service-options {
+  .service-item {
     flex-direction: column;
+    align-items: flex-start;
   }
   
-  .option-btn {
-    width: 100%;
-  }
-  
-  .capture-btn {
-    width: 100%;
+  .service-item label {
     min-width: auto;
+  }
+  
+  .service-options {
+    width: 100%;
+  }
+  
+  .camera-buttons {
+    flex-direction: row;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .capture-btn,
+  .upload-btn {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.9rem;
+    padding: 12px 15px;
   }
 }
 
@@ -273,5 +404,19 @@
   .option-btn:hover {
     background: #4a4a4a;
     border-color: #667eea;
+  }
+  
+  .notes-input {
+    background: #404040;
+    border-color: #666666;
+    color: #ffffff;
+  }
+  
+  .notes-input:focus {
+    border-color: #667eea;
+  }
+  
+  .notes-input::placeholder {
+    color: #888888;
   }
 }

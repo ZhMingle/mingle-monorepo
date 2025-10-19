@@ -4,6 +4,13 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    host: true,
+    https: {
+      key: './localhost+1-key.pem',
+      cert: './localhost+1.pem'
+    }
+  },
   plugins: [
     react(),
     VitePWA({

@@ -1,0 +1,150 @@
+/* 摄像头拍照组件样式 */
+.camera-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.camera-modal {
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.camera-header {
+  background: #333;
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.camera-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.close-camera-btn {
+  background: #666;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+}
+
+.close-camera-btn:hover {
+  background: #888;
+}
+
+.camera-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: #000;
+}
+
+.camera-video {
+  width: 100%;
+  max-width: 400px;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.camera-controls {
+  display: flex;
+  gap: 15px;
+}
+
+.capture-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.capture-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.camera-error {
+  text-align: center;
+  color: white;
+  padding: 40px 20px;
+}
+
+.camera-error h3 {
+  margin-bottom: 15px;
+  color: #ff6b6b;
+}
+
+.camera-error p {
+  margin-bottom: 25px;
+  line-height: 1.5;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .camera-overlay {
+    padding: 10px;
+  }
+  
+  .camera-modal {
+    max-height: 95vh;
+  }
+  
+  .camera-video {
+    height: 250px;
+  }
+  
+  .capture-btn {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+/* 暗色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .camera-modal {
+    background: #1a1a1a;
+  }
+  
+  .camera-header {
+    background: #2d2d2d;
+  }
+  
+  .camera-content {
+    background: #1a1a1a;
+  }
+}
