@@ -1,6 +1,6 @@
 # 百度 AI 车牌识别集成指南
 
-本文档介绍如何配置和使用百度 AI 车牌识别功能。
+本文档介绍如何在 Vercel 上配置和使用百度 AI 车牌识别功能。
 
 ## 📋 概述
 
@@ -20,7 +20,7 @@ npm run dev
 
 系统会使用模拟的车牌识别结果，无需任何配置。
 
-## 🔑 配置真实 API（完整功能）
+## 🔑 配置真实 API（Vercel 部署）
 
 ### 第一步：获取百度 AI 密钥
 
@@ -32,71 +32,39 @@ npm run dev
    - **API Key**
    - **Secret Key**
 
-### 第二步：配置后端环境变量
+### 第二步：在 Vercel 配置环境变量
 
-在 `server/` 目录下创建 `.env` 文件：
+1. 登录 [Vercel](https://vercel.com/)
+2. 进入你的项目
+3. 点击 "Settings"
+4. 点击 "Environment Variables"
+5. 添加以下环境变量：
 
-```bash
-cd server
-touch .env
 ```
+Name: BAIDU_API_KEY
+Value: 你的API_Key
 
-编辑 `.env` 文件，填入你的密钥：
+Name: BAIDU_SECRET_KEY
+Value: 你的Secret_Key
 
-```env
-BAIDU_API_KEY=你的API_Key
-BAIDU_SECRET_KEY=你的Secret_Key
-PORT=3001
-```
-
-安装后端依赖：
-
-```bash
-npm install
-```
-
-### 第三步：配置前端环境变量
-
-在项目根目录创建 `.env` 文件：
-
-```bash
-cd ..
-touch .env
-```
-
-编辑 `.env` 文件：
-
-```env
-VITE_BACKEND_URL=http://localhost:3001
-VITE_USE_MOCK_DATA=false
+Name: VITE_USE_MOCK_DATA
+Value: false
 ```
 
 **重要**：将 `VITE_USE_MOCK_DATA` 设置为 `false` 以启用真实 API。
 
-### 第四步：启动服务
+### 第三步：重新部署
 
-需要同时运行前端和后端：
+在 Vercel 点击 "Deployments" → 选择最新部署 → "Redeploy"
 
-**终端 1 - 启动后端服务器：**
-
-```bash
-cd server
-npm run dev
-```
-
-你应该看到：
-
-```
-🚀 Backend proxy server running on http://localhost:3001
-```
-
-**终端 2 - 启动前端：**
+或者推送一个新提交：
 
 ```bash
-npm run dev
+git commit --allow-empty -m "Enable Baidu AI OCR"
+git push
 ```
 
-访问 `http://localhost:5173`，现在车牌识别功能使用的是真实的百度 AI API！
+访问你的网站，现在车牌识别功能使用的是真实的百度 AI API！
 
 ## 🎯 使用方法
 
@@ -118,15 +86,16 @@ npm run dev
 4. 不要将密钥分享给他人
 5. 如果密钥泄露，立即在百度控制台重置
 
-### 为什么需要后端代理？
+### Vercel Serverless Functions 架构
 
 ```
-浏览器 → 后端代理服务器 → 百度 AI API
+浏览器 → Vercel Serverless Function → 百度 AI API
 ```
 
-- **安全性**：API 密钥保存在服务器端，不暴露给浏览器
-- **CORS**：避免跨域请求问题
-- **令牌管理**：后端缓存访问令牌（有效期 30 天）
+- **安全性**：API 密钥保存在 Vercel 环境变量中，不暴露给浏览器
+- **无 CORS 问题**：API 路由在同一域名下
+- **自动扩展**：Vercel 自动处理流量
+- **完全免费**：个人项目免费使用
 
 ## 📂 文件结构
 
@@ -134,29 +103,28 @@ npm run dev
 my-react-app/
 ├── .env                              # 前端环境变量（不提交）
 ├── .gitignore                        # 包含 .env
+├── api/                              # Vercel Serverless Functions
+│   ├── baidu-token.js                # 获取百度 Access Token
+│   └── baidu-ocr.js                  # 车牌识别 API
 ├── src/
 │   ├── services/
 │   │   └── licensePlateService.js   # 车牌识别服务
 │   └── pages/
 │       └── carwash/
 │           └── CarWashPage.jsx      # 车牌识别页面
-└── server/
-    ├── .env                         # 后端环境变量（不提交）
-    ├── index.js                     # Express 代理服务器
-    └── package.json                 # 后端依赖
 ```
 
 ## 🐛 常见问题
 
 ### 1. "Server configuration error" 错误
 
-**原因**：后端环境变量未配置
+**原因**：Vercel 环境变量未配置
 
 **解决**：
 
-- 检查 `server/.env` 文件是否存在
+- 检查 Vercel Settings → Environment Variables
 - 确认 `BAIDU_API_KEY` 和 `BAIDU_SECRET_KEY` 已设置
-- 重启后端服务器
+- 重新部署项目
 
 ### 2. 车牌识别失败
 
@@ -169,19 +137,29 @@ my-react-app/
 
 **解决**：
 
-- 检查控制台错误信息
+- 检查浏览器控制台错误信息
 - 验证 API 密钥是否正确
 - 使用清晰的车牌照片
 - 检查百度账户配额
 
-### 3. CORS 错误
+### 3. 本地开发时如何测试 API？
 
-**原因**：后端服务器未运行
+**方法 1**：使用模拟数据（推荐）
 
-**解决**：
+```env
+# .env
+VITE_USE_MOCK_DATA=true
+```
 
-- 确保后端服务器在运行（`cd server && npm run dev`）
-- 检查 `VITE_BACKEND_URL` 是否正确（默认：`http://localhost:3001`）
+**方法 2**：使用 Vercel CLI
+
+```bash
+# 安装 Vercel CLI
+npm i -g vercel
+
+# 本地运行（会自动运行 Serverless Functions）
+vercel dev
+```
 
 ### 4. 摄像头无法访问
 
@@ -194,7 +172,7 @@ my-react-app/
 
 - 点击浏览器地址栏的权限图标，允许摄像头访问
 - 开发环境使用 `localhost` 即可
-- 生产环境需要 HTTPS
+- 生产环境需要 HTTPS（Vercel 自动提供）
 
 ## 💡 开发提示
 
@@ -209,8 +187,9 @@ VITE_USE_MOCK_DATA=true
 
 **生产环境**（使用真实 API）：
 
-```env
-# .env
+在 Vercel 环境变量中设置：
+
+```
 VITE_USE_MOCK_DATA=false
 ```
 
@@ -248,45 +227,45 @@ simulateRecognition() {
 class LicensePlateService {
   async recognizeLicensePlate(imageBase64) {
     // 1. 检查是否使用模拟模式
-    // 2. 调用后端代理 API
+    // 2. 调用 Vercel Serverless Function
     // 3. 处理响应并返回结果
     // 4. 错误时回退到模拟模式
   }
 }
 ```
 
-### 后端代理
+### Vercel Serverless Functions
 
 ```javascript
-// server/index.js
-app.post('/api/baidu/token', async (req, res) => {
+// api/baidu-token.js
+export default async function handler(req, res) {
   // 从环境变量读取密钥
   // 调用百度 API 获取 access_token
   // 返回给前端
-});
+}
 
-app.post('/api/baidu/ocr', async (req, res) => {
+// api/baidu-ocr.js
+export default async function handler(req, res) {
   // 接收图片 base64
   // 调用百度车牌识别 API
   // 返回识别结果
-});
+}
 ```
 
 ## 📚 相关文档
 
 - [百度 AI 文档](https://ai.baidu.com/ai-doc/OCR/zk3h7xz52)
-- [ENV_SETUP.md](./ENV_SETUP.md) - 英文版环境配置指南
-- [server/README.md](./server/README.md) - 后端服务器文档
+- [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md) - Vercel 部署指南
+- [Vercel Serverless Functions](https://vercel.com/docs/functions)
 
 ## ✅ 检查清单
 
 配置完成后，检查以下项目：
 
 - [ ] 已获取百度 AI API Key 和 Secret Key
-- [ ] 已创建 `server/.env` 并填入密钥
-- [ ] 已创建项目根目录 `.env` 并配置
-- [ ] 后端依赖已安装（`cd server && npm install`）
-- [ ] 后端服务器运行正常
+- [ ] 已在 Vercel 配置环境变量
+- [ ] 已设置 `VITE_USE_MOCK_DATA=false`
+- [ ] 已重新部署项目
 - [ ] 前端可以成功调用车牌识别
 
 ## 🎉 完成！
@@ -296,5 +275,21 @@ app.post('/api/baidu/ocr', async (req, res) => {
 如有问题，请查看：
 
 - 浏览器控制台错误信息
-- 后端服务器日志
+- Vercel 部署日志（Functions 标签页）
 - 百度智能云控制台的 API 调用记录
+
+## 💰 费用说明
+
+### Vercel（前端 + API）
+
+- **免费额度**：
+  - 100 GB 带宽/月
+  - 100 GB-Hours Serverless Function 执行时间
+- **适合**：几乎所有个人项目
+
+### 百度 AI
+
+- **免费额度**：每天 50,000 次 OCR 调用
+- **适合**：开发测试和小型应用
+
+对于个人项目，完全可以免费使用！🎉

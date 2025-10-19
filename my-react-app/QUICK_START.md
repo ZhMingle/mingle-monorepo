@@ -21,89 +21,80 @@ npm run dev
 
 ---
 
-## 完整功能设置（使用真实百度 AI）
+## 完整功能设置（Vercel 部署）
 
 ### 前提条件
 
 - 百度 AI 账号和 API Key（[获取方法](https://console.bce.baidu.com/ai/)）
+- GitHub 账号
+- Vercel 账号（使用 GitHub 登录即可）
 
-### 步骤 1：配置后端
-
-```bash
-# 1. 进入 server 目录
-cd server
-
-# 2. 创建环境变量文件
-touch .env
-
-# 3. 编辑 .env 文件，添加你的百度 AI 密钥
-# BAIDU_API_KEY=你的API_Key
-# BAIDU_SECRET_KEY=你的Secret_Key
-# PORT=3001
-
-# 4. 安装依赖
-npm install
-
-# 或者从项目根目录运行：
-# npm run server:install
-```
-
-### 步骤 2：配置前端
+### 步骤 1：部署到 Vercel
 
 ```bash
-# 1. 返回项目根目录
-cd ..
+# 1. 推送代码到 GitHub
+git add .
+git commit -m "Deploy to Vercel"
+git push
 
-# 2. 创建环境变量文件
-touch .env
-
-# 3. 编辑 .env 文件
-# VITE_BACKEND_URL=http://localhost:3001
-# VITE_USE_MOCK_DATA=false
+# 2. 访问 vercel.com 并导入你的 GitHub 仓库
+# Vercel 会自动检测 Vite 项目并部署
 ```
 
-### 步骤 3：运行应用
+### 步骤 2：配置环境变量
 
-需要两个终端窗口：
+在 Vercel 项目设置中：
 
-**终端 1 - 后端服务器：**
+1. 点击 "Settings" → "Environment Variables"
+2. 添加以下变量：
+
+```
+BAIDU_API_KEY = 你的百度API_Key
+BAIDU_SECRET_KEY = 你的百度Secret_Key
+VITE_USE_MOCK_DATA = false
+```
+
+### 步骤 3：重新部署
+
+- 点击 "Deployments" → "Redeploy"
+- 或推送新的代码提交自动触发部署
+
+访问你的 Vercel 网站 URL，车牌识别功能现在使用真实 AI！
+
+---
+
+## 本地开发（推荐模拟模式）
+
+### 开发时使用模拟数据
 
 ```bash
-npm run server
-```
-
-看到这个表示成功：
-
-```
-🚀 Backend proxy server running on http://localhost:3001
-```
-
-**终端 2 - 前端应用：**
-
-```bash
+# 直接运行，无需任何配置
 npm run dev
 ```
 
-访问：`http://localhost:5173`
+### 或使用 Vercel CLI 测试 Serverless Functions
+
+```bash
+# 安装 Vercel CLI
+npm i -g vercel
+
+# 在项目根目录运行
+vercel dev
+```
+
+这会在本地运行 Vercel Functions，但通常模拟模式就足够了。
 
 ---
 
 ## 📋 可用命令
-
-### 前端命令
 
 ```bash
 npm run dev          # 启动开发服务器
 npm run build        # 构建生产版本
 npm run preview      # 预览生产构建
 npm run lint         # 运行代码检查
-```
-
-### 后端命令
-
-```bash
-npm run server              # 启动后端服务器
-npm run server:install      # 安装后端依赖
+npm run lint:fix     # 自动修复代码问题
+npm run format       # 格式化代码
 ```
 
 ---
@@ -126,19 +117,18 @@ npm run server:install      # 安装后端依赖
 
 ## 🔧 环境变量说明
 
-### 前端 (`.env`)
+### 本地开发 (`.env` - 可选)
 
 ```env
-VITE_BACKEND_URL=http://localhost:3001    # 后端 API 地址
-VITE_USE_MOCK_DATA=true                   # true=模拟数据, false=真实API
+VITE_USE_MOCK_DATA=true    # 使用模拟数据（默认）
 ```
 
-### 后端 (`server/.env`)
+### Vercel 生产环境（在 Vercel Dashboard 配置）
 
-```env
-BAIDU_API_KEY=your_api_key                # 百度 AI API Key
-BAIDU_SECRET_KEY=your_secret_key          # 百度 AI Secret Key
-PORT=3001                                  # 服务器端口
+```
+BAIDU_API_KEY=your_api_key
+BAIDU_SECRET_KEY=your_secret_key
+VITE_USE_MOCK_DATA=false
 ```
 
 ---
@@ -153,22 +143,30 @@ PORT=3001                                  # 服务器端口
 
 可以！默认使用模拟数据，所有功能都能体验。
 
-### Q3: 后端服务器是必须的吗？
+### Q3: 本地开发需要配置 API 吗？
 
-- 模拟模式：不需要
-- 真实 API：需要（用于代理百度 AI 请求，避免 CORS 问题）
+不需要！本地开发推荐使用模拟模式：
 
-### Q4: 环境变量文件找不到？
+- 无需配置
+- 无需网络请求
+- 开发体验更快
 
-`.env` 文件需要手动创建，它们被 `.gitignore` 忽略，不会被提交到 Git。
+### Q4: Vercel 部署是免费的吗？
+
+是的！Vercel 免费计划包括：
+
+- 无限部署
+- Serverless Functions
+- 自动 HTTPS
+- 适合个人项目
 
 ---
 
 ## 📚 更多文档
 
 - [README.md](./README.md) - 完整项目说明
+- [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md) - Vercel 详细部署指南
 - [BAIDU_AI_SETUP_CN.md](./BAIDU_AI_SETUP_CN.md) - 百度 AI 详细配置
-- [ENV_SETUP.md](./ENV_SETUP.md) - 环境变量配置（英文）
 - [CHANGES_SUMMARY.md](./CHANGES_SUMMARY.md) - 最近更改说明
 
 ---
@@ -184,17 +182,19 @@ node --version
 # 检查依赖是否安装
 ls node_modules
 
-# 检查后端依赖
-ls server/node_modules
+# 启动开发服务器
+npm run dev
 
-# 检查环境变量文件（如果使用真实 API）
-cat .env
-cat server/.env
+# 访问 http://localhost:5173
+# 应该能看到应用正常运行
 ```
 
 ---
 
 ## 🎉 开始使用！
+
+- **本地开发**：直接 `npm run dev`，使用模拟数据
+- **生产部署**：推送到 GitHub，在 Vercel 配置 API 密钥
 
 配置完成后，享受你的 React 学习之旅！
 

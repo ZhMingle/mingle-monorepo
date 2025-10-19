@@ -1,6 +1,6 @@
 # React Learning Project
 
-A comprehensive React learning project featuring interactive components and modern development practices.
+A comprehensive React learning project featuring interactive components and modern development practices, deployed on Vercel.
 
 ## 🚀 Features
 
@@ -14,49 +14,47 @@ A comprehensive React learning project featuring interactive components and mode
 - **Modern UI**: Built with Tailwind CSS and responsive design
 - **React Router**: Client-side routing with sidebar navigation
 - **Component Architecture**: Well-organized folder structure
+- **PWA Support**: Progressive Web App capabilities
 
 ## 📁 Project Structure
 
 ```
 my-react-app/
+├── api/                    # Vercel Serverless Functions
+│   ├── baidu-token.js     # Get Baidu API token
+│   └── baidu-ocr.js       # License plate OCR
 ├── src/
-│   ├── components/           # Reusable components
-│   │   ├── Layout.jsx       # Main layout with sidebar
-│   │   ├── Sidebar.jsx      # Navigation sidebar
-│   │   ├── Articles.jsx     # Articles table component
-│   │   └── CameraCapture.jsx # Camera component for photos
-│   ├── pages/               # Page components
-│   │   ├── carwash/        # Car wash management page
-│   │   │   ├── CarWashPage.jsx
-│   │   │   └── CarWashPage.css
-│   │   ├── feedback/        # Feedback system page
-│   │   │   ├── FeedbackPage.jsx
-│   │   │   └── FeedbackPage.css
-│   │   └── sort/           # Sort articles page
-│   │       └── SortPage.jsx
-│   ├── services/           # Service layer
-│   │   ├── licensePlateService.js  # Baidu AI OCR integration
-│   │   └── dataStorage.js          # Local storage management
-│   └── App.jsx             # Main application
-├── server/                 # Backend proxy server
-│   ├── index.js           # Express server for Baidu API
-│   └── package.json       # Server dependencies
-└── ENV_SETUP.md           # Environment variables guide
+│   ├── components/        # Reusable components
+│   │   ├── Layout.jsx    # Main layout with sidebar
+│   │   ├── Sidebar.jsx   # Navigation sidebar
+│   │   ├── BottomNav.jsx # Mobile bottom navigation
+│   │   ├── Articles.jsx  # Articles table component
+│   │   └── CameraCapture.jsx # Camera component
+│   ├── pages/            # Page components
+│   │   ├── carwash/     # Car wash management
+│   │   ├── feedback/    # Feedback system
+│   │   └── sort/        # Sort articles
+│   ├── services/        # Service layer
+│   │   ├── licensePlateService.js  # OCR integration
+│   │   └── dataStorage.js          # Local storage
+│   └── App.jsx          # Main application
+└── ...
 ```
 
 ## 🛠️ Technologies Used
 
 ### Frontend
 
-- **React 18** - Modern React with hooks
+- **React 19** - Modern React with hooks
 - **React Router DOM** - Client-side routing
 - **Tailwind CSS** - Utility-first CSS framework
 - **Vite** - Fast build tool and dev server
+- **Ant Design Mobile** - Mobile UI components
+- **PWA** - Progressive Web App features
 
 ### Backend
 
-- **Node.js** - JavaScript runtime
-- **Express** - Web application framework
+- **Vercel Serverless Functions** - API endpoints
 - **Baidu AI OCR** - License plate recognition API
 
 ### APIs & Services
@@ -86,22 +84,18 @@ class LicensePlateService {
 }
 
 // Environment variables in Vite
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const useMockData = import.meta.env.VITE_USE_MOCK_DATA !== 'false';
 ```
 
-### Backend Proxy Pattern
+### Vercel Serverless Functions
 
 ```js
-// Server-side API proxy to avoid CORS
-app.post('/api/baidu/token', async (req, res) => {
+// Serverless function for API proxy
+export default async function handler(req, res) {
+  const apiKey = process.env.BAIDU_API_KEY;
   const response = await fetch(baiduUrl);
   res.json(await response.json());
-});
-
-// Environment variables in Node.js
-import dotenv from 'dotenv';
-dotenv.config();
-const apiKey = process.env.BAIDU_API_KEY;
+}
 ```
 
 ### Feedback System
@@ -154,42 +148,34 @@ The application will run with simulated license plate recognition (no API key re
 
 ### Full Setup (Real Baidu AI Integration)
 
-For real license plate recognition using Baidu AI:
+For real license plate recognition using Baidu AI on Vercel:
 
 1. **Get Baidu AI Credentials**
    - Visit [Baidu AI Console](https://console.bce.baidu.com/ai/)
    - Create an application and get your API Key and Secret Key
 
-2. **Configure Backend Environment**
+2. **Deploy to Vercel**
+   - Push your code to GitHub
+   - Connect repository to Vercel
+   - Vercel will auto-detect and deploy
 
-   ```bash
-   cd server
-   cp .env.example .env
-   # Edit .env and add your Baidu AI credentials
-   npm install
-   ```
+3. **Configure Environment Variables in Vercel**
+   - Go to your project settings on Vercel
+   - Add environment variables:
+     ```
+     BAIDU_API_KEY=your_api_key
+     BAIDU_SECRET_KEY=your_secret_key
+     VITE_USE_MOCK_DATA=false
+     ```
 
-3. **Configure Frontend Environment**
+4. **Redeploy**
+   - Trigger a redeploy in Vercel
+   - Your app now uses real AI recognition!
 
-   ```bash
-   # In project root
-   cp .env.example .env
-   # Edit .env and set VITE_USE_MOCK_DATA=false
-   ```
+📖 For detailed setup instructions, see:
 
-4. **Start Backend Server**
-
-   ```bash
-   cd server
-   npm run dev
-   ```
-
-5. **Start Frontend (in new terminal)**
-   ```bash
-   npm run dev
-   ```
-
-📖 For detailed setup instructions, see [ENV_SETUP.md](./ENV_SETUP.md)
+- [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md) - Vercel deployment guide
+- [BAIDU_AI_SETUP_CN.md](./BAIDU_AI_SETUP_CN.md) - Baidu AI setup (中文)
 
 ## 📱 Pages
 
@@ -219,8 +205,10 @@ For real license plate recognition using Baidu AI:
 ## 🎨 UI Features
 
 - **Responsive Design**: Works on all screen sizes
+- **Mobile-First**: Optimized for mobile with bottom navigation
 - **Dark Mode**: Automatic dark/light theme detection
-- **Sidebar Navigation**: Clean navigation with icons
+- **Sidebar Navigation**: Clean navigation with icons (desktop)
+- **Bottom Navigation**: Mobile-friendly navigation bar
 - **Hover Effects**: Interactive button and card animations
 - **Modern Styling**: Professional Tailwind CSS design
 
@@ -239,12 +227,13 @@ For real license plate recognition using Baidu AI:
 - Camera/Media API integration
 - File handling and image processing
 - Base64 encoding/decoding
+- Progressive Web Apps (PWA)
+- Mobile UI patterns
 
 ### Backend & Integration
 
-- Node.js and Express server setup
+- Vercel Serverless Functions
 - RESTful API design
-- CORS handling
 - Environment variables management
 - Third-party API integration (Baidu AI)
 - Token management and caching
@@ -253,10 +242,11 @@ For real license plate recognition using Baidu AI:
 ### Best Practices
 
 - Secure API key management
-- Backend proxy pattern for CORS
+- Serverless architecture
 - Graceful error handling
 - Mock data for development
 - Service layer architecture
+- Mobile-first responsive design
 
 ## 🔧 Development Notes
 
@@ -272,20 +262,25 @@ For real license plate recognition using Baidu AI:
 This project uses environment variables to securely manage API credentials:
 
 - **Frontend**: Uses Vite's environment variables (`VITE_*`)
-- **Backend**: Uses dotenv for Node.js environment variables
-- **API Keys**: Stored in `.env` files (never committed to version control)
+- **Serverless Functions**: Environment variables managed by Vercel
+- **API Keys**: Never exposed to the browser
 
-### Environment Files Structure:
+### Environment Variables:
 
-```
-.env                    # Frontend config (in project root)
-server/.env            # Backend config with Baidu AI credentials
+```bash
+# Development (.env file - not committed)
+VITE_USE_MOCK_DATA=true    # Use mock data for development
+
+# Production (Vercel Dashboard)
+BAIDU_API_KEY=your_key
+BAIDU_SECRET_KEY=your_secret
+VITE_USE_MOCK_DATA=false
 ```
 
 **Important**:
 
 - Never commit `.env` files to Git
-- Use `.env.example` as a template
+- Use Vercel Dashboard for production secrets
 - Keep API credentials secure
 
 ## 🤖 Baidu AI Integration
@@ -296,25 +291,59 @@ This project integrates with Baidu AI Cloud for license plate recognition:
 
 - **OCR API**: Recognizes license plate numbers from images
 - **High Accuracy**: Baidu's AI provides reliable recognition
-- **Backend Proxy**: Secure API key management via Express server
+- **Serverless Architecture**: Secure API key management via Vercel Functions
 - **Fallback Mode**: Mock data for development without API keys
 
 ### API Flow:
 
+```
+User → Frontend → Vercel Function → Baidu AI → Response
+```
+
 1. User captures/uploads license plate image
 2. Frontend converts image to Base64
-3. Backend proxy authenticates with Baidu AI
+3. Vercel Function authenticates with Baidu AI
 4. OCR service processes the image
 5. License plate number returned to frontend
 
-### Why Backend Proxy?
+### Why Serverless Functions?
 
 - **Security**: API keys stay on the server
-- **CORS**: Avoids browser cross-origin restrictions
-- **Token Management**: Caches access tokens (valid for 30 days)
+- **No CORS Issues**: Same domain for frontend and API
+- **Auto-scaling**: Vercel handles traffic automatically
+- **Free Tier**: Generous free usage limits
 
 📚 Learn more: [Baidu AI Documentation](https://ai.baidu.com/ai-doc/OCR/zk3h7xz52)
+
+## 🚀 Deployment
+
+This project is optimized for Vercel deployment:
+
+- **Automatic Builds**: Push to GitHub triggers deployment
+- **Serverless Functions**: API endpoints automatically deployed
+- **Environment Variables**: Managed in Vercel Dashboard
+- **Custom Domains**: Easy to configure
+- **HTTPS**: Automatic SSL certificates
+
+See [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md) for detailed deployment instructions.
+
+## 📝 Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+- `npm run lint:fix` - Fix ESLint errors
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
 
 ## 📝 License
 
 This is a learning project for educational purposes.
+
+## 🙏 Acknowledgments
+
+- Baidu AI Cloud for OCR API
+- Vercel for hosting platform
+- React team for the amazing framework
+- Tailwind CSS for the utility-first CSS framework

@@ -1,99 +1,193 @@
 # Environment Variables Setup Guide
 
-This project uses environment variables to securely store API credentials and configuration settings.
+This project uses environment variables to securely store API credentials and configuration settings. The project is designed for Vercel deployment using Serverless Functions.
 
-## Frontend Environment Variables
+## Local Development (Mock Mode)
 
-Create a `.env` file in the project root directory:
+For local development, you don't need any environment variables. The app will use mock data by default.
 
-```bash
-# .env
-VITE_BACKEND_URL=http://localhost:3001
-VITE_USE_MOCK_DATA=true
-```
-
-### Frontend Variables Description:
-
-- `VITE_BACKEND_URL`: The URL of the backend proxy server (default: http://localhost:3001)
-- `VITE_USE_MOCK_DATA`: Set to `true` to use mock data for development, `false` to use real Baidu API
-
-## Backend Environment Variables
-
-Create a `.env` file in the `server/` directory:
+Simply run:
 
 ```bash
-# server/.env
-BAIDU_API_KEY=your_baidu_api_key_here
-BAIDU_SECRET_KEY=your_baidu_secret_key_here
-PORT=3001
+npm run dev
 ```
 
-### Backend Variables Description:
+## Production Deployment (Vercel)
 
-- `BAIDU_API_KEY`: Your Baidu AI API Key
-- `BAIDU_SECRET_KEY`: Your Baidu AI Secret Key
-- `PORT`: The port number for the backend server (default: 3001)
+For production deployment with real Baidu AI API:
 
-## Getting Baidu AI Credentials
+### Step 1: Get Baidu AI Credentials
 
 1. Visit [Baidu AI Console](https://console.bce.baidu.com/ai/)
 2. Create a new application or use an existing one
 3. Navigate to the application details to find your API Key and Secret Key
-4. Copy the credentials to your `server/.env` file
+
+### Step 2: Configure Vercel Environment Variables
+
+In your Vercel project dashboard:
+
+1. Go to **Settings** → **Environment Variables**
+2. Add the following variables:
+
+```
+Name: BAIDU_API_KEY
+Value: your_baidu_api_key_here
+
+Name: BAIDU_SECRET_KEY
+Value: your_baidu_secret_key_here
+
+Name: VITE_USE_MOCK_DATA
+Value: false
+```
+
+### Step 3: Redeploy
+
+- Go to **Deployments** and click **Redeploy**
+- Or push a new commit to trigger automatic deployment
+
+## Environment Variables Description
+
+### For Vercel Dashboard
+
+| Variable             | Description             | Required           | Default |
+| -------------------- | ----------------------- | ------------------ | ------- |
+| `BAIDU_API_KEY`      | Baidu AI API Key        | Yes (for real API) | -       |
+| `BAIDU_SECRET_KEY`   | Baidu AI Secret Key     | Yes (for real API) | -       |
+| `VITE_USE_MOCK_DATA` | Use mock data if "true" | No                 | true    |
+
+### For Local Development (Optional)
+
+You can create a `.env` file in the project root to override mock mode locally:
+
+```bash
+# .env (optional - for local development)
+VITE_USE_MOCK_DATA=true
+```
+
+## Vercel Serverless Functions Architecture
+
+```
+User Request → Vercel → Serverless Function → Baidu AI API
+                    ↓
+                 Response
+```
+
+- **API Routes**: Located in `/api` directory
+  - `/api/baidu-token.js` - Get Baidu access token
+  - `/api/baidu-ocr.js` - License plate recognition
+- **Security**: API keys stored in Vercel environment variables
+- **No CORS**: Functions run on same domain as frontend
+
+## Testing Locally with Vercel CLI (Optional)
+
+If you want to test Serverless Functions locally:
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Create local .env file for Vercel CLI
+# vercel env pull .env.local
+
+# Or manually create .env.local with your keys
+# BAIDU_API_KEY=your_key
+# BAIDU_SECRET_KEY=your_secret
+
+# Run local development server
+vercel dev
+```
+
+Note: For most development, mock mode is sufficient and faster.
 
 ## Important Security Notes
 
 ⚠️ **NEVER commit `.env` files to version control!**
 
 - `.env` files are already added to `.gitignore`
-- Always use `.env.example` or documentation to share required variables
-- Keep your API credentials secret and secure
+- Always use Vercel Dashboard to manage production secrets
+- Keep your API credentials secure
+- Never hardcode API keys in your source code
 
-## Running the Application
+## Environment Variables vs Mock Data
 
-### With Mock Data (Development):
+### Mock Data Mode (Default - Development)
 
-```bash
-# Frontend only
-npm run dev
+```
+VITE_USE_MOCK_DATA=true (or not set)
 ```
 
-The application will use simulated license plate recognition.
+- ✅ No API keys needed
+- ✅ No network requests
+- ✅ Fast development
+- ✅ Works offline
+- ❌ Fake recognition results
 
-### With Real Baidu API:
+### Real API Mode (Production)
 
-1. Set up backend `.env` with your Baidu credentials
-2. Update frontend `.env`:
-   ```
-   VITE_USE_MOCK_DATA=false
-   ```
-3. Start the backend server:
-   ```bash
-   cd server
-   npm install
-   npm run dev
-   ```
-4. Start the frontend (in a new terminal):
-   ```bash
-   npm run dev
-   ```
+```
+VITE_USE_MOCK_DATA=false
++ BAIDU_API_KEY
++ BAIDU_SECRET_KEY
+```
 
-The application will now use real Baidu AI OCR for license plate recognition.
+- ✅ Real AI recognition
+- ✅ Accurate results
+- ✅ Production-ready
+- ❌ Requires API keys
+- ❌ Uses Baidu API quota
+
+## Deployment Checklist
+
+Before deploying to production:
+
+- [ ] Got Baidu AI credentials
+- [ ] Added environment variables in Vercel Dashboard
+- [ ] Set `VITE_USE_MOCK_DATA=false` in Vercel
+- [ ] Tested local build with `npm run build`
+- [ ] Pushed code to GitHub
+- [ ] Deployed to Vercel
+- [ ] Tested license plate recognition on production
 
 ## Troubleshooting
 
-### "Server configuration error"
+### Issue: "Server configuration error"
 
-- Make sure `BAIDU_API_KEY` and `BAIDU_SECRET_KEY` are set in `server/.env`
-- Check that the backend server is running on the correct port
+**Cause**: Baidu API credentials not configured in Vercel
 
-### "Failed to get access token"
+**Solution**:
 
-- Verify your Baidu AI credentials are correct
-- Check your Baidu AI account quota and status
-- Ensure your network can access Baidu AI API
+1. Check Vercel Dashboard → Settings → Environment Variables
+2. Ensure `BAIDU_API_KEY` and `BAIDU_SECRET_KEY` are set
+3. Redeploy the project
 
-### CORS errors
+### Issue: License plate recognition not working
 
-- Make sure the backend server is running
-- Check that `VITE_BACKEND_URL` in frontend `.env` matches the backend server URL
+**Cause**: Either using mock mode or API error
+
+**Solution**:
+
+1. Check `VITE_USE_MOCK_DATA` is set to `false` in Vercel
+2. Verify API credentials are correct
+3. Check browser console for errors
+4. View Vercel function logs in Functions tab
+
+### Issue: Local development shows errors
+
+**Cause**: Trying to use real API locally without configuration
+
+**Solution**:
+
+1. Use mock mode (default) for local development
+2. Or install Vercel CLI and use `vercel dev`
+3. Mock mode is recommended for faster development
+
+## Learn More
+
+- [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md) - Detailed Vercel deployment guide
+- [BAIDU_AI_SETUP_CN.md](./BAIDU_AI_SETUP_CN.md) - Baidu AI setup (中文)
+- [Vercel Environment Variables Docs](https://vercel.com/docs/concepts/projects/environment-variables)
+- [Vercel Serverless Functions](https://vercel.com/docs/functions)
+
+---
+
+**Summary**: For development use mock mode (no config needed). For production, deploy to Vercel and add API keys in Dashboard. Simple! 🚀

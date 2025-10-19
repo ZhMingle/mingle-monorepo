@@ -45,19 +45,15 @@
 
 ### 2. 更新配置
 
-**本地开发：**
-
-```bash
-# 更新 server/.env
-BAIDU_API_KEY=新的API_Key
-BAIDU_SECRET_KEY=新的Secret_Key
-```
-
 **Vercel 部署：**
 
 1. Settings → Environment Variables
 2. 编辑 `BAIDU_API_KEY` 和 `BAIDU_SECRET_KEY`
 3. 重新部署
+
+**本地开发（可选）：**
+
+本地开发建议使用模拟模式，无需配置 API 密钥。
 
 ### 3. 清理 Git 历史（如果密钥在 Git 中）
 
@@ -66,10 +62,26 @@ BAIDU_SECRET_KEY=新的Secret_Key
 ```bash
 # 从 Git 历史中移除敏感文件
 git filter-branch --force --index-filter \
-  "git rm --cached --ignore-unmatch server/.env .env" \
+  "git rm --cached --ignore-unmatch .env" \
   --prune-empty --tag-name-filter cat -- --all
 
 # 强制推送（谨慎操作）
+git push origin --force --all
+```
+
+或使用 BFG Repo-Cleaner（更简单）：
+
+```bash
+# 安装 BFG
+brew install bfg  # macOS
+
+# 清理 .env 文件
+bfg --delete-files .env
+
+# 清理 Git 历史
+git reflog expire --expire=now --all && git gc --prune=now --aggressive
+
+# 强制推送
 git push origin --force --all
 ```
 
@@ -122,20 +134,6 @@ Settings → Environment Variables → Add
 - ✅ 不会出现在代码库中
 - ✅ 可以按环境配置（Development/Production）
 
-### Railway 环境变量
-
-在 Railway 网站上配置：
-
-```
-Project → Variables → New Variable
-```
-
-优点：
-
-- ✅ 加密存储
-- ✅ 自动注入到应用
-- ✅ 可以随时更新
-
 ---
 
 ## 🔍 监控和审计
@@ -153,13 +151,7 @@ Project → Variables → New Variable
 **Vercel：**
 
 ```
-Functions → 查看调用日志
-```
-
-**Railway：**
-
-```
-Deployments → 查看日志
+Functions → 查看调用日志和错误
 ```
 
 ### 3. 监控 API 使用
@@ -178,15 +170,13 @@ Deployments → 查看日志
 ### 开发环境
 
 ```bash
-# .env (不提交)
-BAIDU_API_KEY=dev_key_xxx
-BAIDU_SECRET_KEY=dev_secret_xxx
-VITE_USE_MOCK_DATA=false
+# .env (不提交，本地开发推荐使用模拟模式)
+VITE_USE_MOCK_DATA=true  # 使用模拟数据，无需 API 密钥
 ```
 
 ### 生产环境
 
-- 在 Vercel/Railway 配置环境变量
+- 在 Vercel Dashboard 配置环境变量
 - 使用生产密钥
 - 启用监控和告警
 - 设置使用限额
