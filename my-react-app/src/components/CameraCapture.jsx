@@ -25,19 +25,19 @@ const CameraCapture = ({ onCapture, onClose }) => {
         video: {
           facingMode: 'environment', // 使用后置摄像头
           width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
+          height: { ideal: 720 },
+        },
       });
-      
+
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
     } catch (err) {
       console.error('摄像头访问失败:', err);
-      
+
       let errorMessage = '无法访问摄像头';
-      
+
       if (err.name === 'NotAllowedError') {
         errorMessage = '摄像头权限被拒绝，请在浏览器设置中允许摄像头访问';
       } else if (err.name === 'NotFoundError') {
@@ -47,7 +47,7 @@ const CameraCapture = ({ onCapture, onClose }) => {
       } else if (err.name === 'NotReadableError') {
         errorMessage = '摄像头被其他应用占用';
       }
-      
+
       setError(errorMessage);
     }
   };
@@ -62,22 +62,22 @@ const CameraCapture = ({ onCapture, onClose }) => {
   const capturePhoto = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    
+
     if (!video || !canvas) return;
 
     const context = canvas.getContext('2d');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
+
     // 绘制视频帧到画布
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
+
     // 转换为 base64
     const imageData = canvas.toDataURL('image/jpeg', 0.8);
-    
+
     // 停止摄像头
     stopCamera();
-    
+
     // 调用回调函数
     onCapture(imageData);
   };
@@ -112,23 +112,17 @@ const CameraCapture = ({ onCapture, onClose }) => {
             ✕
           </button>
         </div>
-        
+
         <div className="camera-content">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="camera-video"
-          />
-          
+          <video ref={videoRef} autoPlay playsInline muted className="camera-video" />
+
           <div className="camera-controls">
             <button onClick={capturePhoto} className="capture-btn">
               📸 拍照
             </button>
           </div>
         </div>
-        
+
         <canvas ref={canvasRef} style={{ display: 'none' }} />
       </div>
     </div>

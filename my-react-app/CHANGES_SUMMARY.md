@@ -7,6 +7,7 @@
 ## 🔐 主要改进
 
 ### 1. 安全性提升
+
 - ✅ 移除硬编码的 API Key 和 Secret Key
 - ✅ 使用环境变量管理敏感信息
 - ✅ 更新 `.gitignore` 防止 `.env` 文件被提交
@@ -15,31 +16,38 @@
 ### 2. 代码重构
 
 #### 前端 (`src/services/licensePlateService.js`)
+
 **修改前：**
+
 ```javascript
 const BAIDU_API_KEY = 'xxx'; // 硬编码（不安全）
 const BAIDU_SECRET_KEY = 'xxx'; // 硬编码（不安全）
 ```
 
 **修改后：**
+
 ```javascript
 const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA !== 'false';
 // API 密钥通过后端管理，前端不再需要
 ```
 
 **改进：**
+
 - 使用环境变量控制模拟/真实 API 模式
 - 移除前端硬编码的密钥
 - 完善错误处理和回退机制
 
 #### 后端 (`server/index.js`)
+
 **修改前：**
+
 ```javascript
 // 从请求体接收密钥（不安全）
 const { apiKey, secretKey } = req.body;
 ```
 
 **修改后：**
+
 ```javascript
 import dotenv from 'dotenv';
 dotenv.config();
@@ -49,6 +57,7 @@ const BAIDU_SECRET_KEY = process.env.BAIDU_SECRET_KEY;
 ```
 
 **改进：**
+
 - 从环境变量读取密钥
 - 添加密钥验证和错误提示
 - 更好的错误处理
@@ -56,7 +65,9 @@ const BAIDU_SECRET_KEY = process.env.BAIDU_SECRET_KEY;
 ### 3. 新增文件
 
 #### 配置文件
+
 1. **`server/.env`** (需手动创建)
+
    ```env
    BAIDU_API_KEY=your_key_here
    BAIDU_SECRET_KEY=your_secret_here
@@ -70,6 +81,7 @@ const BAIDU_SECRET_KEY = process.env.BAIDU_SECRET_KEY;
    ```
 
 #### 文档文件
+
 1. **`ENV_SETUP.md`** - 英文环境变量配置指南
 2. **`BAIDU_AI_SETUP_CN.md`** - 中文百度 AI 配置指南
 3. **`server/README.md`** - 后端服务器文档
@@ -78,7 +90,9 @@ const BAIDU_SECRET_KEY = process.env.BAIDU_SECRET_KEY;
 ### 4. 更新文件
 
 #### `.gitignore`
+
 新增：
+
 ```gitignore
 # Environment variables
 .env
@@ -88,12 +102,15 @@ server/.env
 ```
 
 #### `server/package.json`
+
 新增依赖：
+
 ```json
 "dotenv": "^16.3.1"
 ```
 
 #### `README.md`
+
 - ✅ 更新项目特性说明
 - ✅ 添加车牌识别功能介绍
 - ✅ 完善技术栈说明
@@ -133,17 +150,20 @@ my-react-app/
 如果你之前使用硬编码的版本，请按以下步骤迁移：
 
 ### 步骤 1：备份现有密钥
+
 如果你之前在代码中有密钥，先记录下来。
 
 ### 步骤 2：创建环境变量文件
 
 **后端：**
+
 ```bash
 cd server
 touch .env
 ```
 
 编辑 `server/.env`：
+
 ```env
 BAIDU_API_KEY=你之前的API_Key
 BAIDU_SECRET_KEY=你之前的Secret_Key
@@ -151,24 +171,28 @@ PORT=3001
 ```
 
 **前端：**
+
 ```bash
 cd ..
 touch .env
 ```
 
 编辑 `.env`：
+
 ```env
 VITE_BACKEND_URL=http://localhost:3001
 VITE_USE_MOCK_DATA=false  # 如果想使用真实 API
 ```
 
 ### 步骤 3：安装后端依赖
+
 ```bash
 cd server
 npm install
 ```
 
 ### 步骤 4：测试
+
 1. 启动后端：`cd server && npm run dev`
 2. 启动前端：`npm run dev`
 3. 测试车牌识别功能
@@ -194,13 +218,16 @@ npm install
 ## 🎯 使用场景
 
 ### 场景 1：快速体验（无需 API）
+
 ```bash
 npm install
 npm run dev
 ```
+
 自动使用模拟数据。
 
 ### 场景 2：完整功能（需要 API）
+
 ```bash
 # 配置 .env 文件
 cd server && npm install && npm run dev  # 终端 1
@@ -208,20 +235,21 @@ npm run dev                               # 终端 2
 ```
 
 ### 场景 3：生产部署
+
 - 在服务器上设置环境变量
 - 不要将 `.env` 文件部署到服务器
 - 使用平台提供的环境变量管理（如 Heroku Config Vars, Vercel Environment Variables）
 
 ## 📊 对比总结
 
-| 项目 | 修改前 | 修改后 |
-|------|--------|--------|
-| API Key 存储 | 硬编码在代码中 | 环境变量 |
-| 安全性 | ❌ 低（密钥暴露） | ✅ 高（服务器端） |
-| 灵活性 | ❌ 需修改代码切换 | ✅ 修改环境变量 |
-| 版本控制 | ❌ 密钥可能被提交 | ✅ .gitignore 保护 |
-| 部署 | ❌ 每个环境需修改代码 | ✅ 使用环境变量 |
-| 文档 | ❌ 缺少配置说明 | ✅ 完整文档 |
+| 项目         | 修改前                | 修改后             |
+| ------------ | --------------------- | ------------------ |
+| API Key 存储 | 硬编码在代码中        | 环境变量           |
+| 安全性       | ❌ 低（密钥暴露）     | ✅ 高（服务器端）  |
+| 灵活性       | ❌ 需修改代码切换     | ✅ 修改环境变量    |
+| 版本控制     | ❌ 密钥可能被提交     | ✅ .gitignore 保护 |
+| 部署         | ❌ 每个环境需修改代码 | ✅ 使用环境变量    |
+| 文档         | ❌ 缺少配置说明       | ✅ 完整文档        |
 
 ## ✅ 验证清单
 
@@ -245,6 +273,7 @@ npm run dev                               # 终端 2
 ## 📞 支持
 
 如果遇到问题：
+
 1. 查看 `BAIDU_AI_SETUP_CN.md` 中的常见问题部分
 2. 检查浏览器控制台和后端日志
 3. 验证环境变量是否正确设置
@@ -254,4 +283,3 @@ npm run dev                               # 终端 2
 **变更日期**: 2025-10-19
 **变更类型**: 安全性改进 + 功能完善
 **影响范围**: 车牌识别功能、环境变量管理、文档
-

@@ -119,15 +119,15 @@
   .camera-overlay {
     padding: 10px;
   }
-  
+
   .camera-modal {
     max-height: 95vh;
   }
-  
+
   .camera-video {
     height: 250px;
   }
-  
+
   .capture-btn {
     width: 100%;
     max-width: 200px;
@@ -139,11 +139,11 @@
   .camera-modal {
     background: #1a1a1a;
   }
-  
+
   .camera-header {
     background: #2d2d2d;
   }
-  
+
   .camera-content {
     background: #1a1a1a;
   }

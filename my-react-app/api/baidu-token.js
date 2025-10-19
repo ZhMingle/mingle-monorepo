@@ -11,20 +11,20 @@ export default async function handler(req, res) {
     const BAIDU_SECRET_KEY = process.env.BAIDU_SECRET_KEY;
 
     if (!BAIDU_API_KEY || !BAIDU_SECRET_KEY) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Server configuration error',
-        message: 'Baidu API credentials not configured'
+        message: 'Baidu API credentials not configured',
       });
     }
 
     const tokenUrl = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${BAIDU_API_KEY}&client_secret=${BAIDU_SECRET_KEY}`;
-    
+
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
+        Accept: 'application/json',
+      },
     });
 
     const data = await response.json();
@@ -32,21 +32,19 @@ export default async function handler(req, res) {
     if (data.error) {
       return res.status(400).json({
         error: data.error,
-        error_description: data.error_description
+        error_description: data.error_description,
       });
     }
 
     res.status(200).json({
       access_token: data.access_token,
-      expires_in: data.expires_in
+      expires_in: data.expires_in,
     });
-
   } catch (error) {
     console.error('Error getting Baidu access token:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to get access token',
-      message: error.message 
+      message: error.message,
     });
   }
 }
-

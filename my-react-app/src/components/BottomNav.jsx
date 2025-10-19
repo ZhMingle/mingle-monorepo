@@ -5,7 +5,7 @@ const BottomNav = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'carwash', label: '洗车', icon: '🚗' },
     { id: 'history', label: '历史', icon: '📋' },
-    { id: 'profile', label: '我的', icon: '👤' }
+    { id: 'profile', label: '我的', icon: '👤' },
   ];
 
   return (
@@ -25,4 +25,3 @@ const BottomNav = ({ activeTab, onTabChange }) => {
 };
 
 export default BottomNav;
-

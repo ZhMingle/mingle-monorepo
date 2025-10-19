@@ -8,34 +8,32 @@ const Sidebar = () => {
     {
       path: '/',
       name: 'Car Wash Record',
-      icon: '🚗'
+      icon: '🚗',
     },
     {
       path: '/feedback',
       name: 'Feedback System',
-      icon: '💬'
+      icon: '💬',
     },
     {
       path: '/sort',
       name: 'Sort Articles',
-      icon: '📊'
+      icon: '📊',
     },
     {
       path: '/car-history',
       name: 'Vehicle History',
-      icon: '📋'
-    }
+      icon: '📋',
+    },
   ];
 
   return (
     <div className="w-64 bg-white dark:bg-gray-800 shadow-lg h-screen overflow-y-auto">
       <div className="p-6">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-8">
-          React Learning
-        </h2>
-        
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-8">React Learning</h2>
+
         <nav className="space-y-2">
-          {menuItems.map((item) => (
+          {menuItems.map(item => (
             <Link
               key={item.path}
               to={item.path}

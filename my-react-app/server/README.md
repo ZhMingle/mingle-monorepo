@@ -5,6 +5,7 @@ This is a Node.js/Express backend server that acts as a proxy for Baidu AI OCR A
 ## Purpose
 
 The backend server is necessary to:
+
 - Avoid CORS (Cross-Origin Resource Sharing) issues when calling Baidu AI API from the browser
 - Keep API credentials secure on the server side
 - Handle authentication token management
@@ -28,6 +29,7 @@ PORT=3001
 ```
 
 **How to get Baidu AI credentials:**
+
 1. Visit https://console.bce.baidu.com/ai/
 2. Create or select an application
 3. Find your API Key and Secret Key in the application details
@@ -35,11 +37,13 @@ PORT=3001
 ### 3. Run the Server
 
 Development mode (with auto-reload):
+
 ```bash
 npm run dev
 ```
 
 Production mode:
+
 ```bash
 npm start
 ```
@@ -49,24 +53,31 @@ The server will start on `http://localhost:3001` (or the port specified in .env)
 ## API Endpoints
 
 ### Health Check
+
 ```
 GET /health
 ```
+
 Returns server status.
 
 ### Get Access Token
+
 ```
 POST /api/baidu/token
 ```
+
 Gets an access token from Baidu AI. Tokens are valid for 30 days.
 
 ### License Plate OCR
+
 ```
 POST /api/baidu/ocr
 ```
+
 Performs license plate recognition on a base64-encoded image.
 
 Request body:
+
 ```json
 {
   "image": "base64_encoded_image",
@@ -75,13 +86,16 @@ Request body:
 ```
 
 Response:
+
 ```json
 {
-  "words_result": [{
-    "number": "ABC123",
-    "probability": 0.95,
-    "color": "blue"
-  }]
+  "words_result": [
+    {
+      "number": "ABC123",
+      "probability": 0.95,
+      "color": "blue"
+    }
+  ]
 }
 ```
 
@@ -95,11 +109,12 @@ Response:
 ## Troubleshooting
 
 **Server won't start:**
+
 - Check that the port is not already in use
 - Verify Node.js is installed (version 14+ recommended)
 
 **API calls fail:**
+
 - Verify your Baidu AI credentials in `.env`
 - Check your Baidu AI account quota
 - Ensure your network can reach Baidu AI servers
-

@@ -35,16 +35,16 @@ class DataStorageService {
     const newRecord = {
       id: Date.now() + Math.random(), // 简单的 ID 生成
       ...record,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     this.records.unshift(newRecord); // 添加到开头，最新的在前面
     const success = this.saveRecords();
-    
+
     if (success) {
       console.log('记录保存成功:', newRecord);
     }
-    
+
     return { success, record: newRecord };
   }
 
@@ -59,16 +59,14 @@ class DataStorageService {
       return this.getAllRecords();
     }
 
-    return this.records.filter(record =>
-      record.licensePlate.toLowerCase().includes(plateNumber.toLowerCase())
-    );
+    return this.records.filter(record => record.licensePlate.toLowerCase().includes(plateNumber.toLowerCase()));
   }
 
   // 获取指定车牌号的所有记录
   getRecordsByPlate(plateNumber) {
-    return this.records.filter(record =>
-      record.licensePlate.toLowerCase() === plateNumber.toLowerCase()
-    ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return this.records
+      .filter(record => record.licensePlate.toLowerCase() === plateNumber.toLowerCase())
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
 
   // 更新记录
@@ -95,12 +93,10 @@ class DataStorageService {
   getStatistics() {
     const totalRecords = this.records.length;
     const uniquePlates = new Set(this.records.map(r => r.licensePlate)).size;
-    
+
     // 按日期统计
     const today = new Date().toDateString();
-    const todayRecords = this.records.filter(r => 
-      new Date(r.createdAt).toDateString() === today
-    ).length;
+    const todayRecords = this.records.filter(r => new Date(r.createdAt).toDateString() === today).length;
 
     // 按车牌号统计记录数
     const plateCounts = this.records.reduce((acc, record) => {
@@ -113,7 +109,7 @@ class DataStorageService {
       totalRecords,
       uniquePlates,
       todayRecords,
-      plateCounts
+      plateCounts,
     };
   }
 
@@ -122,7 +118,7 @@ class DataStorageService {
     return {
       records: this.records,
       exportDate: new Date().toISOString(),
-      version: '1.0'
+      version: '1.0',
     };
   }
 
@@ -132,10 +128,10 @@ class DataStorageService {
       if (data.records && Array.isArray(data.records)) {
         // 备份现有数据
         const backup = [...this.records];
-        
+
         // 导入新数据
         this.records = data.records;
-        
+
         if (this.saveRecords()) {
           console.log('数据导入成功');
           return { success: true };

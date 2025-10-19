@@ -25,20 +25,20 @@ class LicensePlateService {
 
       // Use Vercel API route (relative path works on same domain)
       const apiUrl = this.backendUrl ? `${this.backendUrl}/api/baidu/token` : '/api/baidu-token';
-      
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
       });
 
       const data = await response.json();
-      
+
       if (data.access_token) {
         this.accessToken = data.access_token;
         // Baidu tokens expire in 30 days, we'll refresh after 29 days
-        this.tokenExpiry = Date.now() + (29 * 24 * 60 * 60 * 1000);
+        this.tokenExpiry = Date.now() + 29 * 24 * 60 * 60 * 1000;
         return this.accessToken;
       } else {
         throw new Error('Failed to get access token');
@@ -52,24 +52,15 @@ class LicensePlateService {
 
   // 模拟车牌识别（开发测试用）
   simulateRecognition() {
-    const mockPlates = [
-      'ABC123',
-      'DEF456', 
-      'GHI789',
-      'JKL012',
-      'MNO345',
-      'PQR678',
-      'STU901',
-      'VWX234'
-    ];
-    
-    return new Promise((resolve) => {
+    const mockPlates = ['ABC123', 'DEF456', 'GHI789', 'JKL012', 'MNO345', 'PQR678', 'STU901', 'VWX234'];
+
+    return new Promise(resolve => {
       setTimeout(() => {
         const randomPlate = mockPlates[Math.floor(Math.random() * mockPlates.length)];
         resolve({
           success: true,
           plateNumber: randomPlate,
-          confidence: Math.random() * 0.3 + 0.7 // 70%-100% 置信度
+          confidence: Math.random() * 0.3 + 0.7, // 70%-100% 置信度
         });
       }, 1500); // 模拟网络延迟
     });
@@ -92,7 +83,7 @@ class LicensePlateService {
 
       // Call backend proxy or Vercel API for OCR
       const apiUrl = this.backendUrl ? `${this.backendUrl}/api/baidu/ocr` : '/api/baidu-ocr';
-      
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -100,8 +91,8 @@ class LicensePlateService {
         },
         body: JSON.stringify({
           image: imageBase64,
-          accessToken: token
-        })
+          accessToken: token,
+        }),
       });
 
       const result = await response.json();
@@ -116,12 +107,12 @@ class LicensePlateService {
           success: true,
           plateNumber: plateInfo.number,
           confidence: plateInfo.probability || 0.9,
-          color: plateInfo.color || 'unknown'
+          color: plateInfo.color || 'unknown',
         };
       } else {
         return {
           success: false,
-          error: 'No license plate detected'
+          error: 'No license plate detected',
         };
       }
     } catch (error) {

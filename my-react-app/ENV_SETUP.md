@@ -83,15 +83,17 @@ The application will now use real Baidu AI OCR for license plate recognition.
 ## Troubleshooting
 
 ### "Server configuration error"
+
 - Make sure `BAIDU_API_KEY` and `BAIDU_SECRET_KEY` are set in `server/.env`
 - Check that the backend server is running on the correct port
 
 ### "Failed to get access token"
+
 - Verify your Baidu AI credentials are correct
 - Check your Baidu AI account quota and status
 - Ensure your network can access Baidu AI API
 
 ### CORS errors
+
 - Make sure the backend server is running
 - Check that `VITE_BACKEND_URL` in frontend `.env` matches the backend server URL
-

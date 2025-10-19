@@ -2,10 +2,12 @@
 .car-wash-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 15px;
   padding-bottom: 120px; /* 增加底部空间，为底部导航和保存按钮留出空间 */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   min-height: 100vh;
+  max-width: 100vw;
+  overflow-x: hidden; /* 防止水平滚动 */
 }
 
 .page-title {
@@ -20,18 +22,18 @@
 .camera-section {
   background: #f8f9fa;
   border-radius: 12px;
-  padding: 25px;
-  margin-bottom: 30px;
+  padding: 20px;
+  margin-bottom: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .camera-section h2 {
   color: #495057;
-  margin-bottom: 20px;
-  font-size: 1.5rem;
+  margin-bottom: 15px;
+  font-size: 1.4rem;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .camera-controls {
@@ -141,6 +143,8 @@
   letter-spacing: 2px;
   transition: border-color 0.3s ease;
   flex: 1;
+  max-width: 300px;
+  min-width: 200px;
 }
 
 .license-plate-input:focus {
@@ -327,35 +331,35 @@
     padding: 15px;
     padding-bottom: 140px; /* 移动端需要更多底部空间 */
   }
-  
+
   .page-title {
     font-size: 1.5rem;
   }
-  
+
   .camera-section,
   .service-section {
     padding: 20px;
   }
-  
+
   .service-item {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .service-item label {
     min-width: auto;
   }
-  
+
   .service-options {
     width: 100%;
   }
-  
+
   .camera-buttons {
     flex-direction: row;
     width: 100%;
     max-width: 100%;
   }
-  
+
   .capture-btn,
   .upload-btn {
     flex: 1;
@@ -371,51 +375,51 @@
     background: #1a1a1a;
     color: #ffffff;
   }
-  
+
   .camera-section,
   .service-section {
     background: #2d2d2d;
     border-color: #404040;
   }
-  
+
   .camera-section h2,
   .service-section h2,
   .license-input label,
   .service-item label {
     color: #ffffff;
   }
-  
+
   .license-plate-input {
     background: #404040;
     border-color: #666666;
     color: #ffffff;
   }
-  
+
   .license-plate-input:focus {
     border-color: #667eea;
   }
-  
+
   .option-btn {
     background: #404040;
     border-color: #666666;
     color: #ffffff;
   }
-  
+
   .option-btn:hover {
     background: #4a4a4a;
     border-color: #667eea;
   }
-  
+
   .notes-input {
     background: #404040;
     border-color: #666666;
     color: #ffffff;
   }
-  
+
   .notes-input:focus {
     border-color: #667eea;
   }
-  
+
   .notes-input::placeholder {
     color: #888888;
   }

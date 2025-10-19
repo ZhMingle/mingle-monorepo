@@ -24,6 +24,7 @@ npm run dev
 ## 完整功能设置（使用真实百度 AI）
 
 ### 前提条件
+
 - 百度 AI 账号和 API Key（[获取方法](https://console.bce.baidu.com/ai/)）
 
 ### 步骤 1：配置后端
@@ -66,16 +67,19 @@ touch .env
 需要两个终端窗口：
 
 **终端 1 - 后端服务器：**
+
 ```bash
 npm run server
 ```
 
 看到这个表示成功：
+
 ```
 🚀 Backend proxy server running on http://localhost:3001
 ```
 
 **终端 2 - 前端应用：**
+
 ```bash
 npm run dev
 ```
@@ -87,6 +91,7 @@ npm run dev
 ## 📋 可用命令
 
 ### 前端命令
+
 ```bash
 npm run dev          # 启动开发服务器
 npm run build        # 构建生产版本
@@ -95,6 +100,7 @@ npm run lint         # 运行代码检查
 ```
 
 ### 后端命令
+
 ```bash
 npm run server              # 启动后端服务器
 npm run server:install      # 安装后端依赖
@@ -105,12 +111,14 @@ npm run server:install      # 安装后端依赖
 ## 🎯 功能说明
 
 ### 车牌识别页面 (`/carwash`)
+
 1. 点击"📷 拍照识别车牌"打开摄像头
 2. 或点击"📁 上传图片"选择照片
 3. 系统自动识别车牌号
 4. 填写服务记录并保存
 
 ### 其他页面
+
 - `/feedback` - 反馈系统
 - `/sort` - 文章排序
 
@@ -119,12 +127,14 @@ npm run server:install      # 安装后端依赖
 ## 🔧 环境变量说明
 
 ### 前端 (`.env`)
+
 ```env
 VITE_BACKEND_URL=http://localhost:3001    # 后端 API 地址
 VITE_USE_MOCK_DATA=true                   # true=模拟数据, false=真实API
 ```
 
 ### 后端 (`server/.env`)
+
 ```env
 BAIDU_API_KEY=your_api_key                # 百度 AI API Key
 BAIDU_SECRET_KEY=your_secret_key          # 百度 AI Secret Key
@@ -136,16 +146,20 @@ PORT=3001                                  # 服务器端口
 ## ❓ 常见问题
 
 ### Q1: 如何获取百度 AI 密钥？
+
 访问 [百度智能云控制台](https://console.bce.baidu.com/ai/)，创建应用后即可获得。
 
 ### Q2: 可以不配置 API 就使用吗？
+
 可以！默认使用模拟数据，所有功能都能体验。
 
 ### Q3: 后端服务器是必须的吗？
+
 - 模拟模式：不需要
 - 真实 API：需要（用于代理百度 AI 请求，避免 CORS 问题）
 
 ### Q4: 环境变量文件找不到？
+
 `.env` 文件需要手动创建，它们被 `.gitignore` 忽略，不会被提交到 Git。
 
 ---
@@ -185,4 +199,3 @@ cat server/.env
 配置完成后，享受你的 React 学习之旅！
 
 有问题？查看完整文档或检查浏览器控制台的错误信息。
-

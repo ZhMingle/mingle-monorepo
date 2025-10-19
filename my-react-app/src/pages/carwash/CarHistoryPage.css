@@ -286,41 +286,41 @@
   .car-history-container {
     padding: 15px;
   }
-  
+
   .page-title {
     font-size: 1.5rem;
   }
-  
+
   .search-section {
     padding: 20px;
   }
-  
+
   .search-box {
     flex-direction: column;
   }
-  
+
   .search-btn {
     align-self: flex-end;
     width: 80px;
   }
-  
+
   .plate-header {
     flex-direction: column;
     gap: 10px;
     text-align: center;
   }
-  
+
   .record-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 5px;
   }
-  
+
   .modal-content {
     margin: 10px;
     max-height: 90vh;
   }
-  
+
   .modal-header,
   .modal-body {
     padding: 20px;
@@ -333,75 +333,75 @@
     background: #1a1a1a;
     color: #ffffff;
   }
-  
+
   .search-section,
   .plate-group {
     background: #2d2d2d;
     border-color: #404040;
   }
-  
+
   .search-input {
     background: #404040;
     border-color: #666666;
     color: #ffffff;
   }
-  
+
   .search-input:focus {
     border-color: #667eea;
   }
-  
+
   .search-info {
     color: #cccccc;
   }
-  
+
   .record-item {
     background: #404040;
     border-color: #666666;
   }
-  
+
   .record-item:hover {
     background: #4a4a4a;
   }
-  
+
   .record-date {
     color: #ffffff;
   }
-  
+
   .record-time,
   .record-details {
     color: #cccccc;
   }
-  
+
   .modal-content {
     background: #2d2d2d;
   }
-  
+
   .modal-header {
     background: #404040;
     border-color: #666666;
   }
-  
+
   .modal-header h3 {
     color: #ffffff;
   }
-  
+
   .close-btn {
     color: #cccccc;
   }
-  
+
   .close-btn:hover {
     background: #4a4a4a;
     color: #ffffff;
   }
-  
+
   .detail-item label {
     color: #ffffff;
   }
-  
+
   .detail-item span {
     color: #cccccc;
   }
-  
+
   .service-tag {
     background: #1e3a5f;
     color: #64b5f6;

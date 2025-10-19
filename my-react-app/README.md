@@ -47,17 +47,20 @@ my-react-app/
 ## 🛠️ Technologies Used
 
 ### Frontend
+
 - **React 18** - Modern React with hooks
 - **React Router DOM** - Client-side routing
 - **Tailwind CSS** - Utility-first CSS framework
 - **Vite** - Fast build tool and dev server
 
 ### Backend
+
 - **Node.js** - JavaScript runtime
 - **Express** - Web application framework
 - **Baidu AI OCR** - License plate recognition API
 
 ### APIs & Services
+
 - **Baidu AI Cloud** - OCR and image recognition
 - **MediaDevices API** - Camera access for photo capture
 - **LocalStorage API** - Client-side data persistence
@@ -65,9 +68,10 @@ my-react-app/
 ## 🎯 Learning Points
 
 ### Car Wash / License Plate Recognition
+
 ```js
 // Camera API integration
-navigator.mediaDevices.getUserMedia({ video: true })
+navigator.mediaDevices.getUserMedia({ video: true });
 
 // Convert image to Base64
 const reader = new FileReader();
@@ -86,6 +90,7 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL;
 ```
 
 ### Backend Proxy Pattern
+
 ```js
 // Server-side API proxy to avoid CORS
 app.post('/api/baidu/token', async (req, res) => {
@@ -100,26 +105,28 @@ const apiKey = process.env.BAIDU_API_KEY;
 ```
 
 ### Feedback System
+
 ```js
 // Array initialization
 new Array(10).fill(0); // Initialize an array with zeros
 
 // State management with useState
-const [data, setData] = useState([0,0,0,0,0,0,0,0,0,0]);
+const [data, setData] = useState([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
 // Prefer using ternary operator for conditional rendering
-{isVisible ? <Component /> : null}
+{
+  isVisible ? <Component /> : null;
+}
 ```
 
 ### Sort Functionality
+
 ```js
 // Sort comparison function should return number, not boolean
 const sorted = articles.sort((a, b) => b.upvotes - a.upvotes);
 
 // Date comparison - convert string to Date object
-const sorted = articles.sort(
-  (a, b) => new Date(b.date) - new Date(a.date)
-);
+const sorted = articles.sort((a, b) => new Date(b.date) - new Date(a.date));
 ```
 
 ## 🚀 Getting Started
@@ -127,11 +134,13 @@ const sorted = articles.sort(
 ### Quick Start (Mock Data Mode)
 
 1. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 2. **Start development server**
+
    ```bash
    npm run dev
    ```
@@ -152,6 +161,7 @@ For real license plate recognition using Baidu AI:
    - Create an application and get your API Key and Secret Key
 
 2. **Configure Backend Environment**
+
    ```bash
    cd server
    cp .env.example .env
@@ -160,6 +170,7 @@ For real license plate recognition using Baidu AI:
    ```
 
 3. **Configure Frontend Environment**
+
    ```bash
    # In project root
    cp .env.example .env
@@ -167,6 +178,7 @@ For real license plate recognition using Baidu AI:
    ```
 
 4. **Start Backend Server**
+
    ```bash
    cd server
    npm run dev
@@ -182,6 +194,7 @@ For real license plate recognition using Baidu AI:
 ## 📱 Pages
 
 ### Car Wash Management (`/carwash`)
+
 - 📸 Camera capture for license plate photos
 - 🤖 AI-powered license plate recognition (Baidu OCR)
 - 📝 Service record tracking (engine oil, tires, wipers, etc.)
@@ -190,12 +203,14 @@ For real license plate recognition using Baidu AI:
 - ✍️ Manual license plate entry option
 
 ### Feedback System (`/feedback`)
+
 - Interactive voting system
 - Real-time vote counting
 - Responsive card layout
 - Dark mode support
 
 ### Sort Articles (`/sort`)
+
 - Dynamic table with sorting
 - Sort by upvotes or date
 - Sample data included
@@ -212,6 +227,7 @@ For real license plate recognition using Baidu AI:
 ## 📚 Learning Outcomes
 
 ### Frontend
+
 - React hooks (useState, useEffect)
 - Component composition and props
 - React Router for navigation
@@ -225,6 +241,7 @@ For real license plate recognition using Baidu AI:
 - Base64 encoding/decoding
 
 ### Backend & Integration
+
 - Node.js and Express server setup
 - RESTful API design
 - CORS handling
@@ -234,6 +251,7 @@ For real license plate recognition using Baidu AI:
 - Error handling and fallbacks
 
 ### Best Practices
+
 - Secure API key management
 - Backend proxy pattern for CORS
 - Graceful error handling
@@ -258,12 +276,14 @@ This project uses environment variables to securely manage API credentials:
 - **API Keys**: Stored in `.env` files (never committed to version control)
 
 ### Environment Files Structure:
+
 ```
 .env                    # Frontend config (in project root)
 server/.env            # Backend config with Baidu AI credentials
 ```
 
-**Important**: 
+**Important**:
+
 - Never commit `.env` files to Git
 - Use `.env.example` as a template
 - Keep API credentials secure
@@ -273,12 +293,14 @@ server/.env            # Backend config with Baidu AI credentials
 This project integrates with Baidu AI Cloud for license plate recognition:
 
 ### Features:
+
 - **OCR API**: Recognizes license plate numbers from images
 - **High Accuracy**: Baidu's AI provides reliable recognition
 - **Backend Proxy**: Secure API key management via Express server
 - **Fallback Mode**: Mock data for development without API keys
 
 ### API Flow:
+
 1. User captures/uploads license plate image
 2. Frontend converts image to Base64
 3. Backend proxy authenticates with Baidu AI
@@ -286,6 +308,7 @@ This project integrates with Baidu AI Cloud for license plate recognition:
 5. License plate number returned to frontend
 
 ### Why Backend Proxy?
+
 - **Security**: API keys stay on the server
 - **CORS**: Avoids browser cross-origin restrictions
 - **Token Management**: Caches access tokens (valid for 30 days)

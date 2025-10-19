@@ -11,14 +11,17 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<CarWashPage />} />
-          <Route path="feedback" element={
-            <>
-              <h1 className="text-4xl font-bold text-center mb-8 text-gray-800 dark:text-white">
-                Code Review Feedback System
-              </h1>
-              <FeedbackPage />
-            </>
-          } />
+          <Route
+            path="feedback"
+            element={
+              <>
+                <h1 className="text-4xl font-bold text-center mb-8 text-gray-800 dark:text-white">
+                  Code Review Feedback System
+                </h1>
+                <FeedbackPage />
+              </>
+            }
+          />
           <Route path="sort" element={<SortPage />} />
           <Route path="carwash" element={<CarWashPage />} />
           <Route path="car-history" element={<CarHistoryPage />} />

@@ -29,12 +29,14 @@ npm run preview
 ### **部署和分发**
 
 #### 方法一：部署到服务器（推荐）
+
 1. 构建应用：`npm run build`
 2. 将 `dist` 目录部署到任何静态服务器（Vercel、Netlify、GitHub Pages 等）
 3. 通过 HTTPS 访问（PWA 需要 HTTPS）
 4. 分享网址给同事
 
 #### 方法二：本地网络分享（快速测试）
+
 ```bash
 # 构建应用
 npm run build
@@ -51,6 +53,7 @@ npx serve dist -l 3000
 ## 📲 在手机上安装 PWA
 
 ### **iOS (iPhone/iPad)**
+
 1. 用 **Safari 浏览器**打开应用网址
 2. 点击底部的**分享**按钮 📤
 3. 向下滚动，选择**"添加到主屏幕"**
@@ -58,11 +61,13 @@ npx serve dist -l 3000
 5. 应用图标会出现在主屏幕上！
 
 **注意事项：**
+
 - ⚠️ 必须使用 Safari（Chrome 不支持）
 - ⚠️ 需要 HTTPS 协议（或 localhost）
 - ✅ 添加后的应用像原生 App 一样全屏运行
 
 ### **Android**
+
 1. 用 **Chrome 浏览器**打开应用网址
 2. 浏览器会自动显示**"添加到主屏幕"**的提示横幅
 3. 点击**"安装"**
@@ -70,6 +75,7 @@ npx serve dist -l 3000
 5. 应用图标会出现在主屏幕和应用列表中！
 
 **注意事项：**
+
 - ✅ Chrome、Edge、Firefox 都支持
 - ✅ 支持推送通知
 - ✅ 更接近原生应用体验
@@ -79,11 +85,14 @@ npx serve dist -l 3000
 当前使用 Vite 的默认图标作为临时方案。要使用自定义图标：
 
 ### 方法一：在线生成（最简单）
+
 访问以下网站之一，上传您的图片：
+
 - https://www.pwabuilder.com/imageGenerator
 - https://progressier.com/pwa-icons-generator
 
 下载生成的 192x192 和 512x512 图标，重命名后放到 `public` 目录：
+
 ```
 public/
   ├── pwa-192x192.png
@@ -91,23 +100,26 @@ public/
 ```
 
 ### 方法二：使用项目中的工具
+
 在浏览器中打开 `generate-icons.html`，点击按钮下载图标。
 
 ### 更新配置
+
 修改 `vite.config.js` 中的图标配置，将 `vite.svg` 改为：
+
 ```javascript
 icons: [
   {
     src: 'pwa-192x192.png',
     sizes: '192x192',
-    type: 'image/png'
+    type: 'image/png',
   },
   {
     src: 'pwa-512x512.png',
     sizes: '512x512',
-    type: 'image/png'
-  }
-]
+    type: 'image/png',
+  },
+];
 ```
 
 然后重新构建：`npm run build`
@@ -152,30 +164,33 @@ netlify deploy --prod
 
 ## 📊 PWA vs 原生 App 对比
 
-| 特性 | PWA | 原生 App |
-|------|-----|----------|
-| 开发成本 | 低 | 高 |
-| iOS 开发者费用 | **免费** | $99/年 |
-| 分发方式 | 分享网址 | 应用商店 |
-| 更新速度 | 即时 | 需要审核 |
-| 安装方式 | 添加到主屏幕 | 应用商店下载 |
-| 跨平台 | 一套代码 | 需要多套代码 |
-| 离线支持 | ✅ | ✅ |
-| 推送通知 | Android ✅, iOS 部分支持 | 完全支持 |
+| 特性           | PWA                      | 原生 App     |
+| -------------- | ------------------------ | ------------ |
+| 开发成本       | 低                       | 高           |
+| iOS 开发者费用 | **免费**                 | $99/年       |
+| 分发方式       | 分享网址                 | 应用商店     |
+| 更新速度       | 即时                     | 需要审核     |
+| 安装方式       | 添加到主屏幕             | 应用商店下载 |
+| 跨平台         | 一套代码                 | 需要多套代码 |
+| 离线支持       | ✅                       | ✅           |
+| 推送通知       | Android ✅, iOS 部分支持 | 完全支持     |
 
 ## 🔧 问题排查
 
 ### PWA 提示不出现？
+
 - 确保使用 **HTTPS** 或 **localhost**
 - 运行 `npm run build` 和 `npm run preview`（开发模式不支持）
 - iOS 必须使用 **Safari 浏览器**
 - 检查浏览器控制台的错误信息
 
 ### 无法离线访问？
+
 - 确保至少访问过一次（首次需要缓存）
 - 检查 Service Worker 是否注册成功（开发者工具 → Application → Service Workers）
 
 ### 图标显示不正确？
+
 - 清除浏览器缓存
 - 重新构建：`npm run build`
 - 检查 `public` 目录下图标文件是否存在
@@ -219,4 +234,3 @@ my-react-app/
 ---
 
 🎉 **恭喜！您的应用已经是一个功能完整的 PWA，可以在 iOS 和 Android 上免费使用！**
-

@@ -30,20 +30,21 @@ app.post('/api/baidu/token', async (req, res) => {
   try {
     // Check if credentials are configured
     if (!BAIDU_API_KEY || !BAIDU_SECRET_KEY) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Server configuration error',
-        message: 'Baidu API credentials are not configured. Please set BAIDU_API_KEY and BAIDU_SECRET_KEY in .env file.'
+        message:
+          'Baidu API credentials are not configured. Please set BAIDU_API_KEY and BAIDU_SECRET_KEY in .env file.',
       });
     }
 
     const tokenUrl = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${BAIDU_API_KEY}&client_secret=${BAIDU_SECRET_KEY}`;
-    
+
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
+        Accept: 'application/json',
+      },
     });
 
     const data = await response.json();
@@ -51,20 +52,19 @@ app.post('/api/baidu/token', async (req, res) => {
     if (data.error) {
       return res.status(400).json({
         error: data.error,
-        error_description: data.error_description
+        error_description: data.error_description,
       });
     }
 
     res.json({
       access_token: data.access_token,
-      expires_in: data.expires_in
+      expires_in: data.expires_in,
     });
-
   } catch (error) {
     console.error('Error getting Baidu access token:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to get access token',
-      message: error.message 
+      message: error.message,
     });
   }
 });
@@ -75,13 +75,13 @@ app.post('/api/baidu/ocr', async (req, res) => {
     const { image, accessToken } = req.body;
 
     if (!image || !accessToken) {
-      return res.status(400).json({ 
-        error: 'Image and access token are required' 
+      return res.status(400).json({
+        error: 'Image and access token are required',
       });
     }
 
     const ocrUrl = `https://aip.baidubce.com/rest/2.0/ocr/v1/license_plate?access_token=${accessToken}`;
-    
+
     const response = await fetch(ocrUrl, {
       method: 'POST',
       headers: {
@@ -89,8 +89,8 @@ app.post('/api/baidu/ocr', async (req, res) => {
       },
       body: new URLSearchParams({
         image: image,
-        multi_detect: 'false'
-      })
+        multi_detect: 'false',
+      }),
     });
 
     const data = await response.json();
@@ -98,17 +98,16 @@ app.post('/api/baidu/ocr', async (req, res) => {
     if (data.error_code) {
       return res.status(400).json({
         error_code: data.error_code,
-        error_msg: data.error_msg
+        error_msg: data.error_msg,
       });
     }
 
     res.json(data);
-
   } catch (error) {
     console.error('Error performing OCR:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'OCR failed',
-      message: error.message 
+      message: error.message,
     });
   }
 });
@@ -118,4 +117,3 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend proxy server running on http://localhost:${PORT}`);
   console.log(`📝 Health check: http://localhost:${PORT}/health`);
 });
-

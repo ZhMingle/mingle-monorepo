@@ -51,6 +51,7 @@ Value: false
 在 Vercel 点击 "Deployments" → 选择最新部署 → "Redeploy"
 
 或者推送一个新提交：
+
 ```bash
 git commit --allow-empty -m "Trigger redeploy with API functions"
 git push
@@ -65,6 +66,7 @@ git push
 ## 🎉 完成！
 
 现在你的应用：
+
 - ✅ 前端部署在 Vercel
 - ✅ API 函数也在 Vercel（同一个项目）
 - ✅ 无需管理独立的后端服务器
@@ -75,6 +77,7 @@ git push
 ## 🔧 工作原理
 
 ### 前端调用：
+
 ```javascript
 // 自动使用同域名下的 API 路由
 fetch('/api/baidu-token', { method: 'POST' })
@@ -82,6 +85,7 @@ fetch('/api/baidu-ocr', { method: 'POST', body: ... })
 ```
 
 ### Vercel 处理：
+
 ```
 你的网站.vercel.app/          → React 前端
 你的网站.vercel.app/api/baidu-token  → Serverless Function
@@ -93,6 +97,7 @@ fetch('/api/baidu-ocr', { method: 'POST', body: ... })
 ## 🆚 对比：Vercel vs 独立后端
 
 ### Vercel Serverless Functions（推荐）✅
+
 - ✅ 无需管理服务器
 - ✅ 自动扩展
 - ✅ 同域名，无 CORS 问题
@@ -100,6 +105,7 @@ fetch('/api/baidu-ocr', { method: 'POST', body: ... })
 - ✅ 部署简单
 
 ### 独立后端服务器（Railway/Render）
+
 - 需要管理两个部署
 - 可能有费用
 - 需要配置 CORS
@@ -120,6 +126,7 @@ vercel dev
 ```
 
 或者继续使用 `npm run dev` + 模拟数据：
+
 ```
 VITE_USE_MOCK_DATA=true
 ```
@@ -131,6 +138,7 @@ VITE_USE_MOCK_DATA=true
 ### Q: API 函数有使用限制吗？
 
 Vercel 免费计划：
+
 - 100 GB 带宽/月
 - 100 GB-Hours 函数执行时间
 - 对个人项目完全够用
@@ -159,9 +167,9 @@ Vercel 免费计划：
 ## 📝 总结
 
 使用 Vercel Serverless Functions：
+
 - **前端 + 后端 = 一个项目**
 - **一次部署，全部完成**
 - **无需额外配置**
 
 完美的解决方案！🎉
-

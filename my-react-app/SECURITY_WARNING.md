@@ -46,6 +46,7 @@
 ### 2. 更新配置
 
 **本地开发：**
+
 ```bash
 # 更新 server/.env
 BAIDU_API_KEY=新的API_Key
@@ -53,6 +54,7 @@ BAIDU_SECRET_KEY=新的Secret_Key
 ```
 
 **Vercel 部署：**
+
 1. Settings → Environment Variables
 2. 编辑 `BAIDU_API_KEY` 和 `BAIDU_SECRET_KEY`
 3. 重新部署
@@ -84,6 +86,7 @@ BAIDU_SECRET_KEY=你的真实密钥
 ```
 
 ❗ **这个文件应该：**
+
 - 只存在于本地
 - 在 `.gitignore` 中
 - 永远不提交到 Git
@@ -97,6 +100,7 @@ BAIDU_SECRET_KEY=your_secret_key_here
 ```
 
 ❗ **这个文件可以：**
+
 - 提交到 Git
 - 作为模板给其他开发者
 
@@ -113,6 +117,7 @@ Settings → Environment Variables → Add
 ```
 
 优点：
+
 - ✅ 密钥存储在 Vercel 服务器
 - ✅ 不会出现在代码库中
 - ✅ 可以按环境配置（Development/Production）
@@ -126,6 +131,7 @@ Project → Variables → New Variable
 ```
 
 优点：
+
 - ✅ 加密存储
 - ✅ 自动注入到应用
 - ✅ 可以随时更新
@@ -137,6 +143,7 @@ Project → Variables → New Variable
 ### 1. 设置使用限额
 
 在百度智能云控制台：
+
 - 设置每日调用次数限制
 - 设置费用预警
 - 启用异常检测
@@ -144,11 +151,13 @@ Project → Variables → New Variable
 ### 2. 定期检查日志
 
 **Vercel：**
+
 ```
 Functions → 查看调用日志
 ```
 
 **Railway：**
+
 ```
 Deployments → 查看日志
 ```
@@ -156,6 +165,7 @@ Deployments → 查看日志
 ### 3. 监控 API 使用
 
 定期检查：
+
 - API 调用次数
 - 失败率
 - 响应时间
@@ -203,4 +213,3 @@ VITE_USE_MOCK_DATA=false
 **你的 API 密钥 = 你的钱** 💰
 
 保护好它们就像保护银行密码一样重要！
-

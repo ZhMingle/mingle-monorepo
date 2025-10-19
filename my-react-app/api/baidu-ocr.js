@@ -10,13 +10,13 @@ export default async function handler(req, res) {
     const { image, accessToken } = req.body;
 
     if (!image || !accessToken) {
-      return res.status(400).json({ 
-        error: 'Image and access token are required' 
+      return res.status(400).json({
+        error: 'Image and access token are required',
       });
     }
 
     const ocrUrl = `https://aip.baidubce.com/rest/2.0/ocr/v1/license_plate?access_token=${accessToken}`;
-    
+
     const response = await fetch(ocrUrl, {
       method: 'POST',
       headers: {
@@ -24,8 +24,8 @@ export default async function handler(req, res) {
       },
       body: new URLSearchParams({
         image: image,
-        multi_detect: 'false'
-      })
+        multi_detect: 'false',
+      }),
     });
 
     const data = await response.json();
@@ -33,18 +33,16 @@ export default async function handler(req, res) {
     if (data.error_code) {
       return res.status(400).json({
         error_code: data.error_code,
-        error_msg: data.error_msg
+        error_msg: data.error_msg,
       });
     }
 
     res.status(200).json(data);
-
   } catch (error) {
     console.error('Error performing OCR:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'OCR failed',
-      message: error.message 
+      message: error.message,
     });
   }
 }
-

@@ -78,17 +78,20 @@ VITE_USE_MOCK_DATA=false
 需要同时运行前端和后端：
 
 **终端 1 - 启动后端服务器：**
+
 ```bash
 cd server
 npm run dev
 ```
 
 你应该看到：
+
 ```
 🚀 Backend proxy server running on http://localhost:3001
 ```
 
 **终端 2 - 启动前端：**
+
 ```bash
 npm run dev
 ```
@@ -150,6 +153,7 @@ my-react-app/
 **原因**：后端环境变量未配置
 
 **解决**：
+
 - 检查 `server/.env` 文件是否存在
 - 确认 `BAIDU_API_KEY` 和 `BAIDU_SECRET_KEY` 已设置
 - 重启后端服务器
@@ -157,12 +161,14 @@ my-react-app/
 ### 2. 车牌识别失败
 
 **可能原因**：
+
 - API 密钥错误
 - 网络连接问题
 - 图片质量太差
 - 百度 API 配额用完
 
 **解决**：
+
 - 检查控制台错误信息
 - 验证 API 密钥是否正确
 - 使用清晰的车牌照片
@@ -173,16 +179,19 @@ my-react-app/
 **原因**：后端服务器未运行
 
 **解决**：
+
 - 确保后端服务器在运行（`cd server && npm run dev`）
 - 检查 `VITE_BACKEND_URL` 是否正确（默认：`http://localhost:3001`）
 
 ### 4. 摄像头无法访问
 
 **原因**：
+
 - 浏览器未授予摄像头权限
 - 网站未使用 HTTPS（生产环境）
 
 **解决**：
+
 - 点击浏览器地址栏的权限图标，允许摄像头访问
 - 开发环境使用 `localhost` 即可
 - 生产环境需要 HTTPS
@@ -192,12 +201,14 @@ my-react-app/
 ### 切换模式
 
 **开发测试**（使用模拟数据）：
+
 ```env
 # .env
 VITE_USE_MOCK_DATA=true
 ```
 
 **生产环境**（使用真实 API）：
+
 ```env
 # .env
 VITE_USE_MOCK_DATA=false
@@ -283,7 +294,7 @@ app.post('/api/baidu/ocr', async (req, res) => {
 现在你的应用已经完全集成了百度 AI 车牌识别功能！
 
 如有问题，请查看：
+
 - 浏览器控制台错误信息
 - 后端服务器日志
 - 百度智能云控制台的 API 调用记录
-

@@ -1,3 +1,4 @@
+/* 确保底部导航始终可见 */
 .bottom-nav {
   position: fixed !important;
   bottom: 0 !important;
@@ -7,9 +8,11 @@
   background: #ffffff !important;
   border-top: 1px solid #e0e0e0 !important;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1) !important;
-  z-index: 10000 !important;
+  z-index: 99999 !important;
   padding-bottom: env(safe-area-inset-bottom, 0) !important;
-  height: 80px !important; /* 确保有固定高度 */
+  height: 80px !important;
+  width: 100vw !important;
+  max-width: 100% !important;
 }
 
 .nav-tab {
@@ -62,19 +65,19 @@
     background: #2d2d2d;
     border-top-color: #404040;
   }
-  
+
   .nav-tab:hover {
     background: #404040;
   }
-  
+
   .nav-label {
     color: #adb5bd;
   }
-  
+
   .nav-tab.active .nav-label {
     color: #667eea;
   }
-  
+
   .nav-tab.active {
     background: linear-gradient(to top, rgba(102, 126, 234, 0.1), transparent);
   }
@@ -85,9 +88,8 @@
   .nav-icon {
     font-size: 1.4rem;
   }
-  
+
   .nav-label {
     font-size: 0.8rem;
   }
 }
-

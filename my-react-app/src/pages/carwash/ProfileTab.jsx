@@ -6,7 +6,7 @@ const ProfileTab = () => {
   const [stats, setStats] = useState({
     totalRecords: 0,
     uniquePlates: 0,
-    todayRecords: 0
+    todayRecords: 0,
   });
 
   useEffect(() => {
@@ -77,7 +77,7 @@ const ProfileTab = () => {
 
       <div className="menu-section">
         <h3>数据管理</h3>
-        
+
         <button className="menu-item" onClick={handleExportData}>
           <span className="menu-icon">📥</span>
           <span className="menu-text">导出数据</span>
@@ -93,7 +93,7 @@ const ProfileTab = () => {
 
       <div className="menu-section">
         <h3>关于</h3>
-        
+
         <div className="info-item">
           <span className="info-label">版本</span>
           <span className="info-value">v1.0.0</span>
@@ -119,4 +119,3 @@ const ProfileTab = () => {
 };
 
 export default ProfileTab;
-

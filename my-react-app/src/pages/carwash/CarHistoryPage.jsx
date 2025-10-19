@@ -20,30 +20,30 @@ const CarHistoryPage = () => {
   };
 
   // 搜索功能
-  const handleSearch = (term) => {
+  const handleSearch = term => {
     setSearchTerm(term);
     const results = dataStorage.searchByLicensePlate(term);
     setSearchResults(results);
   };
 
   // 获取车牌号的历史记录
-  const getHistoryForPlate = (plate) => {
-    return allRecords.filter(record => 
-      record.licensePlate.toLowerCase() === plate.toLowerCase()
-    ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  const getHistoryForPlate = plate => {
+    return allRecords
+      .filter(record => record.licensePlate.toLowerCase() === plate.toLowerCase())
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   };
 
   // 渲染服务记录详情
-  const renderServiceDetails = (serviceRecord) => {
+  const renderServiceDetails = serviceRecord => {
     const services = [];
-    
+
     if (serviceRecord.rego) services.push(`Rego: ${serviceRecord.rego === 'better' ? '更好' : '添加'}`);
     if (serviceRecord.engineOil) services.push(`机油: ${serviceRecord.engineOil === 'better' ? '更好' : '添加'}`);
     if (serviceRecord.wipers) services.push(`雨刮器: ${serviceRecord.wipers === 'normal' ? '正常' : '损坏'}`);
     if (serviceRecord.tires) services.push(`轮胎: 更换`);
     if (serviceRecord.interior) services.push(`内饰: ${serviceRecord.interior === 'staff1' ? '员工A' : '员工B'}`);
     if (serviceRecord.exterior) services.push(`外观: ${serviceRecord.exterior === 'staff1' ? '员工A' : '员工B'}`);
-    
+
     return services.join(', ');
   };
 
@@ -60,22 +60,20 @@ const CarHistoryPage = () => {
   return (
     <div className="car-history-container">
       <h1 className="page-title">🔍 车辆历史记录</h1>
-      
+
       {/* 搜索区域 */}
       <div className="search-section">
         <div className="search-box">
           <input
             type="text"
             value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={e => handleSearch(e.target.value)}
             placeholder="输入车牌号搜索..."
             className="search-input"
           />
           <button className="search-btn">🔍</button>
         </div>
-        <p className="search-info">
-          找到 {searchResults.length} 条记录
-        </p>
+        <p className="search-info">找到 {searchResults.length} 条记录</p>
       </div>
 
       {/* 结果列表 */}

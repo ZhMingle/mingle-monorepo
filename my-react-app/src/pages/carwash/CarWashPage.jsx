@@ -14,13 +14,13 @@ const CarWashPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [serviceRecord, setServiceRecord] = useState({
-    mileage: 'normal',        // 里程: 正常(默认) / 超了
-    tires: 'normal',          // 轮胎: 正常(默认) / 平了
-    oil: 'normal',            // 机油: 正常(默认) / 少了
-    wipers: 'normal',         // 雨刮: 正常(默认) / 坏了
-    interior: [],             // 内饰: 多选
-    exterior: [],             // 外观: 多选
-    notes: ''                 // 备注
+    mileage: 'normal', // 里程: 正常(默认) / 超了
+    tires: 'normal', // 轮胎: 正常(默认) / 平了
+    oil: 'normal', // 机油: 正常(默认) / 少了
+    wipers: 'normal', // 雨刮: 正常(默认) / 坏了
+    interior: [], // 内饰: 多选
+    exterior: [], // 外观: 多选
+    notes: '', // 备注
   });
 
   // 打开摄像头
@@ -30,22 +30,22 @@ const CarWashPage = () => {
       alert('您的浏览器不支持摄像头功能，请使用现代浏览器或 HTTPS 协议');
       return;
     }
-    
+
     setShowCamera(true);
   };
 
   // Handle camera capture
-  const handleCameraCapture = async (imageData) => {
+  const handleCameraCapture = async imageData => {
     setCapturedImage(imageData);
     setShowCamera(false);
-    
+
     // Start license plate recognition
     setIsLoading(true);
     try {
       // Convert image data to base64 (remove data URL prefix)
       const base64Image = imageData.split(',')[1];
       const result = await licensePlateService.recognizeLicensePlate(base64Image);
-      
+
       if (result.success) {
         setLicensePlate(result.plateNumber);
         console.log(`Detected plate: ${result.plateNumber}, confidence: ${(result.confidence * 100).toFixed(1)}%`);
@@ -70,24 +70,26 @@ const CarWashPage = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = async (e) => {
+    input.onchange = async e => {
       const file = e.target.files[0];
       if (file) {
         const reader = new FileReader();
-        reader.onload = async (e) => {
+        reader.onload = async e => {
           const imageData = e.target.result;
           setCapturedImage(imageData);
-          
+
           // Start license plate recognition
           setIsLoading(true);
           try {
             // Convert image data to base64 (remove data URL prefix)
             const base64Image = imageData.split(',')[1];
             const result = await licensePlateService.recognizeLicensePlate(base64Image);
-            
+
             if (result.success) {
               setLicensePlate(result.plateNumber);
-              console.log(`Detected plate: ${result.plateNumber}, confidence: ${(result.confidence * 100).toFixed(1)}%`);
+              console.log(
+                `Detected plate: ${result.plateNumber}, confidence: ${(result.confidence * 100).toFixed(1)}%`
+              );
             } else {
               alert('License plate recognition failed. Please enter manually.');
             }
@@ -105,21 +107,16 @@ const CarWashPage = () => {
   };
 
   // 手动输入车牌号
-  const handleLicensePlateChange = (e) => {
+  const handleLicensePlateChange = e => {
     setLicensePlate(e.target.value.toUpperCase());
   };
 
   // 服务记录更新
   const handleServiceChange = (category, value) => {
-    console.log(`Changing ${category} to ${value}`);
-    setServiceRecord(prev => {
-      const newRecord = {
-        ...prev,
-        [category]: value
-      };
-      console.log('New service record:', newRecord);
-      return newRecord;
-    });
+    setServiceRecord(prev => ({
+      ...prev,
+      [category]: value,
+    }));
   };
 
   // 多选处理（内饰和外观）
@@ -127,21 +124,21 @@ const CarWashPage = () => {
     setServiceRecord(prev => {
       const currentValues = prev[category];
       const newValues = currentValues.includes(value)
-        ? currentValues.filter(v => v !== value)  // 取消选择
-        : [...currentValues, value];               // 添加选择
-      
+        ? currentValues.filter(v => v !== value) // 取消选择
+        : [...currentValues, value]; // 添加选择
+
       return {
         ...prev,
-        [category]: newValues
+        [category]: newValues,
       };
     });
   };
 
   // 快捷标签处理
-  const handleQuickTag = (tag) => {
+  const handleQuickTag = tag => {
     setServiceRecord(prev => {
       const currentNotes = prev.notes || '';
-      
+
       if (currentNotes.includes(tag)) {
         // 如果已包含该标签，则移除
         const newNotes = currentNotes
@@ -150,14 +147,14 @@ const CarWashPage = () => {
           .trim();
         return {
           ...prev,
-          notes: newNotes
+          notes: newNotes,
         };
       } else {
         // 如果未包含该标签，则添加
         const newNotes = currentNotes ? `${currentNotes}, ${tag}` : tag;
         return {
           ...prev,
-          notes: newNotes
+          notes: newNotes,
         };
       }
     });
@@ -175,15 +172,15 @@ const CarWashPage = () => {
       image: capturedImage,
       serviceRecord,
       timestamp: new Date().toISOString(),
-      date: new Date().toLocaleDateString('zh-CN')
+      date: new Date().toLocaleDateString('zh-CN'),
     };
 
     // 保存到本地存储
     const result = dataStorage.addRecord(record);
-    
+
     if (result.success) {
       alert('记录保存成功！');
-      
+
       // 重置表单
       setLicensePlate('');
       setCapturedImage(null);
@@ -194,7 +191,7 @@ const CarWashPage = () => {
         wipers: 'normal',
         interior: [],
         exterior: [],
-        notes: ''
+        notes: '',
       });
     } else {
       alert('保存失败，请重试');
@@ -204,35 +201,26 @@ const CarWashPage = () => {
   // 渲染洗车表单内容
   const renderCarWashForm = () => (
     <>
-      
       {/* 拍照和车牌识别区域 */}
       <div className="camera-section">
         <div className="camera-controls">
           <div className="camera-buttons">
-            <button 
-              className="capture-btn"
-              onClick={handleOpenCamera}
-              disabled={isLoading}
-            >
+            <button className="capture-btn" onClick={handleOpenCamera} disabled={isLoading}>
               {isLoading ? '识别中...' : '📷 拍照'}
             </button>
-            
-            <button 
-              className="upload-btn"
-              onClick={handleFileUpload}
-              disabled={isLoading}
-            >
+
+            <button className="upload-btn" onClick={handleFileUpload} disabled={isLoading}>
               📁 上传
             </button>
           </div>
-          
+
           {capturedImage && (
             <div className="captured-image">
               <img src={capturedImage} alt="Captured license plate" />
             </div>
           )}
         </div>
-        
+
         <div className="license-input">
           <label>车牌号码:</label>
           <input
@@ -247,19 +235,19 @@ const CarWashPage = () => {
       </div>
 
       {/* 服务记录表单 */}
-      <div className="service-section">        
+      <div className="service-section">
         <div className="service-form">
           {/* 里程 */}
           <div className="service-item">
             <label>里程:</label>
             <div className="service-options">
-              <button 
+              <button
                 className={`option-btn ${serviceRecord.mileage === 'normal' ? 'active' : ''}`}
                 onClick={() => handleServiceChange('mileage', 'normal')}
               >
                 正常
               </button>
-              <button 
+              <button
                 className={`option-btn ${serviceRecord.mileage === 'over' ? 'active' : ''}`}
                 onClick={() => handleServiceChange('mileage', 'over')}
               >
@@ -272,13 +260,13 @@ const CarWashPage = () => {
           <div className="service-item">
             <label>轮胎:</label>
             <div className="service-options">
-              <button 
+              <button
                 className={`option-btn ${serviceRecord.tires === 'normal' ? 'active' : ''}`}
                 onClick={() => handleServiceChange('tires', 'normal')}
               >
                 正常
               </button>
-              <button 
+              <button
                 className={`option-btn ${serviceRecord.tires === 'flat' ? 'active' : ''}`}
                 onClick={() => handleServiceChange('tires', 'flat')}
               >
@@ -291,13 +279,13 @@ const CarWashPage = () => {
           <div className="service-item">
             <label>机油:</label>
             <div className="service-options">
-              <button 
+              <button
                 className={`option-btn ${serviceRecord.oil === 'normal' ? 'active' : ''}`}
                 onClick={() => handleServiceChange('oil', 'normal')}
               >
                 正常
               </button>
-              <button 
+              <button
                 className={`option-btn ${serviceRecord.oil === 'low' ? 'active' : ''}`}
                 onClick={() => handleServiceChange('oil', 'low')}
               >
@@ -310,13 +298,13 @@ const CarWashPage = () => {
           <div className="service-item">
             <label>雨刮:</label>
             <div className="service-options">
-              <button 
+              <button
                 className={`option-btn ${serviceRecord.wipers === 'normal' ? 'active' : ''}`}
                 onClick={() => handleServiceChange('wipers', 'normal')}
               >
                 正常
               </button>
-              <button 
+              <button
                 className={`option-btn ${serviceRecord.wipers === 'broken' ? 'active' : ''}`}
                 onClick={() => handleServiceChange('wipers', 'broken')}
               >
@@ -330,7 +318,7 @@ const CarWashPage = () => {
             <label>内饰:</label>
             <div className="service-options">
               {['Mingle', 'Dao', 'Roger', 'Swing'].map(staff => (
-                <button 
+                <button
                   key={staff}
                   className={`option-btn ${serviceRecord.interior.includes(staff) ? 'active' : ''}`}
                   onClick={() => handleMultiSelectChange('interior', staff)}
@@ -346,7 +334,7 @@ const CarWashPage = () => {
             <label>外观:</label>
             <div className="service-options">
               {['Mingle', 'Dao', 'Roger', 'Swing'].map(staff => (
-                <button 
+                <button
                   key={staff}
                   className={`option-btn ${serviceRecord.exterior.includes(staff) ? 'active' : ''}`}
                   onClick={() => handleMultiSelectChange('exterior', staff)}
@@ -365,7 +353,7 @@ const CarWashPage = () => {
                 type="text"
                 className="notes-input"
                 value={serviceRecord.notes}
-                onChange={(e) => handleServiceChange('notes', e.target.value)}
+                onChange={e => handleServiceChange('notes', e.target.value)}
                 placeholder="输入备注信息..."
               />
               <div className="quick-tags">
@@ -384,22 +372,13 @@ const CarWashPage = () => {
           </div>
         </div>
 
-        <button 
-          className="save-btn"
-          onClick={handleSaveRecord}
-          disabled={!licensePlate}
-        >
+        <button className="save-btn" onClick={handleSaveRecord} disabled={!licensePlate}>
           💾 保存记录
         </button>
       </div>
 
       {/* 摄像头组件 */}
-      {showCamera && (
-        <CameraCapture
-          onCapture={handleCameraCapture}
-          onClose={handleCloseCamera}
-        />
-      )}
+      {showCamera && <CameraCapture onCapture={handleCameraCapture} onClose={handleCloseCamera} />}
     </>
   );
 
