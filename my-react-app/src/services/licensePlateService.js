@@ -98,7 +98,29 @@ class LicensePlateService {
       const result = await response.json();
 
       if (result.error_code) {
-        throw new Error(`API Error: ${result.error_msg}`);
+        // Handle specific error codes
+        if (result.error_code === 282103) {
+          // Target recognition error - no license plate detected
+          return {
+            success: false,
+            error: '未识别到车牌，请确保图片清晰且包含车牌',
+            errorCode: result.error_code,
+          };
+        } else if (result.error_code === 216201) {
+          // Image format error
+          return {
+            success: false,
+            error: '图片格式错误，请上传有效的图片文件',
+            errorCode: result.error_code,
+          };
+        } else {
+          // Other API errors
+          return {
+            success: false,
+            error: `识别失败: ${result.error_msg}`,
+            errorCode: result.error_code,
+          };
+        }
       }
 
       if (result.words_result && result.words_result.length > 0) {
@@ -112,7 +134,7 @@ class LicensePlateService {
       } else {
         return {
           success: false,
-          error: 'No license plate detected',
+          error: '未识别到车牌，请确保图片清晰且包含车牌',
         };
       }
     } catch (error) {

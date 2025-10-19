@@ -50,7 +50,8 @@ const CarWashPage = () => {
         setLicensePlate(result.plateNumber);
         console.log(`Detected plate: ${result.plateNumber}, confidence: ${(result.confidence * 100).toFixed(1)}%`);
       } else {
-        alert('License plate recognition failed. Please enter manually.');
+        // Show specific error message
+        alert(result.error || 'License plate recognition failed. Please enter manually.');
       }
     } catch (error) {
       console.error('License plate recognition failed:', error);
@@ -91,7 +92,8 @@ const CarWashPage = () => {
                 `Detected plate: ${result.plateNumber}, confidence: ${(result.confidence * 100).toFixed(1)}%`
               );
             } else {
-              alert('License plate recognition failed. Please enter manually.');
+              // Show specific error message
+              alert(result.error || 'License plate recognition failed. Please enter manually.');
             }
           } catch (error) {
             console.error('License plate recognition failed:', error);
