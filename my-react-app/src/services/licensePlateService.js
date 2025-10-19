@@ -82,7 +82,9 @@ class LicensePlateService {
       }
 
       // Call backend proxy or Vercel API for OCR
+      // Try license plate OCR first, fallback to general OCR for international plates
       const apiUrl = this.backendUrl ? `${this.backendUrl}/api/baidu/ocr` : '/api/baidu-ocr';
+      const generalOcrUrl = this.backendUrl ? `${this.backendUrl}/api/baidu/general-ocr` : '/api/baidu-general-ocr';
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -95,18 +97,59 @@ class LicensePlateService {
         }),
       });
 
-      const result = await response.json();
+      let result = await response.json();
+
+      // If license plate OCR fails with target recognition error, try general OCR
+      if (result.error_code === 282103) {
+        console.log('License plate OCR failed, trying general OCR for international plates...');
+        
+        const generalResponse = await fetch(generalOcrUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: imageBase64,
+            accessToken: token,
+          }),
+        });
+
+        result = await generalResponse.json();
+        
+        // Process general OCR results
+        if (result.words_result && result.words_result.length > 0) {
+          // Look for text that looks like a license plate (alphanumeric, 3-8 characters)
+          const plateTexts = result.words_result
+            .map(item => item.words)
+            .filter(text => {
+              // Match patterns like ABC123, 123ABC, ABC123D, etc.
+              const platePattern = /^[A-Z0-9]{3,8}$/i;
+              return platePattern.test(text.replace(/\s/g, ''));
+            });
+
+          if (plateTexts.length > 0) {
+            // Return the most likely plate (longest match)
+            const bestPlate = plateTexts.reduce((a, b) => a.length > b.length ? a : b);
+            return {
+              success: true,
+              plateNumber: bestPlate.toUpperCase(),
+              confidence: 0.8, // General OCR confidence
+              color: 'unknown',
+              method: 'general_ocr'
+            };
+          }
+        }
+        
+        return {
+          success: false,
+          error: '未识别到车牌，请确保图片清晰且包含车牌',
+          errorCode: 282103,
+        };
+      }
 
       if (result.error_code) {
-        // Handle specific error codes
-        if (result.error_code === 282103) {
-          // Target recognition error - no license plate detected
-          return {
-            success: false,
-            error: '未识别到车牌，请确保图片清晰且包含车牌',
-            errorCode: result.error_code,
-          };
-        } else if (result.error_code === 216201) {
+        // Handle other specific error codes
+        if (result.error_code === 216201) {
           // Image format error
           return {
             success: false,
