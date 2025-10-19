@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>生成 PWA 图标</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin: 10px;
+    }
+    button {
+      background: #16a34a;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #15803d;
+    }
+    .instructions {
+      background: #f0f9ff;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 生成 PWA 图标</h1>
+  
+  <div class="instructions">
+    <h3>使用说明：</h3>
+    <ol>
+      <li>点击下面的按钮生成图标</li>
+      <li>右键点击图标 → "图片另存为..."</li>
+      <li>保存为 <code>pwa-192x192.png</code> 和 <code>pwa-512x512.png</code></li>
+      <li>将图标放到项目的 <code>public</code> 目录</li>
+    </ol>
+  </div>
+
+  <div>
+    <h2>192x192 图标</h2>
+    <canvas id="canvas192"></canvas>
+    <br>
+    <button onclick="downloadIcon(192)">下载 192x192</button>
+  </div>
+
+  <div>
+    <h2>512x512 图标</h2>
+    <canvas id="canvas512"></canvas>
+    <br>
+    <button onclick="downloadIcon(512)">下载 512x512</button>
+  </div>
+
+  <script>
+    function generateIcon(size) {
+      const canvas = document.getElementById(`canvas${size}`);
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // 绿色背景
+      ctx.fillStyle = '#16a34a';
+      ctx.fillRect(0, 0, size, size);
+
+      // 白色圆角矩形
+      const padding = size * 0.15;
+      const innerSize = size - (padding * 2);
+      const radius = size * 0.1;
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(padding, padding, innerSize, innerSize, radius);
+      ctx.fill();
+
+      // 文字 "R"
+      ctx.fillStyle = '#16a34a';
+      ctx.font = `bold ${size * 0.5}px Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('R', size / 2, size / 2);
+    }
+
+    function downloadIcon(size) {
+      const canvas = document.getElementById(`canvas${size}`);
+      const link = document.createElement('a');
+      link.download = `pwa-${size}x${size}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // 自动生成图标
+    generateIcon(192);
+    generateIcon(512);
+  </script>
+</body>
+</html>
+

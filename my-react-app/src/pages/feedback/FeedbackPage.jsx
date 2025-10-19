@@ -28,7 +28,7 @@ const FeedbackPage = () => {
               <button className="py-10 px-15" data-testid={`upvote-btn-${idx}`}
                 onClick={() => { handleUpOrDown(idx*2) }}
               >
-                👍 Upvote
+                👍 Upvote11
               </button>
               <button className="py-10 px-15 danger" data-testid={`downvote-btn-${idx}`}
                 onClick={() => {handleUpOrDown(idx*2 + 1)}}
