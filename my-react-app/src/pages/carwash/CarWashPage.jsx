@@ -13,6 +13,7 @@ const CarWashPage = () => {
   const [capturedImage, setCapturedImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const containerRef = useRef(null);
   const [serviceRecord, setServiceRecord] = useState({
     mileage: 'normal', // 里程: 正常(默认) / 超了
@@ -65,6 +66,13 @@ const CarWashPage = () => {
       clearTimeout(timer);
     };
   }, [activeTab]);
+
+  // 清空图片和车牌号
+  const handleClearImage = () => {
+    setCapturedImage(null);
+    setLicensePlate('');
+    console.log('🗑️ 已清空图片和车牌号');
+  };
 
   // 打开摄像头
   const handleOpenCamera = async () => {
@@ -260,8 +268,18 @@ const CarWashPage = () => {
           </div>
 
           {capturedImage && (
-            <div className="captured-image">
-              <img src={capturedImage} alt="Captured license plate" />
+            <div className="image-container">
+              <div className="captured-image" onClick={() => setShowImageModal(true)} title="点击查看大图">
+                <img src={capturedImage} alt="Captured license plate" />
+                <div className="image-hint">🔍 点击查看大图</div>
+              </div>
+              <button
+                className="delete-image-btn"
+                onClick={handleClearImage}
+                title="删除图片"
+              >
+                🗑️ 删除
+              </button>
             </div>
           )}
         </div>
@@ -436,6 +454,19 @@ const CarWashPage = () => {
 
       {/* 底部导航 */}
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* 图片预览模态框 */}
+      {showImageModal && capturedImage && (
+        <div className="image-modal" onClick={() => setShowImageModal(false)}>
+          <div className="image-modal-content">
+            <button className="image-modal-close" onClick={() => setShowImageModal(false)}>
+              ✕
+            </button>
+            <img src={capturedImage} alt="License plate preview" />
+            <p className="image-modal-hint">点击任意位置关闭</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

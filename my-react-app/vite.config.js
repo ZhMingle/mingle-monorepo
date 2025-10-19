@@ -10,6 +10,14 @@ export default defineConfig({
       key: './localhost+1-key.pem',
       cert: './localhost+1.pem',
     },
+    proxy: {
+      // 代理 API 请求到 Vercel 本地开发服务器
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   plugins: [
     react(),

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "vercel dev --listen 3000",
+    "dev:full": "./dev-with-api.sh",
     "build": "vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
