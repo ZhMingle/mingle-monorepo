@@ -643,3 +643,29 @@
     color: #888888;
   }
 }
+
+/* 加载动画样式 */
+.loading-spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.save-btn:disabled:hover {
+  background: #667eea;
+  transform: none;
+}

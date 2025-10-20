@@ -119,11 +119,14 @@ class LicensePlateService {
         // Process general OCR results
         if (result.words_result && result.words_result.length > 0) {
           // Filter and process OCR results for international license plates
-          const plateTexts = result.words_result
-            .map(item => item.words)
-            .filter(text => {
-              // Remove spaces and convert to uppercase
-              const cleanText = text.replace(/\s/g, '').toUpperCase();
+          const validPlates = result.words_result
+            .map(item => ({
+              text: item.words,
+              confidence: item.probability?.average || 0.5, // 使用准确率
+              originalItem: item,
+            }))
+            .filter(item => {
+              const cleanText = item.text.replace(/\s/g, '').toUpperCase();
 
               // Check if text contains Chinese characters
               const hasChinese = /[\u4e00-\u9fff]/.test(cleanText);
@@ -144,7 +147,7 @@ class LicensePlateService {
               const hasNonSpace = /[A-Z0-9]/.test(cleanText);
 
               if (isValid && hasNonSpace) {
-                console.log('Found valid license plate:', cleanText);
+                console.log('Found valid license plate:', cleanText, 'confidence:', item.confidence);
               } else {
                 console.log('Filtered out invalid text:', cleanText);
               }
@@ -152,14 +155,15 @@ class LicensePlateService {
               return isValid && hasNonSpace;
             });
 
-          if (plateTexts.length > 0) {
-            // Return the most likely plate (longest match)
-            const bestPlate = plateTexts.reduce((a, b) => (a.length > b.length ? a : b));
-            console.log('Selected best plate:', bestPlate);
+          if (validPlates.length > 0) {
+            // Sort by confidence (accuracy) and select the highest
+            const bestPlate = validPlates.reduce((a, b) => (a.confidence > b.confidence ? a : b));
+
+            console.log('Selected best plate by confidence:', bestPlate.text, 'confidence:', bestPlate.confidence);
             return {
               success: true,
-              plateNumber: bestPlate,
-              confidence: 0.8, // General OCR confidence
+              plateNumber: bestPlate.text,
+              confidence: bestPlate.confidence,
               color: 'unknown',
               method: 'general_ocr',
             };

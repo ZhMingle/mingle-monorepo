@@ -228,7 +228,7 @@ const CarWashPage = () => {
   };
 
   // 保存记录
-  const handleSaveRecord = () => {
+  const handleSaveRecord = async () => {
     if (!licensePlate) {
       Toast.show({
         icon: 'fail',
@@ -238,42 +238,57 @@ const CarWashPage = () => {
       return;
     }
 
-    const record = {
-      licensePlate,
-      image: capturedImage,
-      serviceRecord,
-      timestamp: new Date().toISOString(),
-      date: new Date().toLocaleDateString('zh-CN'),
-    };
+    // 开始加载动画
+    setIsLoading(true);
 
-    // 保存到本地存储
-    const result = dataStorage.addRecord(record);
+    try {
+      const record = {
+        licensePlate,
+        image: capturedImage,
+        serviceRecord,
+        timestamp: new Date().toISOString(),
+        date: new Date().toLocaleDateString('zh-CN'),
+      };
 
-    if (result.success) {
-      Toast.show({
-        icon: 'success',
-        content: '记录保存成功！',
-        duration: 2000,
-      });
+      // 保存到存储（可能是 localStorage 或 Firebase）
+      const result = await dataStorage.addRecord(record);
 
-      // 重置表单
-      setLicensePlate('');
-      setCapturedImage(null);
-      setServiceRecord({
-        mileage: 'normal',
-        tires: 'normal',
-        oil: 'normal',
-        wipers: 'normal',
-        interior: [],
-        exterior: [],
-        notes: '',
-      });
-    } else {
+      if (result.success) {
+        Toast.show({
+          icon: 'success',
+          content: '记录保存成功！',
+          duration: 2000,
+        });
+
+        // 重置表单
+        setLicensePlate('');
+        setCapturedImage(null);
+        setServiceRecord({
+          mileage: 'normal',
+          tires: 'normal',
+          oil: 'normal',
+          wipers: 'normal',
+          interior: [],
+          exterior: [],
+          notes: '',
+        });
+      } else {
+        Toast.show({
+          icon: 'fail',
+          content: `保存失败: ${result.error || '请重试'}`,
+          duration: 2000,
+        });
+      }
+    } catch (error) {
+      console.error('保存记录失败:', error);
       Toast.show({
         icon: 'fail',
         content: '保存失败，请重试',
         duration: 2000,
       });
+    } finally {
+      // 结束加载动画
+      setIsLoading(false);
     }
   };
 
@@ -457,8 +472,15 @@ const CarWashPage = () => {
           </div>
         </div>
 
-        <button className="save-btn" onClick={handleSaveRecord} disabled={!licensePlate}>
-          💾 保存记录
+        <button className="save-btn" onClick={handleSaveRecord} disabled={!licensePlate || isLoading}>
+          {isLoading ? (
+            <>
+              <span className="loading-spinner">⏳</span>
+              保存中...
+            </>
+          ) : (
+            '💾 保存记录'
+          )}
         </button>
       </div>
 
