@@ -7,23 +7,43 @@ const CarHistoryPage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [allRecords, setAllRecords] = useState([]);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   // 加载数据
   useEffect(() => {
     loadRecords();
   }, []);
 
-  const loadRecords = () => {
-    const records = dataStorage.getAllRecords();
-    setAllRecords(records);
-    setSearchResults(records);
+  const loadRecords = async () => {
+    setIsLoading(true);
+    try {
+      // 模拟异步加载延迟，实际项目中这里可能是API调用
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const records = dataStorage.getAllRecords();
+      setAllRecords(records);
+      setSearchResults(records);
+    } catch (error) {
+      console.error('加载记录失败:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // 搜索功能
-  const handleSearch = term => {
+  const handleSearch = async (term) => {
     setSearchTerm(term);
-    const results = dataStorage.searchByLicensePlate(term);
-    setSearchResults(results);
+    setIsSearching(true);
+    try {
+      // 模拟搜索延迟，实际项目中这里可能是API调用
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const results = dataStorage.searchByLicensePlate(term);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('搜索失败:', error);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   // 获取车牌号的历史记录
@@ -70,13 +90,33 @@ const CarHistoryPage = () => {
             onChange={e => handleSearch(e.target.value)}
             placeholder="输入车牌号搜索..."
             className="search-input"
+            disabled={isSearching}
           />
-          <button className="search-btn">🔍</button>
+          <button className="search-btn" disabled={isSearching}>
+            {isSearching ? <div className="loading-spinner small"></div> : '🔍'}
+          </button>
         </div>
-        <p className="search-info">找到 {searchResults.length} 条记录</p>
+        <p className="search-info">
+          {isSearching ? '搜索中...' : `找到 ${searchResults.length} 条记录`}
+        </p>
       </div>
 
+      {/* 加载状态 */}
+      {isLoading && (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">正在加载历史记录...</p>
+        </div>
+      )}
+
       {/* 结果列表 */}
+      {!isLoading && (
+        <div className="results-section">
+          <div className="no-results">
+            <p>暂无历史记录</p>
+          </div>
+        </div>
+      )}
       {/* <div className="results-section">
         {Object.keys(groupedResults).length === 0 ? (
           <div className="no-results">
