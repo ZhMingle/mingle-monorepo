@@ -1,6 +1,21 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import fs from 'fs';
+
+// Check if HTTPS certificates exist (only for local dev)
+const httpsConfig = (() => {
+  const keyPath = './localhost+1-key.pem';
+  const certPath = './localhost+1.pem';
+
+  if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+    return {
+      key: keyPath,
+      cert: certPath,
+    };
+  }
+  return false;
+})();
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -9,10 +24,8 @@ export default defineConfig({
   clearScreen: false,
   server: {
     host: true,
-    https: {
-      key: './localhost+1-key.pem',
-      cert: './localhost+1.pem',
-    },
+    // Only use HTTPS if certificates exist (local dev)
+    ...(httpsConfig ? { https: httpsConfig } : {}),
     proxy: {
       // 代理 API 请求到生产环境
       '/api': {
@@ -25,7 +38,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'public',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       includeAssets: ['vite.svg'],
       manifest: {
         name: 'React Learning App',
@@ -56,25 +73,16 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-        ],
+      devOptions: {
+        enabled: false,
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
 });

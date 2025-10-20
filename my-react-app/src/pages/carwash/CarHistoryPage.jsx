@@ -5,33 +5,29 @@ import dataStorage from '../../services/dataStorage';
 const CarHistoryPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [allRecords, setAllRecords] = useState([]);
-  const [selectedRecord, setSelectedRecord] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
   // 加载数据
   useEffect(() => {
-    loadRecords();
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // 模拟异步加载延迟，实际项目中这里可能是API调用
+        await new Promise(resolve => setTimeout(resolve, 800));
+        const records = dataStorage.getAllRecords();
+        setSearchResults(records);
+      } catch (error) {
+        console.error('加载记录失败:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
   }, []);
 
-  const loadRecords = async () => {
-    setIsLoading(true);
-    try {
-      // 模拟异步加载延迟，实际项目中这里可能是API调用
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const records = dataStorage.getAllRecords();
-      setAllRecords(records);
-      setSearchResults(records);
-    } catch (error) {
-      console.error('加载记录失败:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // 搜索功能
-  const handleSearch = async (term) => {
+  const handleSearch = async term => {
     setSearchTerm(term);
     setIsSearching(true);
     try {
@@ -45,37 +41,6 @@ const CarHistoryPage = () => {
       setIsSearching(false);
     }
   };
-
-  // 获取车牌号的历史记录
-  const getHistoryForPlate = plate => {
-    return allRecords
-      .filter(record => record.licensePlate.toLowerCase() === plate.toLowerCase())
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  };
-
-  // 渲染服务记录详情
-  const renderServiceDetails = serviceRecord => {
-    const services = [];
-
-    if (serviceRecord.rego) services.push(`Rego: ${serviceRecord.rego === 'better' ? '更好' : '添加'}`);
-    if (serviceRecord.engineOil) services.push(`机油: ${serviceRecord.engineOil === 'better' ? '更好' : '添加'}`);
-    if (serviceRecord.wipers) services.push(`雨刮器: ${serviceRecord.wipers === 'normal' ? '正常' : '损坏'}`);
-    if (serviceRecord.tires) services.push(`轮胎: 更换`);
-    if (serviceRecord.interior) services.push(`内饰: ${serviceRecord.interior === 'staff1' ? '员工A' : '员工B'}`);
-    if (serviceRecord.exterior) services.push(`外观: ${serviceRecord.exterior === 'staff1' ? '员工A' : '员工B'}`);
-
-    return services.join(', ');
-  };
-
-  // 按车牌号分组显示
-  const groupedResults = searchResults.reduce((groups, record) => {
-    const plate = record.licensePlate;
-    if (!groups[plate]) {
-      groups[plate] = [];
-    }
-    groups[plate].push(record);
-    return groups;
-  }, {});
 
   return (
     <div className="car-history-container">
@@ -96,9 +61,7 @@ const CarHistoryPage = () => {
             {isSearching ? <div className="loading-spinner small"></div> : '🔍'}
           </button>
         </div>
-        <p className="search-info">
-          {isSearching ? '搜索中...' : `找到 ${searchResults.length} 条记录`}
-        </p>
+        <p className="search-info">{isSearching ? '搜索中...' : `找到 ${searchResults.length} 条记录`}</p>
       </div>
 
       {/* 加载状态 */}
