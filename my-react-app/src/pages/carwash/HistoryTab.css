@@ -1,0 +1,46 @@
+/* 覆盖 antd-mobile 组件库的默认样式 */
+
+/* 去掉 List.Item 的默认 padding */
+.adm-list-item {
+  padding: 0 !important;
+}
+
+.adm-list-item-content {
+  padding: 0 !important;
+}
+
+.adm-list-item-content-main {
+  padding: 0 !important;
+}
+
+/* 去掉 Card 的默认 padding */
+.adm-card {
+  padding: 0 !important;
+}
+
+.adm-card-body {
+  padding: 0 !important;
+}
+
+/* 确保我们的自定义 padding 生效 */
+.history-record-card {
+  padding: 4px 8px !important;
+}
+
+/* 优化 List 容器的间距 */
+.adm-list {
+  --border-inner: none;
+  --border-top: none;
+  --border-bottom: none;
+}
+
+/* 减少 List.Item 之间的间距 */
+.adm-list-item:not(:last-child) {
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 2px;
+}
+
+/* 进一步减少卡片间距 */
+.adm-card {
+  margin: 0 !important;
+}

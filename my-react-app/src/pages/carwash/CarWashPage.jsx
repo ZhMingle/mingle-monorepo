@@ -5,7 +5,8 @@ import BottomNav from '../../components/BottomNav';
 import HistoryTab from './HistoryTab';
 import ProfileTab from './ProfileTab';
 import licensePlateService from '../../services/licensePlateService';
-import dataStorage from '../../services/dataStorage';
+import dataStorage from '../../services/dataStorageAdapter';
+import { Toast } from 'antd-mobile';
 
 const CarWashPage = () => {
   const [activeTab, setActiveTab] = useState('carwash');
@@ -40,13 +41,6 @@ const CarWashPage = () => {
         // 动态设置 padding
         containerRef.current.style.paddingTop = `${Math.max(20, topOffset + 10)}px`;
         containerRef.current.style.paddingBottom = `${bottomHeight + 20}px`;
-
-        console.log('📏 页面间距调整:', {
-          顶部偏移: topOffset,
-          底部导航高度: bottomHeight,
-          设置顶部间距: Math.max(20, topOffset + 10),
-          设置底部间距: bottomHeight + 20,
-        });
       }
     };
 
@@ -78,7 +72,11 @@ const CarWashPage = () => {
   const handleOpenCamera = async () => {
     // 检查摄像头权限
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert('您的浏览器不支持摄像头功能，请使用现代浏览器或 HTTPS 协议');
+      Toast.show({
+        icon: 'fail',
+        content: '您的浏览器不支持摄像头功能，请使用现代浏览器或 HTTPS 协议',
+        duration: 3000,
+      });
       return;
     }
 
@@ -102,11 +100,19 @@ const CarWashPage = () => {
         console.log(`Detected plate: ${result.plateNumber}, confidence: ${(result.confidence * 100).toFixed(1)}%`);
       } else {
         // Show specific error message
-        alert(result.error || 'License plate recognition failed. Please enter manually.');
+        Toast.show({
+          icon: 'fail',
+          content: result.error || '车牌识别失败，请手动输入',
+          duration: 3000,
+        });
       }
     } catch (error) {
       console.error('License plate recognition failed:', error);
-      alert('License plate recognition failed. Please enter manually.');
+      Toast.show({
+        icon: 'fail',
+        content: '车牌识别失败，请手动输入',
+        duration: 3000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -144,11 +150,19 @@ const CarWashPage = () => {
               );
             } else {
               // Show specific error message
-              alert(result.error || 'License plate recognition failed. Please enter manually.');
+              Toast.show({
+                icon: 'fail',
+                content: result.error || '车牌识别失败，请手动输入',
+                duration: 3000,
+              });
             }
           } catch (error) {
             console.error('License plate recognition failed:', error);
-            alert('License plate recognition failed. Please enter manually.');
+            Toast.show({
+              icon: 'fail',
+              content: '车牌识别失败，请手动输入',
+              duration: 3000,
+            });
           } finally {
             setIsLoading(false);
           }
@@ -216,7 +230,11 @@ const CarWashPage = () => {
   // 保存记录
   const handleSaveRecord = () => {
     if (!licensePlate) {
-      alert('请先输入或识别车牌号');
+      Toast.show({
+        icon: 'fail',
+        content: '请先输入或识别车牌号',
+        duration: 2000,
+      });
       return;
     }
 
@@ -232,7 +250,11 @@ const CarWashPage = () => {
     const result = dataStorage.addRecord(record);
 
     if (result.success) {
-      alert('记录保存成功！');
+      Toast.show({
+        icon: 'success',
+        content: '记录保存成功！',
+        duration: 2000,
+      });
 
       // 重置表单
       setLicensePlate('');
@@ -247,7 +269,11 @@ const CarWashPage = () => {
         notes: '',
       });
     } else {
-      alert('保存失败，请重试');
+      Toast.show({
+        icon: 'fail',
+        content: '保存失败，请重试',
+        duration: 2000,
+      });
     }
   };
 
@@ -273,11 +299,7 @@ const CarWashPage = () => {
                 <img src={capturedImage} alt="Captured license plate" />
                 <div className="image-hint">🔍 点击查看大图</div>
               </div>
-              <button
-                className="delete-image-btn"
-                onClick={handleClearImage}
-                title="删除图片"
-              >
+              <button className="delete-image-btn" onClick={handleClearImage} title="删除图片">
                 🗑️ 删除
               </button>
             </div>
@@ -376,9 +398,9 @@ const CarWashPage = () => {
             </div>
           </div>
 
-          {/* 内饰（多选） */}
+          {/* 内饰清洗人员（多选） */}
           <div className="service-item">
-            <label>内饰:</label>
+            <label>内饰清洗:</label>
             <div className="service-options">
               {['Mingle', 'Dao', 'Roger', 'Swing'].map(staff => (
                 <button
@@ -392,9 +414,9 @@ const CarWashPage = () => {
             </div>
           </div>
 
-          {/* 外观（多选） */}
+          {/* 外观清洗人员（多选） */}
           <div className="service-item">
-            <label>外观:</label>
+            <label>外观清洗:</label>
             <div className="service-options">
               {['Mingle', 'Dao', 'Roger', 'Swing'].map(staff => (
                 <button

@@ -4,6 +4,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Keep the dev server output visible across HMR updates
+  // (Vite clears the console on updates by default; disable that)
+  clearScreen: false,
   server: {
     host: true,
     https: {
@@ -11,11 +14,11 @@ export default defineConfig({
       cert: './localhost+1.pem',
     },
     proxy: {
-      // 代理 API 请求到 Vercel 本地开发服务器
+      // 代理 API 请求到生产环境
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'https://car-washing-two.vercel.app',
         changeOrigin: true,
-        secure: false,
+        secure: true,
       },
     },
   },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import dataStorage from '../../services/dataStorage';
+import dataStorage from '../../services/dataStorageAdapter';
 import './ProfileTab.css';
 
 const ProfileTab = () => {
@@ -10,34 +10,58 @@ const ProfileTab = () => {
   });
 
   useEffect(() => {
-    const statistics = dataStorage.getStatistics();
-    setStats(statistics);
+    const loadStatistics = async () => {
+      try {
+        const statistics = await dataStorage.getStatistics();
+        setStats(statistics);
+      } catch (error) {
+        console.error('加载统计信息失败:', error);
+      }
+    };
+
+    loadStatistics();
   }, []);
 
-  const handleExportData = () => {
-    const data = dataStorage.exportData();
-    if (data.records.length === 0) {
-      alert('暂无数据可导出');
-      return;
-    }
+  const handleExportData = async () => {
+    try {
+      const data = await dataStorage.exportData();
+      if (data.records.length === 0) {
+        alert('暂无数据可导出');
+        return;
+      }
 
-    const jsonString = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `carwash-records-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const jsonString = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `carwash-records-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('导出数据失败:', error);
+      alert('导出数据失败，请重试');
+    }
   };
 
-  const handleClearData = () => {
+  const handleClearData = async () => {
     if (window.confirm('确定要清空所有数据吗？此操作不可恢复！')) {
-      dataStorage.clearAllData();
-      alert('数据已清空');
-      window.location.reload();
+      try {
+        const result = await dataStorage.clearAllData();
+        if (result.success) {
+          alert('数据已清空');
+          // 重新加载统计信息
+          const statistics = await dataStorage.getStatistics();
+          setStats(statistics);
+        } else {
+          alert('清空数据失败，请重试');
+        }
+      } catch (error) {
+        console.error('清空数据失败:', error);
+        alert('清空数据失败，请重试');
+      }
     }
   };
 
