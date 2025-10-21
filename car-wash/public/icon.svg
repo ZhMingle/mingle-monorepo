@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect fill="#16a34a" width="512" height="512" rx="80"/>
+  <g transform="translate(256, 256)">
+    <!-- Car Wash Icon -->
+    <path fill="#ffffff" d="M-120,-80 L120,-80 L100,-40 L-100,-40 Z"/>
+    <rect fill="#ffffff" x="-120" y="-40" width="240" height="80" rx="5"/>
+    <circle fill="#333333" cx="-80" cy="50" r="20"/>
+    <circle fill="#333333" cx="80" cy="50" r="20"/>
+    <rect fill="#64748b" x="-90" y="-70" width="60" height="30" rx="2"/>
+    <rect fill="#64748b" x="30" y="-70" width="60" height="30" rx="2"/>
+    <!-- Water Drops -->
+    <path fill="#3b82f6" d="M-150,-120 Q-150,-140 -160,-145 Q-170,-140 -170,-120 Q-170,-100 -160,-95 Q-150,-100 -150,-120 Z"/>
+    <path fill="#3b82f6" d="M150,-100 Q150,-120 140,-125 Q130,-120 130,-100 Q130,-80 140,-75 Q150,-80 150,-100 Z"/>
+    <path fill="#3b82f6" d="M0,-130 Q0,-150 -10,-155 Q-20,-150 -20,-130 Q-20,-110 -10,-105 Q0,-110 0,-130 Z"/>
+  </g>
+</svg>
+
