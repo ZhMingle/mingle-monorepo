@@ -1,20 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './CarWashPage.css';
-import CameraCapture from '../../components/CameraCapture';
 import BottomNav from '../../components/BottomNav';
 import HistoryTab from './HistoryTab';
 import ProfileTab from './ProfileTab';
-import licensePlateService from '../../services/licensePlateService';
 import dataStorage from '../../services/dataStorageAdapter';
 import { Toast } from 'antd-mobile';
 
 const CarWashPage = () => {
   const [activeTab, setActiveTab] = useState('carwash');
   const [licensePlate, setLicensePlate] = useState('');
-  const [capturedImage, setCapturedImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);
   const containerRef = useRef(null);
   const [serviceRecord, setServiceRecord] = useState({
     mileage: 'normal', // 里程: 正常(默认) / 超了
@@ -83,16 +78,34 @@ const CarWashPage = () => {
     // 获取Android设备状态栏高度
     const androidInfo = isAndroid ? getAndroidStatusBarHeight() : null;
     
-    // 综合计算最佳顶部安全区域高度
-    const calculatedHeight = Math.max(
-      safeAreaTop,
-      statusBarHeight,
-      topOffset,
-      androidInfo ? androidInfo.finalHeight : 0, // Android设备使用专门计算的高度
-      isIOS ? 44 : 20, // iOS设备默认44px，其他设备20px
-      isHighDPI ? 30 : 20, // 高分辨率设备需要更多空间
-      30 // 最小安全距离
-    );
+    // 智能计算顶部安全区域高度（只在真正需要时添加间距）
+    let calculatedHeight = 0;
+    
+    // 优先使用CSS安全区域
+    if (safeAreaTop > 0) {
+      calculatedHeight = safeAreaTop;
+    }
+    // 其次使用状态栏高度
+    else if (statusBarHeight > 0) {
+      calculatedHeight = statusBarHeight;
+    }
+    // 然后使用Android设备检测
+    else if (androidInfo && androidInfo.finalHeight > 0) {
+      calculatedHeight = androidInfo.finalHeight;
+    }
+    // 最后使用设备类型判断
+    else if (isIOS) {
+      calculatedHeight = 20; // iOS设备最小间距
+    }
+    else if (isHighDPI) {
+      calculatedHeight = 15; // 高分辨率设备最小间距
+    }
+    else {
+      calculatedHeight = 10; // 最小安全距离
+    }
+    
+    // 确保不超过合理范围
+    calculatedHeight = Math.min(calculatedHeight, 50); // 最大不超过50px
     
     return {
       safeAreaTop,
@@ -126,7 +139,9 @@ const CarWashPage = () => {
           ...safeAreaInfo,
           actualTopOffset,
           viewportHeight: window.innerHeight,
-          screenHeight: window.screen.height
+          screenHeight: window.screen.height,
+          finalPadding: `${actualTopOffset}px`,
+          recommendation: actualTopOffset > 30 ? '⚠️ 间距可能过大' : '✅ 间距合理'
         });
       }
     };
@@ -155,117 +170,10 @@ const CarWashPage = () => {
     };
   }, [activeTab]);
 
-  // 清空图片和车牌号
-  const handleClearImage = () => {
-    setCapturedImage(null);
-    setLicensePlate('');
-    console.log('🗑️ 已清空图片和车牌号');
-  };
 
-  // 打开摄像头
-  const handleOpenCamera = async () => {
-    // 检查摄像头权限
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      Toast.show({
-        icon: 'fail',
-        content: '您的浏览器不支持摄像头功能，请使用现代浏览器或 HTTPS 协议',
-        duration: 3000,
-      });
-      return;
-    }
 
-    setShowCamera(true);
-  };
 
-  // Handle camera capture
-  const handleCameraCapture = async imageData => {
-    setCapturedImage(imageData);
-    setShowCamera(false);
 
-    // Start license plate recognition
-    setIsLoading(true);
-    try {
-      // Convert image data to base64 (remove data URL prefix)
-      const base64Image = imageData.split(',')[1];
-      const result = await licensePlateService.recognizeLicensePlate(base64Image);
-
-      if (result.success) {
-        setLicensePlate(result.plateNumber);
-        console.log(`Detected plate: ${result.plateNumber}, confidence: ${(result.confidence * 100).toFixed(1)}%`);
-      } else {
-        // Show specific error message
-        Toast.show({
-          icon: 'fail',
-          content: result.error || '车牌识别失败，请手动输入',
-          duration: 3000,
-        });
-      }
-    } catch (error) {
-      console.error('License plate recognition failed:', error);
-      Toast.show({
-        icon: 'fail',
-        content: '车牌识别失败，请手动输入',
-        duration: 3000,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 关闭摄像头
-  const handleCloseCamera = () => {
-    setShowCamera(false);
-  };
-
-  // Handle file upload
-  const handleFileUpload = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async e => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = async e => {
-          const imageData = e.target.result;
-          setCapturedImage(imageData);
-
-          // Start license plate recognition
-          setIsLoading(true);
-          try {
-            // Convert image data to base64 (remove data URL prefix)
-            const base64Image = imageData.split(',')[1];
-            const result = await licensePlateService.recognizeLicensePlate(base64Image);
-
-            if (result.success) {
-              setLicensePlate(result.plateNumber);
-              console.log(
-                `Detected plate: ${result.plateNumber}, confidence: ${(result.confidence * 100).toFixed(1)}%`
-              );
-            } else {
-              // Show specific error message
-              Toast.show({
-                icon: 'fail',
-                content: result.error || '车牌识别失败，请手动输入',
-                duration: 3000,
-              });
-            }
-          } catch (error) {
-            console.error('License plate recognition failed:', error);
-            Toast.show({
-              icon: 'fail',
-              content: '车牌识别失败，请手动输入',
-              duration: 3000,
-            });
-          } finally {
-            setIsLoading(false);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-    input.click();
-  };
 
   // 手动输入车牌号
   const handleLicensePlateChange = e => {
@@ -338,7 +246,6 @@ const CarWashPage = () => {
     try {
       const record = {
         licensePlate,
-        image: capturedImage,
         serviceRecord,
         timestamp: new Date().toISOString(),
         date: new Date().toLocaleDateString('zh-CN'),
@@ -356,7 +263,6 @@ const CarWashPage = () => {
 
         // 重置表单
         setLicensePlate('');
-        setCapturedImage(null);
         setServiceRecord({
           mileage: 'normal',
           tires: 'normal',
@@ -389,43 +295,16 @@ const CarWashPage = () => {
   // 渲染洗车表单内容
   const renderCarWashForm = () => (
     <>
-      {/* 拍照和车牌识别区域 */}
-      <div className="camera-section">
-        <div className="camera-controls">
-          <div className="camera-buttons">
-            <button className="capture-btn" onClick={handleOpenCamera} disabled={isLoading}>
-              {isLoading ? '识别中...' : '📷 拍照'}
-            </button>
-
-            <button className="upload-btn" onClick={handleFileUpload} disabled={isLoading}>
-              📁 上传
-            </button>
-          </div>
-
-          {capturedImage && (
-            <div className="image-container">
-              <div className="captured-image" onClick={() => setShowImageModal(true)} title="点击查看大图">
-                <img src={capturedImage} alt="Captured license plate" />
-                <div className="image-hint">🔍 点击查看大图</div>
-              </div>
-              <button className="delete-image-btn" onClick={handleClearImage} title="删除图片">
-                🗑️ 删除
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="license-input">
-          <label>车牌号码:</label>
-          <input
-            type="text"
-            value={licensePlate}
-            onChange={handleLicensePlateChange}
-            placeholder="请输入车牌号"
-            maxLength="10"
-            className="license-plate-input"
-          />
-        </div>
+      <div className="license-input">
+        <label>车牌号码:</label>
+        <input
+          type="text"
+          value={licensePlate}
+          onChange={handleLicensePlateChange}
+          placeholder="请输入车牌号"
+          maxLength="10"
+          className="license-plate-input"
+        />
       </div>
 
       {/* 服务记录表单 */}
@@ -579,7 +458,6 @@ const CarWashPage = () => {
       </div>
 
       {/* 摄像头组件 */}
-      {showCamera && <CameraCapture onCapture={handleCameraCapture} onClose={handleCloseCamera} />}
     </>
   );
 
@@ -593,18 +471,6 @@ const CarWashPage = () => {
       {/* 底部导航 */}
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* 图片预览模态框 */}
-      {showImageModal && capturedImage && (
-        <div className="image-modal" onClick={() => setShowImageModal(false)}>
-          <div className="image-modal-content">
-            <button className="image-modal-close" onClick={() => setShowImageModal(false)}>
-              ✕
-            </button>
-            <img src={capturedImage} alt="License plate preview" />
-            <p className="image-modal-hint">点击任意位置关闭</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

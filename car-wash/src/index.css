@@ -20,8 +20,7 @@ body {
 /* 移动端状态栏适配 */
 @media (max-width: 768px) {
   body {
-    padding-top: env(safe-area-inset-top, 20px); /* 为iOS状态栏留出空间 */
-    padding-top: max(env(safe-area-inset-top, 20px), 20px); /* 确保至少有20px的顶部空间 */
+    padding-top: env(safe-area-inset-top, 0px); /* 为iOS状态栏留出空间，默认不添加额外空间 */
   }
 }
 
