@@ -10,7 +10,7 @@
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1) !important;
   z-index: 99999 !important;
   padding-bottom: env(safe-area-inset-bottom, 0) !important;
-  height: 80px !important;
+  height: 60px !important;
   width: 100vw !important;
   max-width: 100% !important;
 }

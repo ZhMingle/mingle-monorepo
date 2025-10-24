@@ -10,6 +10,9 @@ const CarWashPage = () => {
   const [activeTab, setActiveTab] = useState('carwash');
   const [licensePlate, setLicensePlate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [allLicensePlates, setAllLicensePlates] = useState([]);
   const containerRef = useRef(null);
   const [serviceRecord, setServiceRecord] = useState({
     mileage: 'normal', // 里程: 正常(默认) / 超了
@@ -78,34 +81,34 @@ const CarWashPage = () => {
     // 获取Android设备状态栏高度
     const androidInfo = isAndroid ? getAndroidStatusBarHeight() : null;
     
-    // 智能计算顶部安全区域高度（只在真正需要时添加间距）
+    // 简化的Android设备顶部安全区域计算
     let calculatedHeight = 0;
     
-    // 优先使用CSS安全区域
-    if (safeAreaTop > 0) {
-      calculatedHeight = safeAreaTop;
-    }
-    // 其次使用状态栏高度
-    else if (statusBarHeight > 0) {
-      calculatedHeight = statusBarHeight;
-    }
-    // 然后使用Android设备检测
-    else if (androidInfo && androidInfo.finalHeight > 0) {
-      calculatedHeight = androidInfo.finalHeight;
-    }
-    // 最后使用设备类型判断
-    else if (isIOS) {
-      calculatedHeight = 20; // iOS设备最小间距
-    }
-    else if (isHighDPI) {
-      calculatedHeight = 15; // 高分辨率设备最小间距
-    }
-    else {
-      calculatedHeight = 10; // 最小安全距离
+    if (isAndroid) {
+      // Android设备：使用更保守的计算方式
+      const androidStatusBarHeight = Math.min(
+        statusBarHeight || 0,
+        androidInfo?.finalHeight || 0,
+        30 // Android设备最大不超过30px
+      );
+      
+      // 只有在确实检测到状态栏时才添加间距
+      if (androidStatusBarHeight > 0 && androidStatusBarHeight < 50) {
+        calculatedHeight = androidStatusBarHeight;
+      } else {
+        // 如果检测结果异常，使用固定的小间距
+        calculatedHeight = 10;
+      }
+    } else if (isIOS) {
+      // iOS设备：使用CSS安全区域或固定值
+      calculatedHeight = safeAreaTop > 0 ? safeAreaTop : 20;
+    } else {
+      // 其他设备：最小间距
+      calculatedHeight = 10;
     }
     
     // 确保不超过合理范围
-    calculatedHeight = Math.min(calculatedHeight, 50); // 最大不超过50px
+    calculatedHeight = Math.min(calculatedHeight, 30); // 进一步减少最大高度
     
     return {
       safeAreaTop,
@@ -141,7 +144,13 @@ const CarWashPage = () => {
           viewportHeight: window.innerHeight,
           screenHeight: window.screen.height,
           finalPadding: `${actualTopOffset}px`,
-          recommendation: actualTopOffset > 30 ? '⚠️ 间距可能过大' : '✅ 间距合理'
+          recommendation: actualTopOffset > 20 ? '⚠️ 间距可能过大' : '✅ 间距合理',
+          deviceInfo: {
+            isAndroid: safeAreaInfo.isAndroid,
+            isIOS: safeAreaInfo.isIOS,
+            userAgent: navigator.userAgent,
+            devicePixelRatio: window.devicePixelRatio
+          }
         });
       }
     };
@@ -175,9 +184,85 @@ const CarWashPage = () => {
 
 
 
+  // 组件加载时获取所有车牌号
+  useEffect(() => {
+    loadAllLicensePlates();
+  }, []);
+
+  // 获取所有已保存的车牌号
+  const loadAllLicensePlates = async () => {
+    try {
+      const records = await dataStorage.getAllRecords();
+      console.log('📊 所有记录:', records);
+      const licensePlates = [...new Set(records.map(record => record.licensePlate))].filter(Boolean);
+      setAllLicensePlates(licensePlates);
+      console.log('📋 已加载车牌号列表:', licensePlates);
+      
+      // 如果没有数据，添加一些测试数据
+      if (licensePlates.length === 0) {
+        console.log('⚠️ 没有历史数据，添加测试车牌号');
+        const testPlates = ['京A12345', '沪B67890', '粤C11111', '川D22222', '鲁E33333'];
+        setAllLicensePlates(testPlates);
+      }
+    } catch (error) {
+      console.error('❌ 加载车牌号失败:', error);
+      // 如果加载失败，添加测试数据
+      const testPlates = ['京A12345', '沪B67890', '粤C11111', '川D22222', '鲁E33333'];
+      setAllLicensePlates(testPlates);
+    }
+  };
+
+  // 模糊匹配车牌号
+  const getSuggestions = (input) => {
+    if (!input || input.length < 1) {
+      return [];
+    }
+    
+    const inputUpper = input.toUpperCase();
+    return allLicensePlates
+      .filter(plate => plate.includes(inputUpper))
+      .sort((a, b) => {
+        // 优先显示完全匹配的，然后是按长度排序
+        if (a === inputUpper) return -1;
+        if (b === inputUpper) return 1;
+        return a.length - b.length;
+      })
+      .slice(0, 5); // 最多显示5个建议
+  };
+
   // 手动输入车牌号
   const handleLicensePlateChange = e => {
-    setLicensePlate(e.target.value.toUpperCase());
+    const value = e.target.value.toUpperCase();
+    setLicensePlate(value);
+    
+    // 获取建议
+    const newSuggestions = getSuggestions(value);
+    console.log('🔍 输入值:', value);
+    console.log('📋 所有车牌号:', allLicensePlates);
+    console.log('💡 建议列表:', newSuggestions);
+    console.log('👁️ 显示建议:', value.length > 0 && newSuggestions.length > 0);
+    
+    // 立即更新状态
+    setSuggestions(newSuggestions);
+    setShowSuggestions(value.length > 0 && newSuggestions.length > 0);
+    
+    // 强制重新渲染
+    setTimeout(() => {
+      console.log('🔄 状态更新后 - showSuggestions:', showSuggestions, 'suggestions:', suggestions.length);
+    }, 0);
+  };
+
+  // 选择建议的车牌号
+  const selectSuggestion = (plate) => {
+    setLicensePlate(plate);
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
+
+  // 关闭建议列表
+  const closeSuggestions = () => {
+    setShowSuggestions(false);
+    setSuggestions([]);
   };
 
   // 服务记录更新
@@ -297,14 +382,42 @@ const CarWashPage = () => {
     <>
       <div className="license-input">
         <label>车牌号码:</label>
-        <input
-          type="text"
-          value={licensePlate}
-          onChange={handleLicensePlateChange}
-          placeholder="请输入车牌号"
-          maxLength="10"
-          className="license-plate-input"
-        />
+        <div className="license-input-container">
+          <input
+            type="text"
+            value={licensePlate}
+            onChange={handleLicensePlateChange}
+            onBlur={() => setTimeout(closeSuggestions, 200)} // 延迟关闭，允许点击建议
+            onFocus={() => {
+              if (licensePlate && suggestions.length > 0) {
+                setShowSuggestions(true);
+              }
+            }}
+            placeholder="请输入车牌号"
+            maxLength="10"
+            className="license-plate-input"
+            autoComplete="off"
+          />
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="license-suggestions">
+              {suggestions.map((suggestion, index) => (
+                <div
+                  key={index}
+                  className="suggestion-item"
+                  onClick={() => selectSuggestion(suggestion)}
+                >
+                  {suggestion}
+                </div>
+              ))}
+            </div>
+          )}
+          {/* 调试信息 */}
+          {process.env.NODE_ENV === 'development' && (
+            <div style={{fontSize: '12px', color: '#666', marginTop: '5px'}}>
+              调试: showSuggestions={showSuggestions.toString()}, suggestions={suggestions.length}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 服务记录表单 */}

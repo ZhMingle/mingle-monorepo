@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>车牌号自动补全测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .license-input {
+            margin-bottom: 20px;
+        }
+        
+        .license-input label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .license-input-container {
+            position: relative;
+        }
+        
+        .license-plate-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        
+        .license-plate-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .license-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .suggestion-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+            transition: background-color 0.2s ease;
+        }
+        
+        .suggestion-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        .debug-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .test-data {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+        
+        .test-data h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        
+        .test-data p {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>车牌号自动补全测试</h2>
+        
+        <div class="license-input">
+            <label>车牌号码:</label>
+            <div class="license-input-container">
+                <input
+                    type="text"
+                    id="licenseInput"
+                    placeholder="请输入车牌号"
+                    maxlength="10"
+                    autocomplete="off"
+                />
+                <div id="suggestions" class="license-suggestions" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <div class="debug-info" id="debugInfo">
+            等待输入...
+        </div>
+        
+        <div class="test-data">
+            <h3>测试数据</h3>
+            <p>尝试输入: 京、沪、粤、川、鲁</p>
+            <p>或者输入: 123、678、111、222、333</p>
+        </div>
+    </div>
+
+    <script>
+        // 测试数据
+        const testPlates = ['京A12345', '沪B67890', '粤C11111', '川D22222', '鲁E33333'];
+        
+        const input = document.getElementById('licenseInput');
+        const suggestions = document.getElementById('suggestions');
+        const debugInfo = document.getElementById('debugInfo');
+        
+        let showSuggestions = false;
+        
+        // 模糊匹配函数
+        function getSuggestions(input) {
+            if (!input || input.length < 1) {
+                return [];
+            }
+            
+            const inputUpper = input.toUpperCase();
+            return testPlates
+                .filter(plate => plate.includes(inputUpper))
+                .sort((a, b) => {
+                    if (a === inputUpper) return -1;
+                    if (b === inputUpper) return 1;
+                    return a.length - b.length;
+                })
+                .slice(0, 5);
+        }
+        
+        // 显示建议
+        function showSuggestionsList(suggestionList) {
+            if (suggestionList.length === 0) {
+                suggestions.style.display = 'none';
+                return;
+            }
+            
+            suggestions.innerHTML = suggestionList.map(plate => 
+                `<div class="suggestion-item" onclick="selectSuggestion('${plate}')">${plate}</div>`
+            ).join('');
+            suggestions.style.display = 'block';
+        }
+        
+        // 选择建议
+        function selectSuggestion(plate) {
+            input.value = plate;
+            suggestions.style.display = 'none';
+            updateDebugInfo();
+        }
+        
+        // 更新调试信息
+        function updateDebugInfo() {
+            const value = input.value;
+            const suggestionList = getSuggestions(value);
+            debugInfo.innerHTML = `
+                输入值: "${value}"<br>
+                建议数量: ${suggestionList.length}<br>
+                显示建议: ${suggestionList.length > 0}<br>
+                建议列表: [${suggestionList.join(', ')}]
+            `;
+        }
+        
+        // 输入事件
+        input.addEventListener('input', function(e) {
+            const value = e.target.value.toUpperCase();
+            const suggestionList = getSuggestions(value);
+            showSuggestionsList(suggestionList);
+            updateDebugInfo();
+        });
+        
+        // 失焦事件
+        input.addEventListener('blur', function() {
+            setTimeout(() => {
+                suggestions.style.display = 'none';
+            }, 200);
+        });
+        
+        // 聚焦事件
+        input.addEventListener('focus', function() {
+            const value = input.value;
+            if (value) {
+                const suggestionList = getSuggestions(value);
+                showSuggestionsList(suggestionList);
+            }
+        });
+        
+        // 初始化
+        updateDebugInfo();
+    </script>
+</body>
+</html>

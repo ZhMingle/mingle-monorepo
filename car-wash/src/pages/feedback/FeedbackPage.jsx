@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import './FeedbackPage.css';
-import Test from './Test.jsx';
-
 const FeedbackPage = () => {
   const Data = ['Readability', 'Performance', 'Security', 'Documentation', 'Testing'];
   const [RealTimeData, setRealTimeData] = useState([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
@@ -19,7 +17,6 @@ const FeedbackPage = () => {
 
   return (
     <div className="my-0 mx-auto text-center w-mx-1200">
-      <Test></Test>
       <div className="flex wrap justify-content-center mt-30 gap-30">
         {Data.map((i, idx) => (
           <div key={idx} className="pa-10 w-300 card">
