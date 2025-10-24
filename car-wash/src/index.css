@@ -21,6 +21,7 @@ body {
 @media (max-width: 768px) {
   body {
     padding-top: env(safe-area-inset-top, 20px); /* 为iOS状态栏留出空间 */
+    padding-top: max(env(safe-area-inset-top, 20px), 20px); /* 确保至少有20px的顶部空间 */
   }
 }
 

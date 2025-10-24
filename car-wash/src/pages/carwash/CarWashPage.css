@@ -3,7 +3,7 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 15px;
-  padding-top: 20px; /* 增加顶部空间，为状态栏留出空间 */
+  padding-top: max(env(safe-area-inset-top, 20px), 20px); /* 使用CSS安全区域，确保顶部空间 */
   padding-bottom: 100px; /* 增加底部空间，为底部导航留出足够空间 */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   min-height: 100vh;
@@ -11,6 +11,7 @@
   overflow-x: hidden; /* 防止水平滚动 */
   overflow-y: visible; /* 允许内容正常显示 */
   box-sizing: border-box; /* 确保padding包含在宽度内 */
+  position: relative; /* 为动态调整提供定位上下文 */
 }
 
 .page-title {
@@ -28,6 +29,7 @@
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-top: 10px; /* 确保与顶部有足够间距 */
 }
 
 .camera-section h2 {
@@ -292,7 +294,7 @@
 
   .car-wash-container {
     padding: 10px;
-    padding-top: 30px; /* 移动端需要更多顶部空间，为状态栏留出空间 */
+    padding-top: max(env(safe-area-inset-top, 20px), 40px); /* 移动端使用安全区域，确保顶部空间 */
     padding-bottom: 100px; /* 移动端需要更多底部空间 */
   }
 
@@ -304,6 +306,11 @@
   .camera-section {
     padding: 15px;
     margin-bottom: 15px;
+    margin-top: 10px; /* 确保与顶部有足够间距 */
+  }
+  
+  .camera-buttons {
+    margin-top: 10px; /* 确保按钮区域有足够间距 */
   }
 
   /* 确保移动端页面可以滚动 */
@@ -668,4 +675,19 @@
 .save-btn:disabled:hover {
   background: #667eea;
   transform: none;
+}
+
+/* 针对有刘海屏的设备进一步优化 */
+@media (max-width: 768px) and (min-height: 600px) {
+  .car-wash-container {
+    padding-top: max(env(safe-area-inset-top, 20px), 50px); /* 为刘海屏设备提供更多空间 */
+  }
+  
+  .camera-section {
+    margin-top: 15px; /* 为刘海屏设备增加更多顶部间距 */
+  }
+  
+  .camera-buttons {
+    margin-top: 15px; /* 为刘海屏设备的按钮区域增加更多间距 */
+  }
 }

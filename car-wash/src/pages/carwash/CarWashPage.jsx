@@ -26,21 +26,108 @@ const CarWashPage = () => {
     notes: '', // 备注
   });
 
+  // 获取顶部安全区域高度的工具函数
+  const getTopSafeAreaHeight = () => {
+    // 方法1: 使用CSS环境变量
+    const safeAreaTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-top') || '0');
+    
+    // 方法2: 使用window.screen和window.innerHeight计算状态栏高度
+    const viewportHeight = window.innerHeight;
+    const screenHeight = window.screen.height;
+    const statusBarHeight = Math.max(0, screenHeight - viewportHeight);
+    
+    // Android设备状态栏高度检测的补充方法
+    const getAndroidStatusBarHeight = () => {
+      // 方法2a: 使用screen.availTop (Android特有)
+      const availTop = window.screen.availTop || 0;
+      
+      // 方法2b: 使用screen.height - screen.availHeight
+      const availHeight = window.screen.availHeight;
+      const calculatedHeight = screenHeight - availHeight;
+      
+      // 方法2c: 使用window.outerHeight - window.innerHeight
+      const outerHeight = window.outerHeight || 0;
+      const outerInnerDiff = Math.max(0, outerHeight - viewportHeight);
+      
+      // 综合计算，取最大值作为状态栏高度
+      const androidStatusBarHeight = Math.max(
+        statusBarHeight,
+        availTop,
+        calculatedHeight,
+        outerInnerDiff
+      );
+      
+      return {
+        screenHeight,
+        viewportHeight,
+        availTop,
+        availHeight,
+        outerHeight,
+        calculatedHeight,
+        outerInnerDiff,
+        finalHeight: androidStatusBarHeight
+      };
+    };
+    
+    // 方法3: 使用getBoundingClientRect获取元素位置
+    const rect = containerRef.current?.getBoundingClientRect();
+    const topOffset = rect ? rect.top : 0;
+    
+    // 方法4: 检测是否为iOS设备（通常有刘海屏）
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    // 方法5: 检测设备像素比（高分辨率设备通常有刘海屏）
+    const isHighDPI = window.devicePixelRatio > 2;
+    
+    // 获取Android设备状态栏高度
+    const androidInfo = isAndroid ? getAndroidStatusBarHeight() : null;
+    
+    // 综合计算最佳顶部安全区域高度
+    const calculatedHeight = Math.max(
+      safeAreaTop,
+      statusBarHeight,
+      topOffset,
+      androidInfo ? androidInfo.finalHeight : 0, // Android设备使用专门计算的高度
+      isIOS ? 44 : 20, // iOS设备默认44px，其他设备20px
+      isHighDPI ? 30 : 20, // 高分辨率设备需要更多空间
+      30 // 最小安全距离
+    );
+    
+    return {
+      safeAreaTop,
+      statusBarHeight,
+      topOffset,
+      isIOS,
+      isAndroid,
+      isHighDPI,
+      calculatedHeight,
+      androidInfo // 包含Android设备状态栏的详细信息
+    };
+  };
+
   // 动态获取并设置顶部和底部的安全区域高度
   useEffect(() => {
     const adjustPadding = () => {
       if (containerRef.current) {
-        // 获取视口顶部偏移（状态栏高度）
-        const rect = containerRef.current.getBoundingClientRect();
-        const topOffset = rect.top;
+        const safeAreaInfo = getTopSafeAreaHeight();
+        const actualTopOffset = safeAreaInfo.calculatedHeight;
 
         // 获取底部导航栏高度
         const bottomNav = document.querySelector('.bottom-nav');
         const bottomHeight = bottomNav ? bottomNav.offsetHeight : 60;
 
         // 动态设置 padding
-        containerRef.current.style.paddingTop = `${Math.max(20, topOffset + 10)}px`;
+        containerRef.current.style.paddingTop = `${actualTopOffset}px`;
         containerRef.current.style.paddingBottom = `${bottomHeight + 20}px`;
+        
+        // 添加调试信息
+        console.log('🔧 顶部安全区域调整:', {
+          ...safeAreaInfo,
+          actualTopOffset,
+          viewportHeight: window.innerHeight,
+          screenHeight: window.screen.height
+        });
       }
     };
 
@@ -50,14 +137,21 @@ const CarWashPage = () => {
     // 监听窗口大小变化
     window.addEventListener('resize', adjustPadding);
     window.addEventListener('orientationchange', adjustPadding);
+    
+    // 监听设备方向变化
+    window.addEventListener('orientationchange', () => {
+      setTimeout(adjustPadding, 100); // 延迟调整，等待方向变化完成
+    });
 
     // 延迟调整，确保 DOM 完全加载
     const timer = setTimeout(adjustPadding, 100);
+    const timer2 = setTimeout(adjustPadding, 500); // 额外延迟调整
 
     return () => {
       window.removeEventListener('resize', adjustPadding);
       window.removeEventListener('orientationchange', adjustPadding);
       clearTimeout(timer);
+      clearTimeout(timer2);
     };
   }, [activeTab]);
 
