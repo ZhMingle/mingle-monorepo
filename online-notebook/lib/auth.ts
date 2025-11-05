@@ -8,8 +8,8 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Email',
       credentials: {
-        email: { label: '邮箱', type: 'email', placeholder: 'your@email.com' },
-        password: { label: '密码', type: 'password' },
+        email: { label: 'Email', type: 'email', placeholder: 'your@email.com' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -76,7 +76,7 @@ export async function registerUser(email: string, password: string, name: string
   })
 
   if (existingUser) {
-    throw new Error('该邮箱已被注册')
+    throw new Error('This email is already registered')
   }
 
   // Hash password

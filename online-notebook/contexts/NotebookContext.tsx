@@ -83,7 +83,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
         }
       } else if (response.status === 401) {
         // Unauthorized, may need to login
-        console.error('未授权，请先登录')
+        console.error('Unauthorized, please login first')
       }
     } catch (error) {
       console.error('Failed to load pages:', error)
@@ -115,7 +115,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        const errorMessage = errorData.error || `更新页面失败 (${response.status})`
+        const errorMessage = errorData.error || `Failed to update page (${response.status})`
         const errorDetails = errorData.details || ''
         
         console.error('Failed to update page on server:', {
@@ -128,7 +128,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
         
         // If unauthorized error, may need to re-login
         if (response.status === 401) {
-          console.warn('用户未授权，可能需要重新登录')
+          console.warn('User unauthorized, may need to re-login')
         }
       } else {
         console.log('Page updated successfully on server')
@@ -157,7 +157,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
       // If not logged in, use local storage as fallback
       const newPage: Page = {
         id: uuidv4(),
-        title: '未命名页面',
+        title: 'Untitled Page',
         blocks: [],
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -171,7 +171,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/pages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: '未命名页面' }),
+        body: JSON.stringify({ title: 'Untitled Page' }),
       })
 
       if (response.ok) {
@@ -182,7 +182,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
         return newPage.id
       } else {
         const errorData = await response.json().catch(() => ({}))
-        const errorMessage = errorData.error || `创建页面失败 (${response.status})`
+        const errorMessage = errorData.error || `Failed to create page (${response.status})`
         console.error('Failed to create page:', errorMessage)
         throw new Error(errorMessage)
       }
@@ -191,7 +191,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
       // Create local page on failure
       const newPage: Page = {
         id: uuidv4(),
-        title: '未命名页面',
+        title: 'Untitled Page',
         blocks: [],
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -279,20 +279,38 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
   const deletePage = async (pageId: string) => {
     if (status === 'authenticated') {
       try {
+        console.log('Deleting page on server:', pageId)
         const response = await fetch(`/api/pages/${pageId}`, {
           method: 'DELETE',
         })
 
         if (!response.ok) {
-          console.error('Failed to delete page on server')
+          const errorData = await response.json().catch(() => ({}))
+          const errorMessage = errorData.error || `Failed to delete page (${response.status})`
+          const errorDetails = errorData.details || ''
+          
+          console.error('Failed to delete page on server:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorMessage,
+            details: errorDetails,
+            pageId,
+          })
+          
+          // Show error to user
+          alert(`Failed to delete: ${errorMessage}`)
           return
         }
+        
+        console.log('Page deleted successfully on server')
       } catch (error) {
         console.error('Failed to delete page:', error)
+        alert('Failed to delete, please try again')
         return
       }
     }
 
+    // Update local state
     setPages((prev) => {
       const filtered = prev.filter((page) => page.id !== pageId)
       if (currentPageId === pageId && filtered.length > 0) {
@@ -301,7 +319,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
         // If all pages are deleted, create a new page
         const newPage: Page = {
           id: uuidv4(),
-          title: '未命名页面',
+          title: 'Untitled Page',
           blocks: [],
           createdAt: Date.now(),
           updatedAt: Date.now(),

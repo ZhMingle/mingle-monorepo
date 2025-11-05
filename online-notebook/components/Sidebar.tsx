@@ -15,7 +15,7 @@ export default function Sidebar() {
 
   const handleDeletePage = (e: React.MouseEvent, pageId: string) => {
     e.stopPropagation()
-    if (confirm('确定要删除这个页面吗？')) {
+    if (confirm('Are you sure you want to delete this page?')) {
       deletePage(pageId)
     }
   }
@@ -29,7 +29,7 @@ export default function Sidebar() {
       <div className={styles.header}>
         <div className={styles.logo}>🎾</div>
         <button className={styles.newPageButton} onClick={handleNewPage}>
-          + 新建页面
+          + New Page
         </button>
       </div>
       <div className={styles.userSection}>
@@ -38,7 +38,7 @@ export default function Sidebar() {
           <div className={styles.userEmail}>{session?.user?.email}</div>
         </div>
         <button className={styles.signOutButton} onClick={handleSignOut}>
-          退出登录
+          Sign Out
         </button>
       </div>
       <div className={styles.pagesList}>
@@ -50,7 +50,7 @@ export default function Sidebar() {
             }`}
             onClick={() => selectPage(page.id)}
           >
-            <span className={styles.pageTitle}>{page.title || '未命名页面'}</span>
+            <span className={styles.pageTitle}>{page.title || 'Untitled Page'}</span>
             {pages.length > 1 && (
               <button
                 className={styles.deleteButton}

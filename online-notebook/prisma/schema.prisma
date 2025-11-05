@@ -25,7 +25,7 @@ model User {
 
 model Page {
   id        String   @id @default(uuid())
-  title     String   @default("未命名页面")
+  title     String   @default("Untitled Page")
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   blocks    Block[]

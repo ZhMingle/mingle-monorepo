@@ -21,10 +21,10 @@ export async function GET() {
   } catch (error: any) {
     console.error('Error fetching pages:', error)
     if (error.message === 'Unauthorized' || error.message?.includes('Unauthorized')) {
-      return NextResponse.json({ error: '未授权，请先登录' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized, please login first' }, { status: 401 })
     }
     return NextResponse.json(
-      { error: '获取页面失败', details: error.message || '未知错误' },
+      { error: 'Failed to fetch pages', details: error.message || 'Unknown error' },
       { status: 500 }
     )
   }
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
     const page = await prisma.page.create({
       data: {
-        title: title || '未命名页面',
+        title: title || 'Untitled Page',
         userId: user.id,
       },
       include: {
@@ -51,17 +51,17 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Error creating page:', error)
     if (error.message === 'Unauthorized' || error.message?.includes('Unauthorized')) {
-      return NextResponse.json({ error: '未授权，请先登录' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized, please login first' }, { status: 401 })
     }
     // Handle foreign key constraint error
     if (error.code === 'P2003') {
       return NextResponse.json(
-        { error: '用户不存在，请重新登录' },
+        { error: 'User not found, please login again' },
         { status: 401 }
       )
     }
     return NextResponse.json(
-      { error: '创建页面失败', details: error.message || '未知错误' },
+      { error: 'Failed to create page', details: error.message || 'Unknown error' },
       { status: 500 }
     )
   }

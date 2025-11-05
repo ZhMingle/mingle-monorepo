@@ -5,14 +5,15 @@ import { prisma } from '@/lib/prisma'
 // GET /api/pages/[id] - Get a single page
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
 
     const page = await prisma.page.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: user.id,
       },
       include: {
@@ -23,17 +24,17 @@ export async function GET(
     })
 
     if (!page) {
-      return NextResponse.json({ error: '页面不存在' }, { status: 404 })
+      return NextResponse.json({ error: 'Page not found' }, { status: 404 })
     }
 
     return NextResponse.json(page)
   } catch (error: any) {
     console.error('Error fetching page:', error)
     if (error.message === 'Unauthorized' || error.message?.includes('Unauthorized')) {
-      return NextResponse.json({ error: '未授权，请先登录' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized, please login first' }, { status: 401 })
     }
     return NextResponse.json(
-      { error: '获取页面失败', details: error.message || '未知错误' },
+      { error: 'Failed to fetch page', details: error.message || 'Unknown error' },
       { status: 500 }
     )
   }
@@ -42,25 +43,26 @@ export async function GET(
 // PUT /api/pages/[id] - Update a page
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
     const body = await request.json()
     const { title, blocks } = body
 
-    console.log('Update page request:', { pageId: params.id, hasTitle: title !== undefined, hasBlocks: blocks !== undefined, blocksLength: Array.isArray(blocks) ? blocks.length : 0 })
+    console.log('Update page request:', { pageId: id, hasTitle: title !== undefined, hasBlocks: blocks !== undefined, blocksLength: Array.isArray(blocks) ? blocks.length : 0 })
 
     // Check if page exists and belongs to current user
     const existingPage = await prisma.page.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: user.id,
       },
     })
 
     if (!existingPage) {
-      return NextResponse.json({ error: '页面不存在' }, { status: 404 })
+      return NextResponse.json({ error: 'Page not found' }, { status: 404 })
     }
 
     // Update blocks if provided
@@ -70,7 +72,7 @@ export async function PUT(
       
       // Delete all existing blocks
       await prisma.block.deleteMany({
-        where: { pageId: params.id },
+        where: { pageId: id },
       })
 
       // Validate and filter valid blocks
@@ -108,7 +110,7 @@ export async function PUT(
             type: String(block.type).trim(),
             content: String(block.content || '').trim(),
             order: index,
-            pageId: params.id,
+            pageId: id,
           }
         })
         .filter((block: any) => block !== null) as Array<{
@@ -163,7 +165,7 @@ export async function PUT(
 
     // Always fetch the page with blocks after update
     let page = await prisma.page.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         blocks: {
           orderBy: { order: 'asc' },
@@ -172,13 +174,13 @@ export async function PUT(
     })
 
     if (!page) {
-      return NextResponse.json({ error: '页面不存在' }, { status: 404 })
+      return NextResponse.json({ error: 'Page not found' }, { status: 404 })
     }
 
     // Update title if provided
     if (Object.keys(updateData).length > 0) {
       page = await prisma.page.update({
-        where: { id: params.id },
+        where: { id },
         data: updateData,
         include: {
           blocks: {
@@ -201,24 +203,24 @@ export async function PUT(
     })
     
     if (error.message === 'Unauthorized' || error.message?.includes('Unauthorized')) {
-      return NextResponse.json({ error: '未授权，请先登录' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized, please login first' }, { status: 401 })
     }
     if (error.code === 'P2003') {
       return NextResponse.json(
-        { error: '用户不存在，请重新登录' },
+        { error: 'User not found, please login again' },
         { status: 401 }
       )
     }
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: '数据冲突，请刷新页面后重试' },
+        { error: 'Data conflict, please refresh the page and try again' },
         { status: 409 }
       )
     }
     return NextResponse.json(
       { 
-        error: '更新页面失败', 
-        details: error.message || '未知错误',
+        error: 'Failed to update page', 
+        details: error.message || 'Unknown error',
         code: error.code || 'UNKNOWN',
       },
       { status: 500 }
@@ -229,36 +231,59 @@ export async function PUT(
 // DELETE /api/pages/[id] - Delete a page
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const user = await requireAuth()
+
+    console.log('Delete page request:', { pageId: id, userId: user.id })
 
     // Check if page exists and belongs to current user
     const existingPage = await prisma.page.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: user.id,
       },
     })
 
     if (!existingPage) {
-      return NextResponse.json({ error: '页面不存在' }, { status: 404 })
+      console.warn('Page not found or does not belong to user:', id)
+      return NextResponse.json({ error: 'Page not found' }, { status: 404 })
     }
+
+    console.log('Deleting page:', id)
 
     // Delete page (blocks will be cascade deleted)
     await prisma.page.delete({
-      where: { id: params.id },
+      where: { id },
     })
+
+    console.log('Page deleted successfully:', id)
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('Error deleting page:', error)
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      meta: error.meta,
+      pageId: id,
+    })
+    
     if (error.message === 'Unauthorized' || error.message?.includes('Unauthorized')) {
-      return NextResponse.json({ error: '未授权，请先登录' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized, please login first' }, { status: 401 })
+    }
+    if (error.code === 'P2025') {
+      // Record not found
+      return NextResponse.json({ error: 'Page not found' }, { status: 404 })
     }
     return NextResponse.json(
-      { error: '删除页面失败', details: error.message || '未知错误' },
+      { 
+        error: 'Failed to delete page', 
+        details: error.message || 'Unknown error',
+        code: error.code || 'UNKNOWN',
+      },
       { status: 500 }
     )
   }

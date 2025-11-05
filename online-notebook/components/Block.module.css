@@ -45,6 +45,129 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
+  position: relative;
+  width: 100%;
+}
+
+/* ContentEditable styles */
+.contentEditable {
+  width: 100%;
+  min-height: 1.5em;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #37352f;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 4px 0;
+  font-family: inherit;
+  resize: none;
+  overflow: hidden;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  cursor: text;
+  flex: 1;
+}
+
+.contentEditable:empty:before {
+  content: attr(data-placeholder);
+  color: rgba(55, 53, 47, 0.4);
+  pointer-events: none;
+}
+
+.contentEditable:focus {
+  outline: none;
+}
+
+.contentEditable::selection {
+  background-color: rgba(55, 53, 47, 0.2);
+}
+
+/* Markdown elements in contentEditable */
+.contentEditable * {
+  margin: 0;
+  padding: 0;
+  line-height: inherit;
+}
+
+.contentEditable p {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+.contentEditable h1,
+.contentEditable h2,
+.contentEditable h3,
+.contentEditable h4,
+.contentEditable h5,
+.contentEditable h6 {
+  display: block;
+  margin: 0;
+  padding: 0;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.contentEditable h1 {
+  font-size: 32px;
+}
+
+.contentEditable h2 {
+  font-size: 24px;
+}
+
+.contentEditable h3 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.contentEditable h4,
+.contentEditable h5,
+.contentEditable h6 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.contentEditable strong {
+  font-weight: 600;
+}
+
+.contentEditable em {
+  font-style: italic;
+}
+
+.contentEditable code {
+  background-color: rgba(135, 131, 120, 0.15);
+  color: #eb5757;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 0.9em;
+}
+
+.contentEditable pre {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.contentEditable pre code {
+  background: none;
+  padding: 0;
+  color: #37352f;
+  font-size: 16px;
+}
+
+.contentEditable a {
+  color: #0b70e6;
+  text-decoration: underline;
 }
 
 .bullet,
@@ -91,5 +214,253 @@
   text-align: center;
   font-weight: 600;
   color: rgba(55, 53, 47, 0.6);
+}
+
+/* Markdown Preview Styles */
+.markdownPreview {
+  width: 100%;
+  padding: 4px 0;
+  cursor: text;
+  min-height: 1.5em;
+  line-height: 1.5;
+  pointer-events: none;
+  position: relative;
+  z-index: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: hidden;
+  /* Ensure text alignment matches textarea exactly */
+  font-size: 16px;
+  font-family: inherit;
+  color: #37352f;
+  font-weight: normal;
+  font-style: normal;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-align: left;
+  text-indent: 0;
+  box-sizing: border-box;
+  vertical-align: baseline;
+  /* Match textarea exactly */
+  margin: 0;
+  border: none;
+  /* Ensure text renders exactly like textarea */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.markdownPreview * {
+  margin: 0;
+  padding: 0;
+  line-height: inherit;
+  vertical-align: baseline;
+}
+
+/* Override for specific elements that need special handling */
+.markdownPreview > * {
+  vertical-align: baseline;
+}
+
+.markdownPreview p {
+  margin: 0;
+  line-height: 1.5;
+  display: inline;
+}
+
+/* Ensure all block-level elements render inline for cursor alignment */
+.markdownPreview > * {
+  display: inline;
+}
+
+/* Code blocks need special handling */
+.markdownPreview > pre {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.markdownPreview h1,
+.markdownH1 {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0.5em 0;
+}
+
+.markdownPreview h2,
+.markdownH2 {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0.5em 0;
+}
+
+.markdownPreview h3,
+.markdownH3 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0.5em 0;
+}
+
+.markdownPreview h4,
+.markdownPreview h5,
+.markdownPreview h6 {
+  margin: 0.5em 0;
+  font-weight: 600;
+}
+
+.markdownP {
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+  display: inline;
+  vertical-align: baseline;
+}
+
+.markdownPreview > p {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  vertical-align: baseline;
+}
+
+.markdownStrong {
+  font-weight: 600;
+  vertical-align: baseline;
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+.markdownEm {
+  font-style: italic;
+  vertical-align: baseline;
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+.markdownLink {
+  color: #0b70e6;
+  text-decoration: underline;
+  cursor: pointer;
+  vertical-align: baseline;
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+.markdownLink:hover {
+  color: #0a5fc7;
+}
+
+.markdownInlineCode {
+  background-color: rgba(135, 131, 120, 0.15);
+  color: #eb5757;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 0.9em;
+  vertical-align: baseline;
+  display: inline;
+  margin: 0;
+  line-height: inherit;
+}
+
+.markdownCode {
+  background-color: rgba(135, 131, 120, 0.15);
+  color: #37352f;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 0.9em;
+  vertical-align: baseline;
+  display: inline;
+  margin: 0;
+  line-height: inherit;
+}
+
+.markdownPre {
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #37352f;
+  display: block;
+}
+
+.markdownPre code {
+  background: none;
+  padding: 0;
+  color: #37352f;
+  font-size: 16px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  display: block;
+}
+
+.markdownUl,
+.markdownOl {
+  margin: 0;
+  padding: 0;
+  padding-left: 1.5em;
+  display: inline;
+  list-style-position: inside;
+}
+
+.markdownLi {
+  margin: 0;
+  line-height: 1.5;
+  display: list-item;
+}
+
+.markdownBlockquote {
+  border-left: 3px solid #e9e9e7;
+  padding-left: 1em;
+  margin: 0;
+  color: rgba(55, 53, 47, 0.6);
+  font-style: italic;
+  display: inline-block;
+}
+
+.markdownPreview hr {
+  border: none;
+  border-top: 1px solid #e9e9e7;
+  margin: 1em 0;
+}
+
+.markdownPreview table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5em 0;
+}
+
+.markdownPreview table th,
+.markdownPreview table td {
+  border: 1px solid #e9e9e7;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdownPreview table th {
+  background-color: #f7f6f3;
+  font-weight: 600;
+}
+
+.markdownPreview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 0.5em 0;
 }
 

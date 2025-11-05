@@ -30,7 +30,7 @@ export default function LoginPage() {
         })
 
         if (result?.error) {
-          setError('邮箱或密码不正确')
+          setError('Invalid email or password')
         } else {
           router.push('/')
           router.refresh()
@@ -46,7 +46,7 @@ export default function LoginPage() {
         const data = await response.json()
 
         if (!response.ok) {
-          setError(data.error || '注册失败')
+          setError(data.error || 'Registration failed')
         } else {
           // Auto login after successful registration
           const result = await signIn('credentials', {
@@ -56,7 +56,7 @@ export default function LoginPage() {
           })
 
           if (result?.error) {
-            setError('注册成功，但登录失败，请手动登录')
+            setError('Registration successful, but login failed. Please login manually')
           } else {
             router.push('/')
             router.refresh()
@@ -64,7 +64,7 @@ export default function LoginPage() {
         }
       }
     } catch (err) {
-      setError('发生错误，请稍后重试')
+      setError('An error occurred, please try again later')
     } finally {
       setLoading(false)
     }
@@ -75,31 +75,31 @@ export default function LoginPage() {
       <div className={styles.card}>
         <div className={styles.logo}>🎾</div>
         <h1 className={styles.title}>
-          {isLogin ? '登录' : '注册'}
+          {isLogin ? 'Login' : 'Sign Up'}
         </h1>
         <p className={styles.subtitle}>
           {isLogin
-            ? '登录到你的在线笔记'
-            : '创建新账户开始使用'}
+            ? 'Login to your online notebook'
+            : 'Create a new account to get started'}
         </p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           {!isLogin && (
             <div className={styles.field}>
-              <label htmlFor="name">姓名</label>
+              <label htmlFor="name">Name</label>
               <input
                 id="name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="请输入您的姓名"
+                placeholder="Enter your name"
                 required={!isLogin}
               />
             </div>
           )}
 
           <div className={styles.field}>
-            <label htmlFor="email">邮箱</label>
+            <label htmlFor="email">Email</label>
             <input
               id="email"
               type="email"
@@ -111,13 +111,13 @@ export default function LoginPage() {
           </div>
 
           <div className={styles.field}>
-            <label htmlFor="password">密码</label>
+            <label htmlFor="password">Password</label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="请输入密码"
+              placeholder="Enter your password"
               required
               minLength={isLogin ? undefined : 6}
             />
@@ -130,31 +130,31 @@ export default function LoginPage() {
             className={styles.submitButton}
             disabled={loading}
           >
-            {loading ? '处理中...' : isLogin ? '登录' : '注册'}
+            {loading ? 'Processing...' : isLogin ? 'Login' : 'Sign Up'}
           </button>
         </form>
 
         <div className={styles.switch}>
           {isLogin ? (
             <>
-              还没有账户？{' '}
+              Don't have an account?{' '}
               <button
                 type="button"
                 onClick={() => setIsLogin(false)}
                 className={styles.switchButton}
               >
-                立即注册
+                Sign Up
               </button>
             </>
           ) : (
             <>
-              已有账户？{' '}
+              Already have an account?{' '}
               <button
                 type="button"
                 onClick={() => setIsLogin(true)}
                 className={styles.switchButton}
               >
-                立即登录
+                Login
               </button>
             </>
           )}

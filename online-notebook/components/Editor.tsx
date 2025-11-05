@@ -14,7 +14,7 @@ export default function Editor() {
   if (!currentPage || !currentPageId) {
     return (
       <div className={styles.editor}>
-        <div className={styles.empty}>暂无页面</div>
+        <div className={styles.empty}>No pages available</div>
       </div>
     )
   }
@@ -53,7 +53,7 @@ export default function Editor() {
           value={currentPage.title}
           onChange={handleTitleChange}
           onKeyDown={handleKeyDown}
-          placeholder="无标题"
+          placeholder="Untitled"
         />
         <div className={styles.blocks}>
           {currentPage.blocks.map((block, index) => (

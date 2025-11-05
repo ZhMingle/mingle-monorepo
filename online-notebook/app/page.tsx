@@ -21,7 +21,7 @@ export default function Home() {
   if (status === 'loading') {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>加载中...</div>
+        <div className={styles.loading}>Loading...</div>
       </div>
     )
   }
