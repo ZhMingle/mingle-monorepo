@@ -69,7 +69,32 @@
   flex: 1;
 }
 
+/* Show placeholder when contentEditable is empty */
 .contentEditable:empty:before {
+  content: attr(data-placeholder);
+  color: rgba(55, 53, 47, 0.4);
+  pointer-events: none;
+}
+
+/* Show placeholder when contentEditable contains only empty heading */
+.contentEditable:has(h1:empty):before,
+.contentEditable:has(h2:empty):before,
+.contentEditable:has(h3:empty):before,
+.contentEditable:has(h4:empty):before,
+.contentEditable:has(h5:empty):before,
+.contentEditable:has(h6:empty):before {
+  content: attr(data-placeholder);
+  color: rgba(55, 53, 47, 0.4);
+  pointer-events: none;
+}
+
+/* Show placeholder when contentEditable contains only heading with whitespace/zero-width space */
+.contentEditable:has(h1:only-child):not(:has(h1:not(:empty))):before,
+.contentEditable:has(h2:only-child):not(:has(h2:not(:empty))):before,
+.contentEditable:has(h3:only-child):not(:has(h3:not(:empty))):before,
+.contentEditable:has(h4:only-child):not(:has(h4:not(:empty))):before,
+.contentEditable:has(h5:only-child):not(:has(h5:not(:empty))):before,
+.contentEditable:has(h6:only-child):not(:has(h6:not(:empty))):before {
   content: attr(data-placeholder);
   color: rgba(55, 53, 47, 0.4);
   pointer-events: none;
@@ -107,6 +132,18 @@
   padding: 0;
   font-weight: 700;
   line-height: 1.2;
+}
+
+/* Show placeholder inside empty headings */
+.contentEditable h1:empty:before,
+.contentEditable h2:empty:before,
+.contentEditable h3:empty:before,
+.contentEditable h4:empty:before,
+.contentEditable h5:empty:before,
+.contentEditable h6:empty:before {
+  content: attr(data-placeholder);
+  color: rgba(55, 53, 47, 0.4);
+  pointer-events: none;
 }
 
 .contentEditable h1 {
