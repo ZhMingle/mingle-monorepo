@@ -1,5 +1,7 @@
 ﻿$ErrorActionPreference = 'Stop'
 $compiler = Join-Path ([Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory()) 'csc.exe'
+$outputName = if ($args.Count -gt 0) { [string]$args[0] } else { 'ActivityReminder.exe' }
+if ([IO.Path]::GetFileName($outputName) -ne $outputName -or !$outputName.EndsWith('.exe')) { throw 'Output must be an EXE file name.' }
 if (!(Test-Path $compiler)) { $compiler = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe' }
 Add-Type -AssemblyName System.Drawing
 $bitmap = New-Object Drawing.Bitmap(64,64)
@@ -18,6 +20,6 @@ $graphics.DrawLine($pen,32,42,42,55)
 $icon = [Drawing.Icon]::FromHandle($bitmap.GetHicon())
 $stream = [IO.File]::Create((Join-Path $PSScriptRoot 'app.ico'))
 try { $icon.Save($stream) } finally { $stream.Dispose(); $icon.Dispose(); $brush.Dispose(); $pen.Dispose(); $graphics.Dispose(); $bitmap.Dispose() }
-& $compiler /nologo /target:winexe /optimize+ /codepage:65001 "/out:$PSScriptRoot\ActivityReminder.exe" "/win32icon:$PSScriptRoot\app.ico" /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll "$PSScriptRoot\ActivityReminder.cs"
+& $compiler /nologo /target:winexe /optimize+ /codepage:65001 "/out:$PSScriptRoot\$outputName" "/win32icon:$PSScriptRoot\app.ico" /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll "$PSScriptRoot\ActivityReminder.cs" "$PSScriptRoot\CodexUsage.cs"
 if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
-Write-Output 'Built: ActivityReminder.exe'
+Write-Output "Built: $outputName"

@@ -5,6 +5,7 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
@@ -18,6 +19,7 @@ namespace Mingle.ActivityReminder
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             if (Array.IndexOf(args, "--self-test") >= 0) return Tests.Run();
+            if (Array.IndexOf(args, "--quota-test") >= 0) return CodexUsageClient.LiveTest();
             bool created;
             using (var mutex = new Mutex(true, "Local\\MingleActivityReminder", out created))
             using (var wake = new EventWaitHandle(false, EventResetMode.AutoReset, "Local\\MingleActivityReminder.Open"))
@@ -51,6 +53,7 @@ namespace Mingle.ActivityReminder
         public int breaks;
         public string date = DateTime.Now.ToString("yyyy-MM-dd");
         public bool floating = true;
+        public string codexPath;
         public int miniX = int.MinValue;
         public int miniY = int.MinValue;
     }
@@ -179,21 +182,25 @@ namespace Mingle.ActivityReminder
     internal sealed class MiniWindow : Form
     {
         private readonly MainWindow main;
-        private readonly Label countdown, status;
+        private readonly Label countdown, status, quota, quotaAge;
         private readonly Button pause;
         internal MiniWindow(MainWindow main)
         {
             this.main = main;
-            Text = "Rise - Floating Timer"; ClientSize = new Size(280, 168);
+            Text = "Rise - Floating Timer"; ClientSize = new Size(300, 244);
             FormBorderStyle = FormBorderStyle.FixedToolWindow; StartPosition = FormStartPosition.Manual;
             AutoScaleMode = AutoScaleMode.Dpi; BackColor = Theme.Card; ForeColor = Theme.White;
             TopMost = true; ShowInTaskbar = false; Icon = main.Icon;
-            status = Theme.Label(this, "Tracking active time", 16, 10, 248, 25, 9, Theme.Muted);
+            status = Theme.Label(this, "Tracking active time", 16, 10, 268, 25, 9, Theme.Muted);
             status.AutoEllipsis = true;
             countdown = Theme.Label(this, "30:00", 12, 33, 256, 63, 34, Theme.Mint);
             countdown.Font = new Font("Segoe UI", 34);
-            Theme.Button(this, "Open app", 16, 110, 124, false, main.ShowMain);
-            pause = Theme.Button(this, "Pause", 150, 110, 114, false, main.TogglePause);
+            quota = Theme.Label(this, "Codex: checking usage...", 16, 101, 268, 25, 10, Theme.Mint);
+            quota.AutoEllipsis = true; quota.Cursor = Cursors.Hand; quota.Click += delegate { main.ShowQuota(); };
+            quotaAge = Theme.Label(this, "", 16, 129, 268, 42, 9, Theme.Muted);
+            quotaAge.AutoEllipsis = true;
+            Theme.Button(this, "Open app", 16, 188, 128, false, main.ShowMain);
+            pause = Theme.Button(this, "Pause", 156, 188, 128, false, main.TogglePause);
             FormClosing += delegate(object sender, FormClosingEventArgs e) { if (!main.Exiting) { e.Cancel = true; main.SetFloating(false); main.ShowMain(); } };
             Move += delegate { if (Visible) { main.Clock.State.miniX = Left; main.Clock.State.miniY = Top; } };
         }
@@ -202,6 +209,8 @@ namespace Mingle.ActivityReminder
         {
             countdown.Text = UsageClock.Format(main.Clock.Remaining); status.Text = text;
             pause.Text = main.Clock.Paused ? "Resume" : "Pause";
+            quota.Text = main.QuotaSummary;
+            quotaAge.Text = main.QuotaCompactStatus;
         }
         internal void Place()
         {
@@ -230,6 +239,37 @@ namespace Mingle.ActivityReminder
         private Form reminder;
         private double last, lastSave;
         private bool saveFailed;
+        internal QuotaSnapshot Quota;
+        internal bool QuotaLoading;
+        private string quotaError;
+        private double nextQuotaRefresh;
+        private UsageWindow usageWindow;
+        private readonly Label usageLine;
+        internal string QuotaSummary
+        {
+            get { return Quota == null ? (QuotaLoading ? "Codex: checking usage..." : "Codex usage unavailable") : "Codex " + Quota.Main.Summary; }
+        }
+        internal string QuotaCompactStatus
+        {
+            get
+            {
+                if (QuotaLoading) return Quota == null ? "Connecting to your Codex sign-in" : "Updating last known usage...";
+                if (quotaError != null) return Quota == null ? "Click usage above for connection details" : "Last known usage - refresh failed";
+                if (Quota == null) return "Click usage above to connect";
+                if ((DateTime.UtcNow - Quota.FetchedUtc).TotalMinutes >= 10) return "Last known usage - update overdue";
+                var window = Quota.Main.Primary ?? Quota.Main.Secondary;
+                return window.Reset + "\nUpdated " + Quota.FetchedUtc.ToLocalTime().ToString("HH:mm");
+            }
+        }
+        internal string QuotaStatus
+        {
+            get
+            {
+                if (QuotaLoading) return "Refreshing from your local Codex sign-in...";
+                if (quotaError != null) return (Quota == null ? "" : "Showing last known usage. ") + quotaError;
+                return Quota == null ? "No usage data yet." : "Updated " + Quota.FetchedUtc.ToLocalTime().ToString("MMM d, HH:mm:ss") + " · Codex subscription limits";
+            }
+        }
         internal MainWindow(EventWaitHandle wake)
         {
             this.wake = wake;
@@ -241,7 +281,9 @@ namespace Mingle.ActivityReminder
             BackColor = Theme.Bg; ForeColor = Theme.White; Font = Theme.Font(10, FontStyle.Regular);
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
             Theme.Label(this, "Rise", 32, 22, 240, 46, 26, Theme.Mint);
-            Theme.Label(this, "Make room for a little movement.", 34, 73, 500, 26, 10, Theme.Muted);
+            usageLine = Theme.Label(this, "Codex: checking usage...", 34, 73, 790, 26, 10, Theme.Mint);
+            usageLine.Cursor = Cursors.Hand; usageLine.Click += delegate { ShowQuota(); };
+            Theme.Button(this, "Codex usage", 480, 32, 150, false, ShowQuota);
             Theme.Button(this, "Use floating timer", 648, 32, 178, false, delegate { SetFloating(true); Hide(); });
 
             Panel timerCard = Theme.CardPanel(this, 32, 116, 490, 344);
@@ -282,11 +324,13 @@ namespace Mingle.ActivityReminder
             menu.Items.Add("Open app", null, delegate { ShowMain(); });
             menu.Items.Add("Show floating timer", null, delegate { SetFloating(true); });
             menu.Items.Add("Pause / Resume", null, delegate { TogglePause(); });
+            menu.Items.Add("Codex usage", null, delegate { ShowQuota(); });
+            menu.Items.Add("Refresh usage", null, delegate { RefreshQuota(); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Exit Rise", null, delegate { ExitApp(); });
             tray = new NotifyIcon { Text = "Rise - Starting", Icon = Icon, ContextMenuStrip = menu, Visible = true };
             tray.DoubleClick += delegate { ShowMain(); };
-            Shown += delegate { if (Clock.State.floating) mini.Show(); RefreshDisplay(Native.Idle(), Native.Locked()); };
+            Shown += delegate { if (Clock.State.floating) mini.Show(); RefreshDisplay(Native.Idle(), Native.Locked()); RefreshQuota(); };
             FormClosing += delegate(object sender, FormClosingEventArgs e)
             {
                 if (e.CloseReason == CloseReason.UserClosing && !Exiting) { e.Cancel = true; SetFloating(true); Hide(); }
@@ -341,6 +385,7 @@ namespace Mingle.ActivityReminder
             RefreshDisplay(idle, locked);
             if (Clock.Due && !locked && idle < Clock.State.idle && reminder == null) ShowReminder();
             if (now - lastSave >= 15) { Save(); lastSave = now; }
+            if (now >= nextQuotaRefresh && !QuotaLoading) RefreshQuota();
         }
         private void RefreshDisplay(double idle, bool locked)
         {
@@ -356,6 +401,7 @@ namespace Mingle.ActivityReminder
             cycle.Text = UsageClock.Format(Clock.State.cycle);
             breaks.Text = Clock.State.breaks.ToString() + (Clock.State.breaks == 1 ? " break" : " breaks");
             pause.Text = Clock.Paused ? "Resume timer" : "Pause timer";
+            usageLine.Text = QuotaSummary + (quotaError != null && Quota != null ? " (last known)" : "");
             if (mini != null) mini.RefreshClock(text);
             if (tray != null) tray.Text = "Rise · " + dial.Time + " · " + text;
             footer.Text = saveFailed ? "Could not save settings. Check local disk space and permissions." : "Local data only · Auto-pause when locked or idle · Close to keep the floating timer";
@@ -363,6 +409,30 @@ namespace Mingle.ActivityReminder
         internal void ShowMain()
         {
             Show(); WindowState = FormWindowState.Normal; Activate();
+        }
+        internal void ShowQuota()
+        {
+            if (usageWindow == null || usageWindow.IsDisposed) usageWindow = new UsageWindow(this);
+            usageWindow.RefreshData(); usageWindow.Show(); usageWindow.Activate();
+        }
+        internal void SetCodexPath(string path) { Clock.State.codexPath = path; Save(); RefreshQuota(); }
+        internal async void RefreshQuota()
+        {
+            if (QuotaLoading || Exiting) return;
+            QuotaLoading = true; quotaError = null;
+            if (usageWindow != null && !usageWindow.IsDisposed) usageWindow.RefreshData();
+            string path = Clock.State.codexPath;
+            try { Quota = await Task.Run(() => CodexUsageClient.Read(path)); }
+            catch (Exception ex) { quotaError = ex.Message; }
+            finally
+            {
+                QuotaLoading = false; nextQuotaRefresh = watch.Elapsed.TotalSeconds + 300;
+                if (!Exiting && !IsDisposed)
+                {
+                    RefreshDisplay(Native.Idle(), Native.Locked());
+                    if (usageWindow != null && !usageWindow.IsDisposed) usageWindow.RefreshData();
+                }
+            }
         }
         internal void TogglePause() { Clock.Paused = !Clock.Paused; RefreshDisplay(Native.Idle(), Native.Locked()); }
         internal void SetFloating(bool visible)
@@ -403,6 +473,7 @@ namespace Mingle.ActivityReminder
                 if (tray != null) { tray.Visible = false; tray.Dispose(); }
                 if (mini != null) mini.Dispose();
                 if (reminder != null) reminder.Dispose();
+                if (usageWindow != null) usageWindow.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -439,7 +510,8 @@ namespace Mingle.ActivityReminder
                 var json = new JavaScriptSerializer();
                 Equal(json.Deserialize<SavedState>(json.Serialize(clock.State)).cycle, 44, "state persistence");
                 if (Native.Idle() < 0) throw new Exception("native idle"); Native.Locked();
-                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test-result.txt"), "PASS: timing, idle, lock, pause, sleep, reminder threshold, snooze, rest, midnight, formatting, persistence and native APIs.");
+                QuotaTests.Run();
+                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test-result.txt"), "PASS: timing, idle, lock, pause, sleep, reminder threshold, snooze, rest, midnight, formatting, persistence, native APIs and quota parsing.");
                 return 0;
             }
             catch (Exception ex)

@@ -32,7 +32,26 @@ Settings, floating window position, and daily statistics are saved every 15 seco
 
 The first run can import settings and statistics from an older `settings.json` in the same directory. Daily statistics reset at midnight; the current session continues. Manual pause, break countdown, and snooze state are not restored after quitting.
 
-Nothing is uploaded. The application does not record typed content, screenshots, or which applications you use.
+Activity statistics stay on this computer. The application does not record typed content, screenshots, or which applications you use. The Codex usage feature connects to OpenAI through your installed Codex CLI, as described below.
+
+## Codex usage remaining
+
+The dashboard header and floating timer display your Codex subscription allowance, including the five-hour and weekly windows when the service returns them. Select **Codex usage**, or click the usage text, for all available usage buckets, reset times, and **Refresh now**. Reset times use your computer's local timezone.
+
+Usage refreshes on startup and every five minutes without interrupting the activity timer. Remaining percentage is calculated as `100 - usedPercent`; a missing value is shown as unavailable. The app retains the last successful reading in memory and labels it as last known if refreshing fails. Passing a reset time does not automatically assume that your allowance has refilled.
+
+Install Codex and sign in with your ChatGPT account first. Rise finds `codex.exe` on PATH or in the desktop app's local installation directory. If needed, select **Choose Codex CLI** in the usage window. Rise starts a temporary, hidden `codex app-server` process and uses the documented read-only `account/rateLimits/read` method. It does not start an AI conversation, consume reset credits, purchase credits, or read/copy login tokens. Only the selected CLI path is saved; usage readings remain in memory.
+
+This displays Codex subscription limits. It is not a counter for ordinary ChatGPT Chat messages or OpenAI API billing. ChatGPT Work and Codex share usage according to the [official pricing documentation](https://learn.chatgpt.com/docs/pricing). The protocol and fields are documented in the [official App Server reference](https://learn.chatgpt.com/docs/app-server#6-rate-limits-chatgpt).
+
+To verify the connection separately:
+
+```powershell
+Start-Process .\ActivityReminder.exe -ArgumentList '--quota-test' -Wait
+Get-Content .\quota-test-result.txt
+```
+
+This check prints only usage percentages and window names, not login credentials. Network or sign-in failures appear in the usage window with a retry option.
 
 ## Detection limits
 
@@ -50,7 +69,7 @@ Start-Process .\ActivityReminder.exe -ArgumentList '--self-test' -Wait
 Get-Content .\test-result.txt
 ```
 
-The build uses the system C# compiler and generates the application icon and EXE. Self-tests cover active timing, idle boundaries, locking, pausing, sleep gaps, reminder thresholds, snoozing, completed breaks, midnight rollover, countdown formatting, state serialization, and native Windows APIs.
+The build uses the system C# compiler and generates the application icon and EXE. Self-tests cover active timing, idle boundaries, locking, pausing, sleep gaps, reminder thresholds, snoozing, completed breaks, midnight rollover, countdown formatting, state serialization, native Windows APIs, and usage parsing (multiple buckets, missing values, percentage bounds, and window labels). They do not require a network connection.
 
 ## Files
 
@@ -58,6 +77,7 @@ The build uses the system C# compiler and generates the application icon and EXE
 | --- | --- |
 | `ActivityReminder.exe` | Compiled Windows application |
 | `ActivityReminder.cs` | Application source code |
+| `CodexUsage.cs` | Codex usage client, quota parser, and usage window |
 | `app.ico` | Application icon |
 | `build.ps1` | Build script |
 | `Start.bat` | Optional launcher |
