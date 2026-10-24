@@ -18,7 +18,9 @@ The dashboard shows a countdown, time spent in the current session, active time 
 
 The default reminder interval is 30 minutes of active use. Choose 15, 30, 45, or 60 minutes. Tracking pauses when the screen is locked or when there has been no keyboard or mouse input for the idle threshold: 1, 2, or 5 minutes. Sleep and long timer interruptions do not count as active use. You can also pause and resume manually.
 
-When a break is due, the app plays a system sound and opens a reminder above other windows. Start a two-minute break or snooze for five more minutes of active use. Closing the reminder also snoozes it. A completed break resets the session timer and increases the daily break count. Locking or sleeping the computer pauses the break countdown. **Preview reminder** opens the reminder immediately.
+When a break is due, the app plays a system sound and opens a reminder above other windows. Start a five-minute break or snooze for five more minutes of active use. Closing the reminder also snoozes it. **Preview reminder** opens the reminder immediately.
+
+Breaks use an actual five-minute deadline, independent of keyboard/mouse activity and the work timer's paused state. You can leave the computer, lock the screen, or let it sleep. After waking, the countdown catches up to elapsed time. A completed break resets the session timer and increases the daily break count exactly once. Break time never counts as active computer use. Work-timer pause buttons are disabled during a break; after it ends, work tracking follows the existing idle, lock, and manual pause settings.
 
 The application must remain running to send reminders. It does not run while the computer is shut down.
 
