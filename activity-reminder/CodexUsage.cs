@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 using System.Drawing;
@@ -127,62 +125,17 @@ namespace Mingle.ActivityReminder
             }
             throw new FileNotFoundException("Codex CLI not found. Choose codex.exe to connect your existing Codex sign-in.");
         }
-        private static Dictionary<string, object> ReadReply(Process process, int id, Stopwatch timeout, JavaScriptSerializer json)
-        {
-            while (timeout.Elapsed.TotalSeconds < 25)
-            {
-                Task<string> line = process.StandardOutput.ReadLineAsync();
-                int remaining = Math.Max(1, 25000 - (int)timeout.ElapsedMilliseconds);
-                if (!line.Wait(remaining)) throw new TimeoutException("Codex did not respond. Check your connection and try Refresh.");
-                if (line.Result == null) throw new InvalidOperationException("Codex connection closed. Open Codex, check your sign-in, then refresh.");
-                Dictionary<string, object> message;
-                try { message = QuotaSnapshot.Map(json.DeserializeObject(line.Result)); } catch { continue; }
-                object replyId = QuotaSnapshot.Get(message, "id");
-                if (replyId == null || Convert.ToString(replyId) != id.ToString(CultureInfo.InvariantCulture)) continue;
-                if (QuotaSnapshot.Get(message, "error") != null)
-                    throw new InvalidOperationException("Codex could not read subscription usage. Check your ChatGPT sign-in and network connection in Codex.");
-                var result = QuotaSnapshot.Map(QuotaSnapshot.Get(message, "result"));
-                if (result != null) return result;
-            }
-            throw new TimeoutException("Codex usage request timed out.");
-        }
-        internal static QuotaSnapshot Read(string selected)
-        {
-            string executable = FindExecutable(selected);
-            var start = new ProcessStartInfo(executable, "app-server")
-            {
-                UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true,
-                RedirectStandardOutput = true, RedirectStandardError = true,
-                WorkingDirectory = Path.GetDirectoryName(executable)
-            };
-            // Let Codex manage its existing login. Never read or copy authentication files.
-            using (var process = new Process { StartInfo = start })
-            {
-                try
-                {
-                    process.Start();
-                    process.ErrorDataReceived += delegate { }; process.BeginErrorReadLine();
-                    var timeout = Stopwatch.StartNew(); var json = new JavaScriptSerializer();
-                    process.StandardInput.WriteLine("{\"method\":\"initialize\",\"id\":1,\"params\":{\"clientInfo\":{\"name\":\"rise_usage_monitor\",\"title\":\"Rise Activity Reminder\",\"version\":\"1.1.0\"}}}");
-                    process.StandardInput.Flush(); ReadReply(process, 1, timeout, json);
-                    process.StandardInput.WriteLine("{\"method\":\"initialized\",\"params\":{}}");
-                    process.StandardInput.WriteLine("{\"method\":\"account/rateLimits/read\",\"id\":2}");
-                    process.StandardInput.Flush();
-                    return QuotaSnapshot.Parse(ReadReply(process, 2, timeout, json));
-                }
-                finally
-                {
-                    try { process.StandardInput.Close(); if (!process.WaitForExit(1500)) { process.Kill(); process.WaitForExit(1500); } } catch { }
-                }
-            }
-        }
         internal static int LiveTest()
         {
             string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "quota-test-result.txt");
             try
             {
-                var snapshot = Read(null);
-                File.WriteAllText(path, "PASS: live Codex usage read at " + DateTime.Now.ToString("s") + Environment.NewLine + string.Join(Environment.NewLine, snapshot.Buckets.Select(b => b.Name + ": " + b.Summary).ToArray()));
+                using (var connection = new CodexUsageConnection(null))
+                {
+                    connection.Read();
+                    var snapshot = connection.Read();
+                    File.WriteAllText(path, "PASS: persistent Codex connection and repeat usage reads at " + DateTime.Now.ToString("s") + Environment.NewLine + string.Join(Environment.NewLine, snapshot.Buckets.Select(b => b.Name + ": " + b.Summary).ToArray()));
+                }
                 return 0;
             }
             catch (Exception ex) { File.WriteAllText(path, "FAIL: " + ex.Message); return 1; }
@@ -234,7 +187,7 @@ namespace Mingle.ActivityReminder
                     if (picker.ShowDialog(this) == DialogResult.OK) main.SetCodexPath(picker.FileName);
             });
             choose.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            var note = Theme.Label(this, "Auto-refresh every 5 minutes. Reset times use your computer's local timezone.", 28, 466, 600, 28, 9, Theme.Muted);
+            var note = Theme.Label(this, "Updates automatically as you use Codex. Reset times use your local timezone.", 28, 466, 600, 28, 9, Theme.Muted);
             note.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             RefreshData();
         }
