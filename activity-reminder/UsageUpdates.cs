@@ -7,11 +7,66 @@ using System.Web.Script.Serialization;
 
 namespace Mingle.ActivityReminder
 {
-    // Filesystem notifications provide a local activity signal, not quota values.
-    // Session contents and conversation text are never opened by this monitor.
+    // Only lifecycle records appended after startup can trigger an automatic refresh.
+    internal sealed class TaskCompletionReader
+    {
+        private readonly System.Text.StringBuilder line = new System.Text.StringBuilder();
+        private readonly System.Text.Decoder decoder = System.Text.Encoding.UTF8.GetDecoder();
+        private readonly HashSet<string> seen = new HashSet<string>();
+        private bool skipLine;
+        internal int Consume(byte[] data, int count)
+        {
+            char[] chars = new char[System.Text.Encoding.UTF8.GetMaxCharCount(count)];
+            int length = decoder.GetChars(data, 0, count, chars, 0, false), completed = 0;
+            for (int i = 0; i < length; i++)
+            {
+                if (chars[i] == '\n')
+                {
+                    if (!skipLine && IsCompletion(line.ToString())) completed++;
+                    line.Clear(); skipLine = false;
+                }
+                else if (!skipLine)
+                {
+                    if (line.Length >= 2 * 1024 * 1024) { line.Clear(); skipLine = true; }
+                    else line.Append(chars[i]);
+                }
+            }
+            return completed;
+        }
+        private bool IsCompletion(string record)
+        {
+            // Ignore reasoning, token updates, tools, and assistant messages.
+            if (record.IndexOf("task_complete", StringComparison.Ordinal) < 0 && record.IndexOf("turn_aborted", StringComparison.Ordinal) < 0) return false;
+            try
+            {
+                var json = new JavaScriptSerializer { MaxJsonLength = 2 * 1024 * 1024 };
+                var message = QuotaSnapshot.Map(json.DeserializeObject(record));
+                if (Convert.ToString(QuotaSnapshot.Get(message, "type")) != "event_msg") return false;
+                var payload = QuotaSnapshot.Map(QuotaSnapshot.Get(message, "payload"));
+                string kind = Convert.ToString(QuotaSnapshot.Get(payload, "type"));
+                if (kind != "task_complete" && kind != "turn_aborted") return false;
+                string id = Convert.ToString(QuotaSnapshot.Get(payload, "turn_id"));
+                string root = Convert.ToString(QuotaSnapshot.Get(payload, "root_turn_id"));
+                if (!string.IsNullOrEmpty(root) && root != id) return false;
+                if (string.IsNullOrEmpty(id)) return false;
+                if (seen.Count > 2048) seen.Clear();
+                return seen.Add(id);
+            }
+            catch { return false; }
+        }
+    }
+
     internal sealed class UsageActivityMonitor : IDisposable
     {
+        private sealed class Cursor
+        {
+            internal long Offset;
+            internal TaskCompletionReader Reader = new TaskCompletionReader();
+        }
+        private readonly object gate = new object();
+        private readonly Dictionary<string, Cursor> cursors = new Dictionary<string, Cursor>(StringComparer.OrdinalIgnoreCase);
         private readonly FileSystemWatcher watcher;
+        private bool disposed;
         internal event Action Changed;
         internal readonly bool Watching;
         internal UsageActivityMonitor(string home)
@@ -20,23 +75,59 @@ namespace Mingle.ActivityReminder
             if (!Directory.Exists(root)) return;
             try
             {
+                // Record existing lengths only; never replay historical completions.
+                foreach (string path in Directory.EnumerateFiles(root, "*.jsonl", SearchOption.AllDirectories))
+                    try { cursors[path] = new Cursor { Offset = new FileInfo(path).Length }; } catch { }
                 watcher = new FileSystemWatcher(root, "*.jsonl")
                 {
                     IncludeSubdirectories = true,
                     NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
                     InternalBufferSize = 32768
                 };
-                watcher.Changed += delegate { Signal(); };
-                watcher.Created += delegate { Signal(); };
-                watcher.Renamed += delegate { Signal(); };
-                watcher.Error += delegate { Signal(); };
+                watcher.Changed += delegate(object sender, FileSystemEventArgs e) { ReadAppend(e.FullPath); };
+                watcher.Created += delegate(object sender, FileSystemEventArgs e) { ReadAppend(e.FullPath); };
+                watcher.Renamed += delegate(object sender, RenamedEventArgs e)
+                {
+                    lock (gate) { Cursor cursor; if (cursors.TryGetValue(e.OldFullPath, out cursor)) { cursors.Remove(e.OldFullPath); cursors[e.FullPath] = cursor; } }
+                    ReadAppend(e.FullPath);
+                };
+                watcher.Error += delegate { Rescan(root); };
                 watcher.EnableRaisingEvents = true;
                 Watching = true;
+                Rescan(root);
             }
             catch { if (watcher != null) watcher.Dispose(); }
         }
-        private void Signal() { Action handler = Changed; if (handler != null) handler(); }
-        public void Dispose() { if (watcher != null) watcher.Dispose(); }
+        private void Rescan(string root)
+        {
+            try { foreach (string path in Directory.EnumerateFiles(root, "*.jsonl", SearchOption.AllDirectories)) ReadAppend(path); } catch { }
+        }
+        private void ReadAppend(string path)
+        {
+            int completions = 0;
+            lock (gate)
+            {
+                if (disposed) return;
+                try
+                {
+                    using (var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                    {
+                        Cursor cursor;
+                        if (!cursors.TryGetValue(path, out cursor)) { cursor = new Cursor(); cursors[path] = cursor; }
+                        if (file.Length < cursor.Offset) { cursor.Offset = 0; cursor.Reader = new TaskCompletionReader(); }
+                        file.Position = cursor.Offset;
+                        byte[] buffer = new byte[32768]; int count;
+                        while ((count = file.Read(buffer, 0, buffer.Length)) > 0) completions += cursor.Reader.Consume(buffer, count);
+                        cursor.Offset = file.Position;
+                    }
+                }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
+            Action handler = Changed;
+            if (completions > 0 && handler != null && !disposed) handler();
+        }
+        public void Dispose() { lock (gate) disposed = true; if (watcher != null) watcher.Dispose(); }
         internal static string CodexHome
         {
             get
@@ -47,7 +138,7 @@ namespace Mingle.ActivityReminder
         }
     }
 
-    // Debounce bursts, retain activity during a request, and never poll while idle.
+    // Coalesce completed tasks and retain completions received during a request.
     internal sealed class UsageUpdateSchedule
     {
         private double first = double.PositiveInfinity, last, notBefore;
@@ -58,7 +149,6 @@ namespace Mingle.ActivityReminder
             return Pending && now >= notBefore && (now - last >= 0.8 || now - first >= 3);
         }
         internal void Started(double now) { first = double.PositiveInfinity; notBefore = now + 3; }
-        internal void Failed(double now) { Signal(now); notBefore = now + 15; }
     }
 
     // One persistent, private stdio connection. No listening network port or model turns.
@@ -71,8 +161,10 @@ namespace Mingle.ActivityReminder
         private int nextId;
         private bool initialized, disposed;
         private readonly string selected;
-        internal event Action<QuotaSnapshot> Updated;
-        internal event Action Disconnected;
+        internal bool IsAlive
+        {
+            get { try { return !disposed && (process == null || !process.HasExited); } catch { return false; } }
+        }
         internal CodexUsageConnection(string selected) { this.selected = selected; }
         private void OnLine(string line)
         {
@@ -86,28 +178,19 @@ namespace Mingle.ActivityReminder
                 TaskCompletionSource<Dictionary<string, object>> completion;
                 lock (gate) { if (!pending.TryGetValue(id, out completion)) return; pending.Remove(id); }
                 if (QuotaSnapshot.Get(message, "error") != null)
-                    completion.TrySetException(new InvalidOperationException("Could not read Codex usage. Check your sign-in and network connection; Rise will retry automatically."));
+                    completion.TrySetException(new InvalidOperationException("Could not read Codex usage. Check your connection. Rise will try again after the next completed task."));
                 else completion.TrySetResult(QuotaSnapshot.Map(QuotaSnapshot.Get(message, "result")));
                 return;
             }
-            if (Convert.ToString(QuotaSnapshot.Get(message, "method")) == "account/rateLimits/updated")
-            {
-                try
-                {
-                    QuotaSnapshot snapshot = QuotaSnapshot.Parse(QuotaSnapshot.Map(QuotaSnapshot.Get(message, "params")));
-                    Action<QuotaSnapshot> handler = Updated; if (handler != null) handler(snapshot);
-                }
-                catch { }
-            }
+            // Unsolicited quota notifications must not refresh the UI mid-task.
         }
         private void FailPending()
         {
             lock (gate)
             {
-                foreach (var completion in pending.Values) completion.TrySetException(new IOException("Codex connection closed. Reconnecting automatically."));
+                foreach (var completion in pending.Values) completion.TrySetException(new IOException("Codex connection closed. Will reconnect after the next completed task."));
                 pending.Clear();
             }
-            if (!disposed) { Action handler = Disconnected; if (handler != null) handler(); }
         }
         private Dictionary<string, object> Request(string method, object parameters)
         {
@@ -118,7 +201,7 @@ namespace Mingle.ActivityReminder
             {
                 process.StandardInput.WriteLine(json.Serialize(new { method = method, id = id, @params = parameters }));
                 process.StandardInput.Flush();
-                if (!completion.Task.Wait(25000)) throw new TimeoutException("Codex usage response timed out. Retrying automatically.");
+                if (!completion.Task.Wait(25000)) throw new TimeoutException("Codex usage request timed out. Will retry after the next completed task.");
                 return completion.Task.GetAwaiter().GetResult();
             }
             catch (AggregateException ex) { throw ex.InnerException ?? ex; }
@@ -174,10 +257,21 @@ namespace Mingle.ActivityReminder
             schedule.Started(5);
             for (int i = 0; i < 10; i++) schedule.Signal(5 + i * 0.3);
             if (!schedule.Ready(8.1)) throw new Exception("Continuous activity must not starve updates");
-            schedule.Started(8.1); schedule.Failed(9);
-            if (schedule.Ready(10) || !schedule.Ready(24)) throw new Exception("Failure retry backoff");
+            var reader = new TaskCompletionReader();
+            Func<string, int> consume = value => { byte[] data = System.Text.Encoding.UTF8.GetBytes(value); return reader.Consume(data, data.Length); };
+            if (consume("{\"type\":\"event_msg\",\"payload\":{\"type\":\"task_started\",\"turn_id\":\"a\"}}\n") != 0) throw new Exception("Task start must not refresh");
+            if (consume("{\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\"}}\n") != 0) throw new Exception("Thinking/token usage must not refresh");
+            if (consume("{\"type\":\"event_msg\",\"payload\":{\"type\":\"item_completed\"}}\n") != 0) throw new Exception("Tool completion must not refresh");
+            if (consume("{\"type\":\"response_item\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"fake\"}}\n") != 0) throw new Exception("Only lifecycle events count");
+            string completion = "{\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"a\",\"root_turn_id\":\"a\"}}";
+            if (consume(completion.Substring(0, 50)) != 0 || consume(completion.Substring(50)) != 0 || consume("\n") != 1) throw new Exception("Partial completion record handling");
+            if (consume(completion + "\n") != 0) throw new Exception("Duplicate task completion");
+            if (consume("{\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"child\",\"root_turn_id\":\"a\"}}\n") != 0) throw new Exception("Subtask is not a root task completion");
+            if (consume("{\"type\":\"event_msg\",\"payload\":{\"type\":\"turn_aborted\",\"turn_id\":\"b\"}}\n") != 1) throw new Exception("Stopped task completion");
             string root = Path.Combine(Path.GetTempPath(), "rise-watch-test-" + Guid.NewGuid().ToString("N"));
             string sessions = Path.Combine(root, "sessions"); Directory.CreateDirectory(sessions);
+            string synthetic = Path.Combine(sessions, "synthetic.jsonl");
+            File.WriteAllText(synthetic, completion + "\n");
             try
             {
                 using (var changed = new System.Threading.ManualResetEvent(false))
@@ -185,8 +279,13 @@ namespace Mingle.ActivityReminder
                 {
                     monitor.Changed += delegate { changed.Set(); };
                     if (!monitor.Watching) throw new Exception("Session watcher initialization");
-                    File.WriteAllText(Path.Combine(sessions, "synthetic.jsonl"), "synthetic activity; no conversation content");
-                    if (!changed.WaitOne(3000)) throw new Exception("Live filesystem activity event");
+                    File.AppendAllText(synthetic, "{\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\"}}\n");
+                    if (changed.WaitOne(200)) throw new Exception("Historical completions and live token events must not refresh");
+                    File.AppendAllText(synthetic, completion.Replace("\"a\"", "\"new-task\"") + "\n");
+                    if (!changed.WaitOne(3000)) throw new Exception("Live task completion event");
+                    changed.Reset();
+                    File.AppendAllText(synthetic, "{\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\"}}\n");
+                    if (changed.WaitOne(200)) throw new Exception("Completion must not be replayed on the next file change");
                 }
             }
             finally { File.Delete(Path.Combine(sessions, "synthetic.jsonl")); Directory.Delete(sessions); Directory.Delete(root); }

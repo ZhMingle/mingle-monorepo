@@ -245,7 +245,6 @@ namespace Mingle.ActivityReminder
         private readonly UsageUpdateSchedule quotaSchedule = new UsageUpdateSchedule();
         private UsageActivityMonitor usageMonitor;
         private CodexUsageConnection usageConnection;
-        private readonly System.Collections.Generic.HashSet<long> checkedResets = new System.Collections.Generic.HashSet<long>();
         private UsageWindow usageWindow;
         private readonly Label usageLine;
         internal string QuotaSummary
@@ -269,7 +268,7 @@ namespace Mingle.ActivityReminder
             {
                 if (QuotaLoading) return "Refreshing from your local Codex sign-in...";
                 if (quotaError != null) return (Quota == null ? "" : "Showing last known usage. ") + quotaError;
-                return Quota == null ? "No usage data yet." : "Updated " + Quota.FetchedUtc.ToLocalTime().ToString("MMM d, HH:mm:ss") + (usageMonitor != null && usageMonitor.Watching ? " · Live activity updates" : " · Activity monitoring unavailable; reconnect to Codex");
+                return Quota == null ? "No usage data yet." : "Updated " + Quota.FetchedUtc.ToLocalTime().ToString("MMM d, HH:mm:ss") + (usageMonitor != null && usageMonitor.Watching ? " · Updates after each completed task" : " · Task monitoring unavailable; reconnect to Codex");
             }
         }
         internal MainWindow(EventWaitHandle wake)
@@ -339,7 +338,6 @@ namespace Mingle.ActivityReminder
                 if (Clock.State.floating) mini.Show();
                 RefreshDisplay(Native.Idle(), Native.Locked()); RefreshQuota();
             };
-            Activated += delegate { if (Quota != null && (DateTime.UtcNow - Quota.FetchedUtc).TotalSeconds > 10) QueueUsageUpdate(); };
             FormClosing += delegate(object sender, FormClosingEventArgs e)
             {
                 if (e.CloseReason == CloseReason.UserClosing && !Exiting) { e.Cancel = true; SetFloating(true); Hide(); }
@@ -394,13 +392,6 @@ namespace Mingle.ActivityReminder
             RefreshDisplay(idle, locked);
             if (Clock.Due && !locked && idle < Clock.State.idle && reminder == null) ShowReminder();
             if (now - lastSave >= 15) { Save(); lastSave = now; }
-            if (Quota != null)
-            {
-                long utc = (long)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds;
-                foreach (var bucket in Quota.Buckets)
-                    foreach (var window in bucket.Windows)
-                        if (window.ResetsAt.HasValue && window.ResetsAt.Value <= utc && checkedResets.Add(window.ResetsAt.Value)) quotaSchedule.Signal(now);
-            }
             if (quotaSchedule.Ready(now) && !QuotaLoading) RefreshQuota();
         }
         private void RefreshDisplay(double idle, bool locked)
@@ -455,15 +446,10 @@ namespace Mingle.ActivityReminder
             QuotaLoading = true; quotaError = null;
             quotaSchedule.Started(watch.Elapsed.TotalSeconds);
             if (usageWindow != null && !usageWindow.IsDisposed) usageWindow.RefreshData();
-            if (usageConnection == null)
+            if (usageConnection == null || !usageConnection.IsAlive)
             {
+                if (usageConnection != null) usageConnection.Dispose();
                 usageConnection = new CodexUsageConnection(Clock.State.codexPath);
-                usageConnection.Updated += snapshot =>
-                {
-                    if (Exiting || IsDisposed || !IsHandleCreated) return;
-                    try { BeginInvoke((Action)delegate { if (!Exiting) ApplyQuota(snapshot); }); } catch (InvalidOperationException) { }
-                };
-                usageConnection.Disconnected += QueueUsageUpdate;
             }
             CodexUsageConnection connection = usageConnection;
             try
@@ -473,7 +459,7 @@ namespace Mingle.ActivityReminder
             }
             catch (Exception ex)
             {
-                quotaError = ex.Message; quotaSchedule.Failed(watch.Elapsed.TotalSeconds);
+                quotaError = ex.Message;
                 if (usageConnection == connection) { connection.Dispose(); usageConnection = null; }
             }
             finally
@@ -566,7 +552,7 @@ namespace Mingle.ActivityReminder
                 if (Native.Idle() < 0) throw new Exception("native idle"); Native.Locked();
                 QuotaTests.Run();
                 UsageUpdateTests.Run();
-                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test-result.txt"), "PASS: timer rules, quota parsing, idle/no-poll scheduling, debounce, in-flight events, retry backoff and live filesystem notifications.");
+                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test-result.txt"), "PASS: timer rules, quota parsing, no idle polling, completion-only updates, partial records, deduplication and live completion notifications.");
                 return 0;
             }
             catch (Exception ex)

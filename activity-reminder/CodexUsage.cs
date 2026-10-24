@@ -187,7 +187,7 @@ namespace Mingle.ActivityReminder
                     if (picker.ShowDialog(this) == DialogResult.OK) main.SetCodexPath(picker.FileName);
             });
             choose.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            var note = Theme.Label(this, "Updates automatically as you use Codex. Reset times use your local timezone.", 28, 466, 600, 28, 9, Theme.Muted);
+            var note = Theme.Label(this, "Updates after each completed Codex task. Reset times use your local timezone.", 28, 466, 600, 28, 9, Theme.Muted);
             note.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             RefreshData();
         }
