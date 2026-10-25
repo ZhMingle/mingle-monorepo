@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+
+- Darkened reading text, metadata, code examples, and inactive step labels to improve contrast.
+- Switched interface and body text to the system font, keeping the established branding and heading sizes.
+- Limited reading paragraphs to 72 characters per line and kept comfortable line spacing, independently of the text-size control.
+
 ## 0.1.3
 
 - Added a persistent top-bar control to increase small text by 0–8px from its current baseline, with a reset action.

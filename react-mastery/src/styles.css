@@ -15,4 +15,12 @@
 @media(max-width:700px){.lesson-article section p,.lesson-why,.description,.prediction-card>p,.challenge-brief>p,.hero-content>p,.explain-input{font-size:calc(12px + var(--small-text-increase, 0px))}.page-heading p{font-size:calc(12px + var(--small-text-increase, 0px))}}
 
 /* Keep enlarged navigation inside the fixed sidebar. */
+/* Reading contrast is independent of the small-text size preference. */
+:root{font-family:'Segoe UI',Arial,sans-serif;--muted:#566254;color:#263029}
+.page-heading p,.hero-content>p,.next-details>p,.how-card>p,.lesson-why,.prediction-card>p,.description,.challenge-brief>p,.lesson-article section p,.mentor-card>p,.proof-card>p,.aside-question p,.settings-card p,.completion-card p,.rubric>p,.how-step p{color:#354236;font-weight:400;line-height:1.8;letter-spacing:0}
+.lesson-article section p,.lesson-why,.description,.challenge-brief>p{max-width:72ch}
+.lesson-article h3,.lab-main h2{color:#202b23;font-weight:650}
+.workspace-label,.eyebrow,.tiny-label,.page-heading .eyebrow,.date-chip .tiny-label,.brand small,.local-badge,.sidebar-path>span,.path-small,.local-person small,.connection small,.topbar>span,.date-chip strong,.lesson-title>p,.save-label,.lesson-meta,.home-stats>div>div>span,.page-footer,.mentor-note,.muted,.article-number,.editor-footer>span,.editor-bar,.writing-footer>span,.score-grid>div>span,.rubric-title>span,.art-card small,.art-bottom,.hero-caption{color:#566254}
+.sidebar nav button{color:#43513f}.text-button,.sidebar-path>button,.article-bottom>a{color:#466334}.proof-card>div,.proof-card>div.proof-done{color:#435a36}.stage-tabs>button{color:#566254;opacity:1}.stage-tabs small{color:#566254}.stage-tabs>button.active{color:#365524}.aside-question h4{color:#435a36;font-weight:600}
+.example-code,.editor textarea{font-family:'Cascadia Code',Consolas,monospace;color:#25362a;font-weight:400}.explain-input{color:#263029}.explain-input::placeholder{color:#5e685c;opacity:1}.sidebar{overflow-x:hidden}
 .sidebar nav button{white-space:normal;overflow-wrap:anywhere}.sidebar-path,.sidebar-bottom{min-width:0}.path-small{gap:8px;flex-wrap:wrap}.sidebar-path>button{flex-wrap:wrap}.stage-tabs>button{position:relative;padding-right:17px}.stage-tabs>button>svg{position:absolute;right:4px;top:50%;transform:translateY(-50%)}.score-grid{grid-template-columns:repeat(auto-fit,minmax(100px,1fr))}
