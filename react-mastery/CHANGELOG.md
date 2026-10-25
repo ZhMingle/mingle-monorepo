@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Raised supporting text to a minimum of 12px across desktop and mobile layouts.
+- Allowed labels, controls, and footer content to wrap as needed for readability.
+
 ## 0.1.1
 
 - Translated the interface and all six labs, predictions, exercise instructions, hints, and rubrics into English.
