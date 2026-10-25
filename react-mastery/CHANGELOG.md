@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+- Added an Understanding Lab for experienced React learners: predict, compare a changed condition, and select a repair with a valid boundary case.
+- Combined deterministic result checks with genuine Codex evaluation of task-specific causal reasoning. Generic recall, wrong outputs, and unsupported evidence cannot verify a probe.
+- Added one targeted clarification per probe, preserved original answers, recorded help separately, and allowed continuing with a visible gap.
+- Added opt-in browser voice dictation, editable transcripts, optional question read-out, and clear unsupported/permission/error states.
+- Persisted sessions, drafts, evidence and delayed-review eligibility separately from the existing learning labs; included them in data export.
+
 ## 0.2.0
 
 - Simplified explanation pages to four short requirements; moved passing rules into a disclosure and removed repeated coaching copy.

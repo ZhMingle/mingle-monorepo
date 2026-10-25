@@ -1,4 +1,5 @@
 export const uiZh: Record<string, string> = {
+  'Understanding lab':'理解验证','Try the understanding lab':'体验理解验证',
   'checks passed':'项检查通过',
   'Language':'语言','Correctness':'概念准确','Causality':'因果理解','Clarity':'表达清晰','Transfer':'迁移',
   'Explanation verified':'讲解通过','Let’s make this clearer':'再完善一下','AI rubric · v1':'AI 评分 · v1','IN YOUR OWN WORDS':'你的原话','Think one step further':'想一想',

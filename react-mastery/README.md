@@ -4,6 +4,10 @@ A local-first AI learning platform for React. A topic is assessed through indepe
 
 ## First version
 
+- **Understanding Lab** (`/#lab`): an experienced-learner experiment for state snapshots and update queues. Three short probes vary the inputs and operation order. Numbers and repair choices are checked deterministically; Codex evaluates the explanation with a verbatim evidence quote. Correct predictions alone, fluency, and generic recall cannot verify a probe.
+- A failed probe gets one focused clarification rather than requiring the whole explanation again. Earlier answers remain saved. Help and evaluated retries remain supported practice, and users can continue with an explicit gap. This is evidence for one narrow skill, not a general mastery certificate.
+- Independent success across all three probes opens a delayed check after 24 hours. Early practice cannot grant retention evidence; reviews use a fresh parameter combination. The older six-lab flow remains available.
+- Optional **voice input** uses the browser's SpeechRecognition/webkitSpeechRecognition API, not Codex audio access. It starts only after opt-in and a user click, can be stopped, and produces editable text before submission. Browser recognition can send audio to the browser provider's speech service and may be unavailable or fail even if the API exists. Text entry always remains available. Question read-out uses speechSynthesis when present. No audio recordings are stored by this application. See [MDN's browser support and privacy notes](https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition).
 - Six complete learning labs: components/props, state snapshots and batching, immutable updates, stable keys, derived data, and reducers.
 - A five-step flow: **Understand → Predict → Build → Explain → Transfer**.
 - Explain and transfer explanations include concrete answer requirements, passing criteria, and authored reference answers. Viewing a reference is recorded as assisted practice and never replaces a draft or grants independent mastery. Reference answers do not call a model.
