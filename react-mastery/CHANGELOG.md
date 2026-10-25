@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+
+- Added a persistent top-bar control to increase small text by 0–8px from its current baseline, with a reset action.
+- Adjusted only text sized 12–16px; branding and larger headings retain their original sizes.
+- Allowed controls and supporting content to wrap, with matching code and line-number spacing.
+
 ## 0.1.2
 
 - Raised supporting text to a minimum of 12px across desktop and mobile layouts.

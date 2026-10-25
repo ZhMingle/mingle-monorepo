@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, Braces, Check, CheckCheck, CheckCircle2, ChevronRight, Circle, Code2, Compass, FileCheck2, GraduationCap, Layers3, Lightbulb, Link2, LoaderCircle, Map, MessageCircle, Play, RefreshCw, Settings2, ShieldCheck, Sparkles, Target, Terminal, Timer, X } from 'lucide-react';
 import type { Assessment, Bootstrap, Challenge, Lesson, LessonId, LearningSession, SessionMode, SessionPayload, Stage } from '../shared/types.ts';
 import { roadmap } from '../shared/curriculum.ts';
@@ -28,6 +29,15 @@ function Rubric({ value }: { value: Assessment }) {
 }
 
 export default function App() {
+  const [textIncrease, setTextIncrease] = useState(() => {
+    try {
+      const stored = Number(localStorage.getItem('clarity.smallTextIncrease'));
+      return Number.isFinite(stored) ? Math.min(8, Math.max(0, Math.round(stored))) : 0;
+    } catch { return 0; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('clarity.smallTextIncrease', String(textIncrease)); } catch { /* Keep the control usable when storage is unavailable. */ }
+  }, [textIncrease]);
   const [data, setData] = useState<Bootstrap | null>(null);
   const [page, setPage] = useState<Page>((location.hash.slice(1).split('/')[0] || 'home') as Page);
   const [payload, setPayload] = useState<SessionPayload | null>(null);
@@ -120,9 +130,9 @@ export default function App() {
   const suggested = data.lessons.find(l => !data.progress.find(p => p.lessonId === l.id && ['provisional', 'retained'].includes(p.status))) ?? data.lessons[0];
   const gates = session ? evidenceGates(session) : null;
   const allContentPassed = session && session.build?.passed && session.explanation?.passed && session.transfer?.passed && session.transferExplanation?.passed;
-  return <div className="app-shell">
+  return <div className="app-shell" style={{ '--small-text-increase': `${textIncrease}px` } as CSSProperties}>
     <aside className="sidebar"><button className="brand" onClick={() => go('home')}><span className="brand-mark">c<span/></span><span>clarity<small>REACT MASTERY LAB</small></span></button><div className="workspace-label">PERSONAL WORKSPACE</div><nav>{[{ id: 'home', icon: Compass, name: 'Learning desk' }, { id: 'roadmap', icon: Map, name: 'React roadmap' }, { id: 'review', icon: RefreshCw, name: 'Review queue' }, { id: 'evidence', icon: FileCheck2, name: 'Evidence journal' }].map(({ id, icon: Icon, name }) => <button key={id} className={page === id ? 'active' : ''} onClick={() => go(id as Page)}><Icon size={19}/>{name}{id === 'review' && due.length > 0 && <span className="nav-count">{due.length}</span>}{id === 'home' && page === 'home' && <i/>}</button>)}</nav><div className="sidebar-path"><div className="sidebar-path-icon"><Braces size={22}/></div><strong>React Developer</strong><span>From foundations to fluency</span><div className="path-track"><i style={{ width: `${proved / data.lessons.length * 100}%` }}/></div><div className="path-small"><span>{proved} of {data.lessons.length} topics proved</span><span>{Math.round(proved / data.lessons.length * 100)}%</span></div><button onClick={() => go('roadmap')}>Explore your path <ArrowUpRight size={14}/></button></div><div className="sidebar-bottom"><button className="connection" onClick={() => go('settings')}><span className={`connection-dot ${data.connection.available ? '' : 'offline'}`}/><span>Codex local connection<small>{data.connection.available ? 'CLI detected · ready to connect' : 'Setup needed'}</small></span><Settings2 size={16}/></button><div className="local-person"><span>ME</span><div><strong>Your learning space</strong><small>Private · stored on this computer</small></div></div></div></aside>
-    <main className="main"><header className="topbar"><span>My workspace <ChevronRight size={14}/><strong>{page === 'lesson' ? lesson?.english ?? 'Lesson' : { home: 'Learning desk', roadmap: 'React roadmap', review: 'Review queue', evidence: 'Evidence journal', settings: 'Connection & data' }[page] ?? 'Learning desk'}</strong></span><div><span className="local-badge"><span/> LOCAL FIRST</span><button className="icon-button" title="Export learning evidence" aria-label="Export learning evidence" onClick={() => { location.href = '/api/export'; }}><ArrowDownToLine size={18}/></button></div></header>
+    <main className="main"><header className="topbar"><span>My workspace <ChevronRight size={14}/><strong>{page === 'lesson' ? lesson?.english ?? 'Lesson' : { home: 'Learning desk', roadmap: 'React roadmap', review: 'Review queue', evidence: 'Evidence journal', settings: 'Connection & data' }[page] ?? 'Learning desk'}</strong></span><div><label className="text-size-control"><span>Small text</span><input type="range" min="0" max="8" step="1" value={textIncrease} aria-label="Small text size increase" aria-valuetext={`+${textIncrease} pixels from default`} onChange={event => setTextIncrease(Number(event.target.value))}/><output>+{textIncrease}px</output><button type="button" onClick={() => setTextIncrease(0)} disabled={textIncrease === 0}>Reset</button></label><span className="local-badge"><span/> LOCAL FIRST</span><button className="icon-button" title="Export learning evidence" aria-label="Export learning evidence" onClick={() => { location.href = '/api/export'; }}><ArrowDownToLine size={18}/></button></div></header>
       <div className={`page-content ${page === 'lesson' ? 'lesson-page' : ''}`}>
       {error && <div className="error-banner" role="alert"><span>{error}</span><button aria-label="Dismiss error" onClick={() => setError('')}><X size={16}/></button></div>}
       {page === 'home' && <><div className="page-heading"><div><span className="eyebrow">A LITTLE DEEPER, EVERY DAY</span><h1>Your learning desk<span className="heading-dot">.</span></h1><p>Make each concept something you can use and explain with confidence.</p></div><div className="date-chip"><span className="tiny-label">YOUR FOCUS</span><strong>React, one concept at a time</strong></div></div>
