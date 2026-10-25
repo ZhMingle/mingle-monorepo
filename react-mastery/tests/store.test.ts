@@ -22,3 +22,18 @@ test('export includes older sessions beyond the journal display limit', () => {
   assert.equal(store.sessionList().length, 40);
   assert.equal(store.exportData().sessions.length, 43);
 });
+test('reference views remain recorded after reloading a session and in exports', async () => {
+  const { markReferenceViewed } = await import('../server/reference-answers.ts');
+  const s = store.createSession('props', 'practice');
+  s.explanationText = 'An unfinished answer to preserve';
+  markReferenceViewed(s, 'explain');
+  store.record(s, 'reference-viewed', { area: 'explain', assisted: true });
+  const loaded = store.getSession(s.id);
+  assert.deepEqual(loaded.referenceViews, ['explain']);
+  assert.equal(loaded.hintsUsed, 1);
+  assert.equal(loaded.explanationText, s.explanationText);
+  assert.ok(store.exportData().evidence.some(e => {
+    const row = e as Record<string, unknown>;
+    return row.kind === 'reference-viewed' && row.session_id === s.id;
+  }));
+});

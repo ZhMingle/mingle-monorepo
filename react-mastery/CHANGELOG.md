@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5
+
+- Added reference explanations and worked examples for all six labs, available in Explain and transfer explanations without a model call.
+- Added specific answer requirements and visible passing criteria, shared with the AI evaluator.
+- Persisted reference views as assistance without overwriting drafts or awarding independent mastery.
+- Restored light code, caret, line numbers, and metadata inside the dark editor; reference examples retain a light reading surface.
+
 ## 0.1.4
 
 - Darkened reading text, metadata, code examples, and inactive step labels to improve contrast.

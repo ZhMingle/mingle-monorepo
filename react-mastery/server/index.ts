@@ -7,6 +7,7 @@ import { lessons, getLesson, challengeFor } from '../shared/curriculum.ts';
 import { testNames } from '../shared/test-spec.ts';
 import { createSession, exportData, getSession, progressList, record, saveSession, sessionList } from './store.ts';
 import { assess, findCodex } from './coach.ts';
+import { markReferenceViewed, referenceAnswerFor } from './reference-answers.ts';
 import type { LearningSession, RunReport, SessionMode, Stage } from '../shared/types.ts';
 
 const port = Number(process.env.PORT ?? 4317);
@@ -15,7 +16,7 @@ const origins = new Set([`http://127.0.0.1:${port}`, `http://localhost:${port}`]
 const busy = new Set<string>();
 const payload = (session: LearningSession) => {
   const { answer: _a, explanation: _e, ...prediction } = getLesson(session.lessonId).prediction[session.variant];
-  return { session, prediction, challenge: challengeFor(session.lessonId, session.variant), transferChallenge: challengeFor(session.lessonId, session.variant, true), progress: progressList() };
+  return { session, prediction, challenge: challengeFor(session.lessonId, session.variant), transferChallenge: challengeFor(session.lessonId, session.variant, true), progress: progressList(), referenceAnswers: Object.fromEntries((session.referenceViews ?? []).map(area => [area, referenceAnswerFor(session.lessonId)])) };
 };
 function send(res: ServerResponse, code: number, body: unknown) {
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(body));
@@ -54,6 +55,13 @@ const server = createServer(async (req, res) => {
       const session = getSession(text(input.sessionId, 80));
       const lesson = getLesson(session.lessonId);
       switch (url.pathname) {
+        case '/api/reference': {
+          const area = input.area;
+          if (area !== 'explain' && area !== 'transfer') throw new Error('Unknown reference area');
+          stageReady(session, area);
+          if (markReferenceViewed(session, area)) record(session, 'reference-viewed', { area, assisted: true });
+          send(res, 200, payload(session)); return;
+        }
         case '/api/draft': {
           const stage = input.stage as Stage;
           if (!['learn', 'predict', 'build', 'explain', 'transfer'].includes(stage)) throw new Error('Invalid learning stage');

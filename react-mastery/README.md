@@ -6,6 +6,7 @@ A local-first AI learning platform for React. A topic is assessed through indepe
 
 - Six complete learning labs: components/props, state snapshots and batching, immutable updates, stable keys, derived data, and reducers.
 - A five-step flow: **Understand → Predict → Build → Explain → Transfer**.
+- Explain and transfer explanations include concrete answer requirements, passing criteria, and authored reference answers. Viewing a reference is recorded as assisted practice and never replaces a draft or grants independent mastery. Reference answers do not call a model.
 - Real JSX execution in an opaque-origin browser sandbox. Correct solutions, broken starters, and transfer variants are covered by a browser regression harness.
 - Real Codex evaluation using the existing local ChatGPT sign-in, without an API key. Only submitting an explanation invokes the model; reading and code tests do not.
 - Four explanation dimensions, each 0–3: correctness, causality, clarity, transfer. AI must quote actual learner text. A score alone is insufficient.

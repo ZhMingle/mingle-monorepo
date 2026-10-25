@@ -1,6 +1,8 @@
 export type LessonId = 'props' | 'snapshot' | 'immutable' | 'keys' | 'derived' | 'reducer';
 export type Stage = 'learn' | 'predict' | 'build' | 'explain' | 'transfer';
 export type SessionMode = 'practice' | 'assessment' | 'review';
+export type ReferenceArea = 'explain' | 'transfer';
+export interface ReferenceAnswer { paragraphs: string[]; code: string; transfer: string }
 export interface Lesson {
   id: LessonId; title: string; english: string; level: string; minutes: number;
   summary: string; why: string; takeaway: string; prerequisites: LessonId[];
@@ -22,6 +24,7 @@ export interface LearningSession {
   build: RunReport | null; explanation: Assessment | null; explanationText: string;
   transfer: RunReport | null; transferExplanation: Assessment | null; transferText: string;
   draft: string; transferDraft: string; stage: Stage;
+  referenceViews?: ReferenceArea[];
 }
 export interface Progress {
   lessonId: LessonId; status: 'learning' | 'provisional' | 'retained' | 'review_due';
@@ -31,4 +34,4 @@ export interface Bootstrap {
   lessons: Omit<Lesson, 'prediction'>[]; progress: Progress[]; sessions: LearningSession[];
   connection: { available: boolean; provider: string; message: string }; now: string;
 }
-export interface SessionPayload { session: LearningSession; prediction: Omit<Lesson['prediction'][number], 'answer' | 'explanation'>; challenge: Challenge; transferChallenge: Challenge; progress: Progress[] }
+export interface SessionPayload { session: LearningSession; prediction: Omit<Lesson['prediction'][number], 'answer' | 'explanation'>; challenge: Challenge; transferChallenge: Challenge; progress: Progress[]; referenceAnswers?: Partial<Record<ReferenceArea, ReferenceAnswer>> }

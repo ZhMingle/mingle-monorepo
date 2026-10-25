@@ -7,7 +7,7 @@ export function evidenceGates(session: LearningSession) {
     build: !!session.build?.passed,
     explain: !!session.explanation?.passed,
     transfer: !!session.transfer?.passed && !!session.transferExplanation?.passed,
-    independent: session.hintsUsed === 0
+    independent: session.hintsUsed === 0 && !session.referenceViews?.length
   };
 }
 export function qualifies(session: LearningSession) { return Object.values(evidenceGates(session)).every(Boolean); }
