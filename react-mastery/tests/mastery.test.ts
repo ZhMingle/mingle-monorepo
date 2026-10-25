@@ -5,6 +5,7 @@ import type { LearningSession } from '../shared/types.ts';
 import { challengeFor, lessons } from '../shared/curriculum.ts';
 import { explanationRequirements } from '../shared/explanation-guide.ts';
 import { markReferenceViewed, referenceAnswerFor } from '../server/reference-answers.ts';
+import { codeHintsFor, codeReferenceFor } from '../server/code-support.ts';
 
 const raw = { scores: { correctness: 2, causality: 2, clarity: 3, transfer: 2 }, evidence: ['旧值不是原地改变', '下一次渲染'], misconceptions: [], summary: '正确', followUp: '换一个场景？', nextStep: '尝试迁移' };
 const assessment = validateAssessment(raw, '旧值不是原地改变，setState 请求下一次渲染。');
@@ -66,4 +67,21 @@ test('every playable lesson has grounded content, a variant and a transfer task'
     assert.notEqual(challengeFor(lesson.id, 0).variant, challengeFor(lesson.id, 0, true).variant);
     assert.ok(challengeFor(lesson.id, 1).starter.includes('function Exercise'));
   }
+});
+test('coding support covers both variants and never awards independent mastery', () => {
+  for (const lesson of lessons) {
+    assert.equal(codeHintsFor(lesson.id, true).length, 3);
+    for (const variant of [0, 1]) for (const transfer of [false, true]) {
+      const reference = codeReferenceFor(lesson.id, variant, transfer);
+      assert.ok(reference.code.includes('function Exercise'));
+      assert.notEqual(reference.code, challengeFor(lesson.id, variant, transfer).starter);
+      assert.doesNotMatch(JSON.stringify(reference), /\p{Script=Han}/u);
+    }
+  }
+  const s = passed(); s.transferDraft = 'My unfinished transfer code';
+  markReferenceViewed(s, 'transfer-code');
+  assert.equal(s.transferDraft, 'My unfinished transfer code');
+  assert.equal(qualifies(s), false);
+  assert.match(codeHintsFor('props', true).join(' '), /middle dot ·/);
+  assert.match(codeHintsFor('props', true).join(' '), /default value "Member"/);
 });

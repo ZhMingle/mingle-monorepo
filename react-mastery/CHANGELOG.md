@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6
+
+- Added visible hint and reference-code controls above both coding editors, including transfer tasks before code checks pass.
+- Added three progressive transfer hints per lab and kept hint progression separate for each learning area.
+- Recorded code-reference views as assistance without replacing drafts or awarding automatic passes.
+
 ## 0.1.5
 
 - Added reference explanations and worked examples for all six labs, available in Explain and transfer explanations without a model call.

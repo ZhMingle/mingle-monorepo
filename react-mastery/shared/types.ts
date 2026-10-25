@@ -1,7 +1,7 @@
 export type LessonId = 'props' | 'snapshot' | 'immutable' | 'keys' | 'derived' | 'reducer';
 export type Stage = 'learn' | 'predict' | 'build' | 'explain' | 'transfer';
 export type SessionMode = 'practice' | 'assessment' | 'review';
-export type ReferenceArea = 'explain' | 'transfer';
+export type ReferenceArea = 'explain' | 'transfer' | 'build-code' | 'transfer-code';
 export interface ReferenceAnswer { paragraphs: string[]; code: string; transfer: string }
 export interface Lesson {
   id: LessonId; title: string; english: string; level: string; minutes: number;
@@ -25,6 +25,7 @@ export interface LearningSession {
   transfer: RunReport | null; transferExplanation: Assessment | null; transferText: string;
   draft: string; transferDraft: string; stage: Stage;
   referenceViews?: ReferenceArea[];
+  hintCounts?: Partial<Record<'build' | 'explain' | 'transfer', number>>;
 }
 export interface Progress {
   lessonId: LessonId; status: 'learning' | 'provisional' | 'retained' | 'review_due';

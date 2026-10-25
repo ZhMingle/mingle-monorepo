@@ -99,16 +99,16 @@ export default function App() {
     try { const next = await request<SessionPayload & { feedback: string }>('predict', { sessionId: session.id, choice }); apply(next); setPredictionFeedback(next.feedback); }
     catch (e) { setError((e as Error).message); } finally { setWorking(''); }
   }
-  async function hint() {
+  async function hint(area?: 'build' | 'explain' | 'transfer') {
     if (!session) return;
-    try { const next = await request<SessionPayload & { hint: string }>('hint', { sessionId: session.id, area: stage === 'explain' ? 'explain' : stage === 'transfer' ? 'transfer' : 'build' }); apply(next); setNotice(next.hint); }
+    try { const next = await request<SessionPayload & { hint: string }>('hint', { sessionId: session.id, area: area ?? (stage === 'explain' ? 'explain' : stage === 'transfer' ? 'transfer' : 'build') }); apply(next); setNotice(next.hint); }
     catch (e) { setError((e as Error).message); }
   }
-  async function viewReference(transfer = false) {
+  async function viewReference(transfer = false, code = false) {
     if (!session) return;
     setWorking('Opening the reference answer'); setError('');
     try {
-      const next = await request<SessionPayload>('reference', { sessionId: session.id, area: transfer ? 'transfer' : 'explain' });
+      const next = await request<SessionPayload>('reference', { sessionId: session.id, area: code ? (transfer ? 'transfer-code' : 'build-code') : (transfer ? 'transfer' : 'explain') });
       apply(next);
     } catch (e) { setError((e as Error).message); } finally { setWorking(''); }
   }
@@ -125,8 +125,16 @@ export default function App() {
   function editor(challenge: Challenge, transfer = false) {
     const code = transfer ? transferDraft : draft; const report = transfer ? session?.transfer : session?.build;
     const fresh = report?.code === code;
+    const reference = payload?.referenceAnswers?.[transfer ? 'transfer-code' : 'build-code'];
     return <div className="coding-workspace">
       <div className="challenge-brief"><span className="eyebrow">{transfer ? 'NEW CONTEXT · NO COPY-PASTE' : 'YOUR HANDS, YOUR UNDERSTANDING'}</span><h2>{challenge.title}</h2><p>{challenge.brief}</p><ul>{challenge.criteria.map(c => <li key={c}><Check size={14}/>{c}</li>)}</ul></div>
+      <section className="code-support" aria-label={transfer ? 'Transfer coding help' : 'Coding help'}>
+        <h3>Need a hand with this task?</h3>
+        <p>Implement the Exercise definition. The runner supplies the props and renders it for you. Keep the provided data-testid and aria-label values; output text and punctuation must match the task.</p>
+        <div className="reference-actions"><button className="secondary" disabled={!!working} onClick={() => void hint(transfer ? 'transfer' : 'build')}><Lightbulb size={16}/> Get a hint</button><button className="secondary" disabled={!!working} onClick={() => void viewReference(transfer, true)}><BookOpen size={16}/> View reference code</button></div>
+        <p>Hints and reference code are recorded as assisted practice. Your code stays unchanged and no Codex allowance is used.</p>
+        {reference && <details className="reference-answer" open><summary>Reference code · {transfer ? 'transfer task' : 'build task'}</summary>{reference.paragraphs.map(p => <p key={p}>{p}</p>)}<pre className="example-code"><code>{reference.code}</code></pre><p>Read the changes, then edit your own code and run the checks. Viewing this solution does not pass the exercise automatically.</p></details>}
+      </section>
       <div className="editor"><div className="editor-bar"><span><span className="file-dot"/> Exercise.jsx</span><span>React provided · JSX supported</span></div><div className="editor-body"><div className="line-numbers" aria-hidden>{code.split('\n').map((_, i) => <span key={i}>{i + 1}</span>)}</div><textarea aria-label={transfer ? 'Transfer code editor' : 'React code editor'} spellCheck={false} value={code} disabled={!!working} onKeyDown={e => { if (e.key === 'Tab') { e.preventDefault(); const el = e.currentTarget; const from = el.selectionStart; const next = code.slice(0, from) + '  ' + code.slice(el.selectionEnd); (transfer ? setTransferDraft : setDraft)(next); requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = from + 2; }); } }} onChange={e => (transfer ? setTransferDraft : setDraft)(e.target.value)} /></div><div className="editor-footer"><span><ShieldCheck size={13}/> Isolated browser · no server execution</span><button className="run-button" disabled={!!working} onClick={() => void run(transfer)}>{working ? <LoaderCircle size={15} className="spin"/> : <Play size={15}/>} Run checks</button></div></div>
       {report && <div className="test-panel"><div className="test-heading"><Terminal size={16}/><strong>{fresh ? `${report.tests.filter(t => t.passed).length} / ${report.tests.length} checks passed` : 'Code changed · run checks again'}</strong>{fresh && report.passed && <CheckCircle2 size={17} className="green"/>}</div>{report.tests.map(t => <div className="test-row" key={t.name}>{fresh && t.passed ? <CheckCircle2 size={15} className="green"/> : <Circle size={15}/>}<span>{t.name}</span>{fresh && !t.passed && <small>{t.detail}</small>}</div>)}{report.error && <p className="misconception">{report.error}</p>}</div>}
     </div>;

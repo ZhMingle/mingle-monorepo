@@ -1,6 +1,6 @@
 import type { Challenge, Lesson, LessonId } from './types.ts';
 
-export const curriculumVersion = '2026.10.3';
+export const curriculumVersion = '2026.10.4';
 export const lessons: Lesson[] = [
   {
     id: 'props', title: 'Write components as reusable functions', english: 'Components & props', level: 'FOUNDATIONS', minutes: 18,

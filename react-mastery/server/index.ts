@@ -8,6 +8,7 @@ import { testNames } from '../shared/test-spec.ts';
 import { createSession, exportData, getSession, progressList, record, saveSession, sessionList } from './store.ts';
 import { assess, findCodex } from './coach.ts';
 import { markReferenceViewed, referenceAnswerFor } from './reference-answers.ts';
+import { codeHintsFor, codeReferenceFor } from './code-support.ts';
 import type { LearningSession, RunReport, SessionMode, Stage } from '../shared/types.ts';
 
 const port = Number(process.env.PORT ?? 4317);
@@ -16,7 +17,7 @@ const origins = new Set([`http://127.0.0.1:${port}`, `http://localhost:${port}`]
 const busy = new Set<string>();
 const payload = (session: LearningSession) => {
   const { answer: _a, explanation: _e, ...prediction } = getLesson(session.lessonId).prediction[session.variant];
-  return { session, prediction, challenge: challengeFor(session.lessonId, session.variant), transferChallenge: challengeFor(session.lessonId, session.variant, true), progress: progressList(), referenceAnswers: Object.fromEntries((session.referenceViews ?? []).map(area => [area, referenceAnswerFor(session.lessonId)])) };
+  return { session, prediction, challenge: challengeFor(session.lessonId, session.variant), transferChallenge: challengeFor(session.lessonId, session.variant, true), progress: progressList(), referenceAnswers: Object.fromEntries((session.referenceViews ?? []).map(area => [area, area === 'build-code' || area === 'transfer-code' ? codeReferenceFor(session.lessonId, session.variant, area === 'transfer-code') : referenceAnswerFor(session.lessonId)])) };
 };
 function send(res: ServerResponse, code: number, body: unknown) {
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(body));
@@ -57,8 +58,8 @@ const server = createServer(async (req, res) => {
       switch (url.pathname) {
         case '/api/reference': {
           const area = input.area;
-          if (area !== 'explain' && area !== 'transfer') throw new Error('Unknown reference area');
-          stageReady(session, area);
+          if (area !== 'explain' && area !== 'transfer' && area !== 'build-code' && area !== 'transfer-code') throw new Error('Unknown reference area');
+          stageReady(session, area === 'build-code' ? 'build' : area === 'transfer-code' ? 'transfer' : area);
           if (markReferenceViewed(session, area)) record(session, 'reference-viewed', { area, assisted: true });
           send(res, 200, payload(session)); return;
         }
@@ -95,8 +96,13 @@ const server = createServer(async (req, res) => {
           send(res, 200, { ...payload(session), feedback: q.explanation }); return;
         }
         case '/api/hint': {
-          if (!['build', 'transfer', 'explain'].includes(String(input.area))) throw new Error('Unknown hint area');
-          const hint = lesson.hints[Math.min(session.hintsUsed, lesson.hints.length - 1)]; session.hintsUsed++; session.hints.push(hint);
+          const area = input.area;
+          if (area !== 'build' && area !== 'transfer' && area !== 'explain') throw new Error('Unknown hint area');
+          const hints = area === 'explain' ? lesson.hints : codeHintsFor(session.lessonId, area === 'transfer');
+          const count = session.hintCounts?.[area] ?? 0;
+          const hint = hints[Math.min(count, hints.length - 1)];
+          session.hintCounts = { ...session.hintCounts, [area]: count + 1 };
+          session.hintsUsed++; session.hints.push(hint);
           record(session, 'hint', { area: input.area, hint }); send(res, 200, { ...payload(session), hint }); return;
         }
         case '/api/run': {
