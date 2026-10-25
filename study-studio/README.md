@@ -10,7 +10,8 @@ No dependency installation or build is required. Any static host can serve the `
 
 ## Features
 
-- Four initial concepts: backend validation, race conditions, idempotency, and interval overlap.
+- Eight cards: four backend concepts and four English interview prompts covering reusable components, API integration, personal ownership, and backend/QA collaboration.
+- Interview cards include CV-grounded answer scaffolds, follow-up questions, and speaking exercises. Replace bracketed prompts with real details; suggested answers are not verified work stories.
 - Mouse wheel navigation at card boundaries; left/right keyboard navigation.
 - Search, practice mode, suggested answers, personal notes, and confidence tracking.
 - Progress and notes are stored in this browser's localStorage; they do not sync between devices. Clearing browser data removes them.

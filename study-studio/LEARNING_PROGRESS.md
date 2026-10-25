@@ -8,7 +8,8 @@ Updated: 2026-10-25 (Pacific/Auckland). Continue learning in mingle-monorepo; th
 - Priorities: C# / ASP.NET Core and databases, project practice, English interviews, AWS, React and TypeScript.
 - Key technical concepts and interview answers must be in English; Chinese explanations are welcome. Use simple, accurate English and correct both technical understanding and wording.
 - Teach through Concept → Example → Interview answer → Follow-up questions, using a car rental booking scenario. Prefer one question at a time and active recall.
-- Availability stated in the earlier chat: October 25–26 around 8 hours/day; October 27–30 around 5 hours/day; after leaving work on Friday October 30, around 8 hours/day. Adjust to actual mastery.
+- Latest availability: around 4 hours/day for the rest of October; from November 1, up to 10 hours/day including breaks. Aim for one month of focused interview preparation.
+- Background: 3+ years of frontend experience with Vue, TypeScript, Nuxt, API integration and enterprise interfaces; Master of Software Engineering in NZ. In NZ for two years; listening is adequate, speaking needs practice. Target frontend roles and frontend-oriented full-stack roles, adding C# / SQL / AWS capability. Do not repeatedly ask for this background or restart with a beginner curriculum.
 
 ## Current learning position
 
@@ -45,3 +46,7 @@ Expanded the Idempotency card: create a key once on confirmation; retain the key
 ## Repository workflow preference
 
 After each code update, commit the relevant changes and push to the remote repository. User explicitly requested this on 2026-10-25.
+
+## Added: English interview practice
+
+Added four cards: reusable components, integration issues, personal ownership, and collaboration with backend/QA. Each includes an English answer scaffold grounded in the existing CV, Chinese guidance, follow-ups, and an active-recall speaking exercise. Bracketed details require the learner's real examples; no invented incidents or metrics. Practice from day one, not only at the end of the month. App progress now uses the actual card count; existing card IDs and localStorage key are preserved. Content added does not establish mastery.
