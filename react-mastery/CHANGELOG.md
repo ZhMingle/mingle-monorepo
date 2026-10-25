@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+- Translated the interface and all six labs, predictions, exercise instructions, hints, and rubrics into English.
+- Switched new AI feedback and error messages to English while preserving verbatim learner evidence in its original language.
+- Updated document language and date formatting. Existing learning records are preserved.
+
 ## 0.1.0
 
 - Established the React learning loop and six playable labs.

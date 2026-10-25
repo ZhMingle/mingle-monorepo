@@ -6,7 +6,7 @@ export async function runCode(challenge: Challenge, code: string): Promise<RunRe
   frame.srcdoc = `<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${origin} 'unsafe-eval'; connect-src 'none'; img-src 'none'; style-src 'unsafe-inline'; form-action 'none'"></head><body><script src="${origin}/sandbox-runner.js"></script></body></html>`;
   return new Promise((resolve, reject) => {
     const cleanup = () => { clearTimeout(timeout); window.removeEventListener('message', handler); frame.remove(); };
-    const timeout = setTimeout(() => { cleanup(); reject(new Error('代码运行超时。请检查循环或组件重复更新；主应用不会运行你的服务端代码。')); }, 10000);
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('Code execution timed out. Check for loops or repeated component updates. Learner code runs only in the browser.')); }, 10000);
     const handler = (event: MessageEvent) => {
       if (event.source !== frame.contentWindow || event.data?.type !== 'clarity:result' || event.data.runId !== runId) return;
       cleanup(); const result = event.data;

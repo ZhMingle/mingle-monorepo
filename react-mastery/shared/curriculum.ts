@@ -1,84 +1,84 @@
 import type { Challenge, Lesson, LessonId } from './types.ts';
 
-export const curriculumVersion = '2026.10.1';
+export const curriculumVersion = '2026.10.2';
 export const lessons: Lesson[] = [
   {
-    id: 'props', title: '把组件写成可复用的函数', english: 'Components & props', level: 'FOUNDATIONS', minutes: 18,
-    summary: '让同一个组件，根据输入渲染不同的界面。', why: '真实项目中的按钮、用户卡片、列表项，都依靠清晰的 props 接口复用。',
-    takeaway: 'Props 是只读的输入。组件负责把输入变成 UI。', prerequisites: [], tags: ['JSX', 'Props', 'Pure rendering'],
+    id: 'props', title: 'Write components as reusable functions', english: 'Components & props', level: 'FOUNDATIONS', minutes: 18,
+    summary: 'Render different interfaces from the same component by changing its inputs.', why: 'Buttons, user cards, and list items in real projects rely on clear props interfaces for reuse.',
+    takeaway: 'Props are read-only inputs. A component turns those inputs into UI.', prerequisites: [], tags: ['JSX', 'Props', 'Pure rendering'],
     paragraphs: [
-      { title: '组件接收什么？', body: 'React 组件是返回界面描述的函数。函数的参数是一个 props 对象。通过解构获取 name、role 等输入，不要把具体用户写死在 JSX 中。' },
-      { title: 'JSX 中的花括号', body: 'JSX 的花括号让你把 JavaScript 表达式放进界面。{name} 会展示当前输入；直接写 name 则只会展示字面文本。组件重新收到 props 时，会根据新输入再次计算 UI。' },
-      { title: '可复用不是复制一份', body: '同一个组件可以同时用于不同用户。保持输入只读，避免修改 props，调用方才能预测组件行为。判断是否理解，要看你能否处理一个从没见过的输入。' }
+      { title: 'What does a component receive?', body: 'A React component is a function that returns a description of the UI. Its argument is a props object. Destructure inputs such as name and role instead of hardcoding a particular user in JSX.' },
+      { title: 'Curly braces in JSX', body: 'Curly braces let you put JavaScript expressions inside JSX. {name} displays the current input; plain name displays literal text. When a component receives new props, it calculates the UI again from those inputs.' },
+      { title: 'Reuse means more than copying', body: 'The same component can serve different users at the same time. Keep inputs read-only so callers can predict its behavior. A useful test of understanding is whether you can handle an input you have never seen before.' }
     ], example: 'function Greeting({ name }) {\n  return <h2>Hello, {name}!</h2>;\n}\n\n<Greeting name="Ada" />\n<Greeting name="Lin" />',
-    source: 'https://react.dev/learn/passing-props-to-a-component', rubric: ['区分组件定义和某次组件调用', '解释 props 如何决定渲染结果', '说明 props 只读以及复用的意义', '给出一个不同于示例的输入输出'],
-    prediction: [0, 1].map(v => ({ prompt: '同一个组件使用不同的 props，会显示什么？', code: `function Label({ name }) { return <span>{name}</span>; }\n<Label name="${v ? 'Mia' : 'Ada'}" />\n<Label name="${v ? 'Kai' : 'Lin'}" />`, choices: [v ? 'Mia 和 Kai' : 'Ada 和 Lin', '只会显示最后一个名字', '两次都显示 name'], answer: 0, explanation: '每次调用都有自己的 props，组件分别使用对应的输入渲染。' })),
-    hints: ['先找到 JSX 中被写死的内容，它应该来自哪个 prop？', '解构函数参数，再把变量放进 JSX 花括号。']
+    source: 'https://react.dev/learn/passing-props-to-a-component', rubric: ['Distinguish a component definition from a particular use of that component', 'Explain how props determine the rendered output', 'Explain read-only props and why they enable reuse', 'Give an input and output different from the example'],
+    prediction: [0, 1].map(v => ({ prompt: 'What does the same component display with different props?', code: `function Label({ name }) { return <span>{name}</span>; }\n<Label name="${v ? 'Mia' : 'Ada'}" />\n<Label name="${v ? 'Kai' : 'Lin'}" />`, choices: [v ? 'Mia and Kai' : 'Ada and Lin', 'Only the last name', 'The literal text name both times'], answer: 0, explanation: 'Each use has its own props, and the component renders each set of inputs separately.' })),
+    hints: ['Find the hardcoded content in JSX. Which prop should supply it?', 'Destructure the function argument, then place the variable inside JSX curly braces.']
   },
   {
-    id: 'snapshot', title: '理解 state 为什么像一张快照', english: 'State snapshots & batching', level: 'FOUNDATIONS', minutes: 24,
-    summary: '弄懂为什么连续三次更新，有时只增加一次。', why: '点赞、计数、购物车数量：依赖旧值的更新几乎无处不在。',
-    takeaway: '需要根据前一个值计算新值时，把更新函数交给 React。', prerequisites: ['props'], tags: ['useState', 'Batching', 'Updater functions'],
+    id: 'snapshot', title: 'Understand why state behaves like a snapshot', english: 'State snapshots & batching', level: 'FOUNDATIONS', minutes: 24,
+    summary: 'Find out why three consecutive updates can increase a value only once.', why: 'Likes, counters, and cart quantities all involve updates that depend on a previous value.',
+    takeaway: 'When the next value depends on the previous value, give React an updater function.', prerequisites: ['props'], tags: ['useState', 'Batching', 'Updater functions'],
     paragraphs: [
-      { title: '一次渲染，一张快照', body: '组件执行时，React 给它这一轮的 state。事件处理函数捕获的也是这轮快照。调用 setCount 不会立刻修改当前函数里的 count，而是请求下一次渲染。' },
-      { title: '三个相同的更新请求', body: '如果 count 是 0，连续三次 setCount(count + 1) 都计算成 setCount(1)。React 会把这些更新排队处理。处理函数里的 count 仍然是 0，所以你并没有提交三次“加一”。' },
-      { title: '把计算交给更新队列', body: 'setCount(n => n + 1) 提交的是一个函数。React 依次把前一个更新的结果传给下一个函数：0 → 1 → 2 → 3。这适用于依赖前值的更新；直接替换成一个独立的新值时仍可传值。' }
-    ], example: '// 同一张快照：三次都提交 1\nsetCount(count + 1);\nsetCount(count + 1);\nsetCount(count + 1);\n\n// 依次应用到队列中的值\nsetCount(n => n + 1);\nsetCount(n => n + 1);\nsetCount(n => n + 1);',
-    source: 'https://react.dev/learn/queueing-a-series-of-state-updates', rubric: ['解释渲染快照和事件闭包', '说明 setState 请求下一次渲染而非改写局部变量', '对比传值与函数式更新的队列结果', '用新的实际场景说明何时依赖前值'],
-    prediction: [0, 2].map(n => ({ prompt: '按钮点击一次后，会显示几？先独立预测，再运行。', code: `const [count, setCount] = useState(${n});\nfunction handleClick() {\n  setCount(count + 1);\n  setCount(count + 1);\n  setCount(count + 1);\n}`, choices: [`${n + 3}`, `${n + 1}`, `${n}`], answer: 1, explanation: `这一轮的 count 始终是 ${n}，三次都请求把值替换为 ${n + 1}。` })),
-    hints: ['三次调用是不是都读取了同一轮的 count？', '尝试让每次更新接收队列中上一次计算出的值，而不是捕获的 count。']
+      { title: 'One render, one snapshot', body: 'React supplies the state for the current render when it calls your component. Event handlers capture that same snapshot. Calling setCount requests another render; it does not immediately change count inside the current function.' },
+      { title: 'Three identical replacement requests', body: 'If count is 0, all three calls to setCount(count + 1) evaluate to setCount(1). React queues these updates. The handler still sees count as 0, so you have not queued three separate increments.' },
+      { title: 'Let the update queue do the calculation', body: 'setCount(n => n + 1) queues a function. React passes the result of each update into the next: 0 → 1 → 2 → 3. Use this for updates that depend on a previous value. Passing a value is still appropriate for an independent replacement.' }
+    ], example: '// Same snapshot: all three calls queue 1\nsetCount(count + 1);\nsetCount(count + 1);\nsetCount(count + 1);\n\n// Apply each updater to the queued value\nsetCount(n => n + 1);\nsetCount(n => n + 1);\nsetCount(n => n + 1);',
+    source: 'https://react.dev/learn/queueing-a-series-of-state-updates', rubric: ['Explain render snapshots and event-handler closures', 'Explain that setState requests a render rather than rewriting a local variable', 'Compare queued replacement values with updater functions', 'Use a new practical example of an update depending on its previous value'],
+    prediction: [0, 2].map(n => ({ prompt: 'What number appears after one click? Predict before running it.', code: `const [count, setCount] = useState(${n});\nfunction handleClick() {\n  setCount(count + 1);\n  setCount(count + 1);\n  setCount(count + 1);\n}`, choices: [`${n + 3}`, `${n + 1}`, `${n}`], answer: 1, explanation: `count stays at ${n} in this render. All three calls request a replacement with ${n + 1}.` })),
+    hints: ['Do all three calls read count from the same render?', 'Let each update receive the previous queued result instead of the captured count.']
   },
   {
-    id: 'immutable', title: '更新数组，同时保护旧状态', english: 'Immutable state updates', level: 'FOUNDATIONS', minutes: 23,
-    summary: '让待办事项正确更新，同时保持其他项目不变。', why: '列表编辑最常见的 bug，是偷偷改了旧对象或把其他项目一起改掉。',
-    takeaway: '创建新的数组，并为发生变化的项目创建新对象。', prerequisites: ['snapshot'], tags: ['Arrays', 'Object identity', 'map'],
+    id: 'immutable', title: 'Update arrays while protecting previous state', english: 'Immutable state updates', level: 'FOUNDATIONS', minutes: 23,
+    summary: 'Update a todo correctly while leaving every other item unchanged.', why: 'Common list-editing bugs mutate old objects or accidentally change unrelated items.',
+    takeaway: 'Create a new array and a new object for each item that changes.', prerequisites: ['snapshot'], tags: ['Arrays', 'Object identity', 'map'],
     paragraphs: [
-      { title: 'state 不是随手改的容器', body: '直接给数组中的对象赋值，会改动旧渲染所引用的数据。即使随后复制数组，被修改的对象仍然和旧数组共享。' },
-      { title: '复制发生变化的层级', body: '更新一个待办项，通常用 map 返回新数组：目标项返回 {...item, done: !item.done}，其他项返回原来的对象。这样变更范围清楚，也保留了旧状态的快照。' },
-      { title: '先验证“不该改变的东西”', body: '除了目标项是否切换，还要检查其他项目、列表顺序和初始输入是否保持不变。一个功能看似成功，却破坏了其他数据，仍然不算正确。' }
+      { title: 'State is not a container to mutate', body: 'Assigning directly to an object inside an array changes data referenced by an earlier render. Copying the array afterward still leaves that mutated object shared with the old array.' },
+      { title: 'Copy the levels that change', body: 'Use map to return a new array. Return {...item, done: !item.done} for the target and the original object for other items. This makes the change explicit and preserves previous state snapshots.' },
+      { title: 'Check what must stay unchanged', body: 'Check the target toggle, other items, list order, and initial input. A feature that appears to work while damaging other data is still incorrect.' }
     ], example: 'setItems(previous => previous.map(item =>\n  item.id === targetId\n    ? { ...item, done: !item.done }\n    : item\n));', source: 'https://react.dev/learn/updating-arrays-in-state',
-    rubric: ['指出直接修改旧对象的后果', '说明浅复制数组不等于复制内部对象', '解释 map 和对象复制分别解决哪一层更新', '说明如何验证其他项目没有被破坏'],
-    prediction: [0, 1].map(() => ({ prompt: '这段代码是否保护了旧对象？', code: 'const next = [...items];\nnext[0].done = true;', choices: ['保护了，数组已经复制', '没有，两个数组仍引用同一个 item 对象', '只有 React 会自动深复制'], answer: 1, explanation: '展开数组只复制了数组这一层，里面的对象引用仍然共享。' })),
-    hints: ['数组和数组里面的对象，是两层不同的数据。', '对目标项返回一个新对象，对非目标项保留原值。']
+    rubric: ['Describe the consequences of mutating an existing object', 'Explain why a shallow array copy does not copy its nested objects', 'Explain which update levels map and object spread each handle', 'Explain how to check that other items remain intact'],
+    prediction: [0, 1].map(() => ({ prompt: 'Does this code protect the old object?', code: 'const next = [...items];\nnext[0].done = true;', choices: ['Yes, the array has been copied', 'No, both arrays still reference the same item object', 'React automatically deep-copies it'], answer: 1, explanation: 'Spreading the array copies only the array itself. The object references inside are still shared.' })),
+    hints: ['The array and the objects inside it are different levels of data.', 'Return a new object for the target item and keep the original values for other items.']
   },
   {
-    id: 'keys', title: '让列表中的状态跟对人', english: 'Stable keys & identity', level: 'INTERMEDIATE', minutes: 26,
-    summary: '列表排序后，输入框里写的内容为什么跑到了别人身上？', why: '表单、拖拽排序和动态列表，都需要稳定的组件身份。',
-    takeaway: 'key 表示数据的身份，不是它此刻排在第几位。', prerequisites: ['immutable'], tags: ['Keys', 'Reconciliation', 'Local state'],
+    id: 'keys', title: 'Keep list state with the right item', english: 'Stable keys & identity', level: 'INTERMEDIATE', minutes: 26,
+    summary: 'Why can text entered in a list move to the wrong person after sorting?', why: 'Forms, drag-and-drop sorting, and dynamic lists need stable component identity.',
+    takeaway: 'A key represents the identity of data, not its current position.', prerequisites: ['immutable'], tags: ['Keys', 'Reconciliation', 'Local state'],
     paragraphs: [
-      { title: 'React 需要识别同一个组件', body: '渲染一个列表时，React 用 key 匹配前后两轮的兄弟节点。稳定的 key 帮助 React 知道哪个组件应保留自己的 state。' },
-      { title: '位置不是身份', body: '如果 key 使用 index，列表反转后同一位置的 key 没变，那个位置的组件 state 就可能跟着位置留下，而不是跟着对应的人或事项移动。' },
-      { title: '用稳定的数据标识', body: '在同一组兄弟节点中使用唯一且稳定的业务 ID。不要在每次渲染时临时生成随机 key；那会制造新的身份，导致组件反复重建。静态且永不变化的列表是另一种有限场景。' }
-    ], example: '// 身份跟随数据\nitems.map(item => (\n  <Row key={item.id} item={item} />\n))', source: 'https://react.dev/learn/rendering-lists#keeping-list-items-in-order-with-key',
-    rubric: ['解释 key 用于匹配兄弟节点身份', '说明 index 在重排时如何错配局部 state', '对比稳定 ID 和每次生成的随机 key', '给出插入、删除或排序的验证例子'],
-    prediction: [0, 1].map(() => ({ prompt: '可编辑列表反转后，什么 key 更能保留每一项的输入状态？', code: 'items.map((item, index) =>\n  <EditableRow key={/* ? */} item={item} />\n)', choices: ['index', 'Math.random()', 'item.id'], answer: 2, explanation: '业务 ID 跟随数据移动，不会因为项目在列表中的位置改变而改变。' })),
-    hints: ['输入框的局部 state，应该跟着数据还是位置？', '看看 map 中的 key，数据里是否已有稳定 ID？']
+      { title: 'React needs to recognize the same component', body: 'React uses keys to match sibling nodes between renders. A stable key tells React which component should retain its own state.' },
+      { title: 'Position is not identity', body: 'With index keys, reversing a list leaves the same key at each position. Local component state can stay with that position instead of moving with the corresponding person or item.' },
+      { title: 'Use stable identifiers from your data', body: 'Use IDs that are unique among siblings and stable across renders. Generating random keys during rendering creates new identities and repeatedly remounts components. A static list that never changes is a separate, limited case.' }
+    ], example: '// Identity follows the data\nitems.map(item => (\n  <Row key={item.id} item={item} />\n))', source: 'https://react.dev/learn/rendering-lists#keeping-list-items-in-order-with-key',
+    rubric: ['Explain how keys match sibling identities', 'Explain how index keys can mismatch local state after reordering', 'Compare stable IDs with newly generated random keys', 'Give a test involving insertion, deletion, or sorting'],
+    prediction: [0, 1].map(() => ({ prompt: 'Which key best preserves each editable row after the list is reversed?', code: 'items.map((item, index) =>\n  <EditableRow key={/* ? */} item={item} />\n)', choices: ['index', 'Math.random()', 'item.id'], answer: 2, explanation: 'A data ID moves with the item and does not change when its position changes.' })),
+    hints: ['Should input state follow the data or the position?', 'Check the key in map. Does the data already have a stable ID?']
   },
   {
-    id: 'derived', title: '把派生数据留在渲染里', english: 'Derived state, fewer effects', level: 'INTERMEDIATE', minutes: 22,
-    summary: '减少重复 state，让搜索结果始终和输入保持一致。', why: '很多同步 bug 来自维护两份本可以直接计算的数据。',
-    takeaway: '能从 props 或 state 直接算出的值，先考虑在渲染时计算。', prerequisites: ['snapshot', 'immutable'], tags: ['Effects', 'Derived data', 'Single source of truth'],
+    id: 'derived', title: 'Keep derived data in rendering', english: 'Derived state, fewer effects', level: 'INTERMEDIATE', minutes: 22,
+    summary: 'Avoid duplicate state so search results stay consistent with their inputs.', why: 'Many synchronization bugs come from maintaining a second copy of data that could be calculated directly.',
+    takeaway: 'If a value can be calculated from props or state, first consider calculating it during rendering.', prerequisites: ['snapshot', 'immutable'], tags: ['Effects', 'Derived data', 'Single source of truth'],
     paragraphs: [
-      { title: '初始化只发生一次', body: 'useState(items.filter(...)) 里的值只用于初始状态。以后 query 或 items 改变，不会自动重新初始化这份 state。' },
-      { title: '派生值可以直接计算', body: '当 visibleItems 完全由 items 和 query 决定时，在渲染期间计算它即可。这样每次渲染都得到一致的结果，避免额外 effect 带来的旧结果和再次渲染。' },
-      { title: 'Effect 有自己的职责', body: 'Effect 主要用于把组件和外部系统同步，比如订阅、浏览器 API、网络连接。计算很昂贵时可考虑 useMemo，但它是性能优化，不应成为正确性的前提。' }
+      { title: 'Initialization happens once', body: 'The value passed to useState(items.filter(...)) is used for initial state. Later changes to query or items do not automatically reinitialize that state.' },
+      { title: 'Calculate derived values directly', body: 'If visibleItems is fully determined by items and query, calculate it during rendering. Each render then produces consistent results without the stale output and extra render caused by an unnecessary effect.' },
+      { title: 'Effects have a different job', body: 'Effects synchronize components with external systems such as subscriptions, browser APIs, and network connections. Consider useMemo for expensive calculations, but treat it as a performance optimization rather than a requirement for correctness.' }
     ], example: 'function Results({ items, query }) {\n  const visible = items.filter(item =>\n    item.toLowerCase().includes(query.toLowerCase())\n  );\n  return <ul>{visible.map(item => <li key={item}>{item}</li>)}</ul>;\n}', source: 'https://react.dev/learn/you-might-not-need-an-effect',
-    rubric: ['指出 useState 初始化不会跟随 props 重新初始化', '说明派生值与真实状态的区别', '解释 effect 同步外部系统与渲染计算的边界', '说明什么情况下才考虑 memo 优化'],
-    prediction: [0, 1].map(() => ({ prompt: 'query 改变时，这里的 visible 会自动重新初始化吗？', code: 'const [visible] = useState(\n  items.filter(item => item.includes(query))\n);', choices: ['会，所有渲染都会初始化 state', '不会，初始化只用于第一次', '会，只要传入一个 Effect'], answer: 1, explanation: '这把派生数据存成了独立状态。query 改变不等于初始化再次执行；直接在渲染中计算更合适。' })),
-    hints: ['这份数据是否完全由已有的 props 决定？', '尝试去掉不必要的 useState，让筛选表达式在每次渲染执行。']
+    rubric: ['Explain why useState does not reinitialize when props change', 'Distinguish derived values from independent state', 'Explain the boundary between external synchronization and render calculations', 'Explain when memoization is worth considering'],
+    prediction: [0, 1].map(() => ({ prompt: 'When query changes, does visible automatically reinitialize?', code: 'const [visible] = useState(\n  items.filter(item => item.includes(query))\n);', choices: ['Yes, every render initializes state', 'No, the initial value is used only at initialization', 'Yes, as long as you pass an Effect'], answer: 1, explanation: 'This stores derived data as independent state. Changing query does not rerun state initialization; calculating the result during rendering is a better fit.' })),
+    hints: ['Is this data fully determined by existing props?', 'Remove the unnecessary useState and let the filter run during each render.']
   },
   {
-    id: 'reducer', title: '用 reducer 约束状态变化', english: 'Reducers & state transitions', level: 'ADVANCED', minutes: 30,
-    summary: '把可测试的状态规则从事件处理函数里抽出来。', why: '复杂表单和交互需要一致的规则，而不是分散在各处的赋值。',
-    takeaway: 'Reducer 根据旧状态和 action，纯粹地计算新状态。', prerequisites: ['immutable', 'derived'], tags: ['useReducer', 'Pure functions', 'State transitions'],
+    id: 'reducer', title: 'Define state transitions with a reducer', english: 'Reducers & state transitions', level: 'ADVANCED', minutes: 30,
+    summary: 'Extract testable state rules from event handlers.', why: 'Complex forms and interactions need consistent rules rather than assignments scattered throughout the UI.',
+    takeaway: 'A reducer purely calculates the next state from the previous state and an action.', prerequisites: ['immutable', 'derived'], tags: ['useReducer', 'Pure functions', 'State transitions'],
     paragraphs: [
-      { title: '事件描述发生了什么', body: '组件通过 dispatch({type: ...}) 描述事件，而不是到处直接计算下一份 state。Reducer 集中定义每一种事件如何改变状态。' },
-      { title: '纯函数更容易验证', body: '相同的 state 和 action 应得到相同结果。不要修改旧状态，不要在 reducer 里请求网络、写存储或依赖随机数。副作用应放在适合的事件或 effect 层。' },
-      { title: '边界也是规则的一部分', body: '除了普通增加和减少，还要约束零边界、reset、未知 action，以及其他字段是否保留。Reducer 不是复杂应用的魔法开关；它的价值在于让状态转换可预测、可验证。' }
+      { title: 'Events describe what happened', body: 'Components dispatch actions such as dispatch({type: ...}) instead of calculating the next state everywhere. The reducer defines how each event changes state in one place.' },
+      { title: 'Pure functions are easier to verify', body: 'The same state and action should produce the same result. Do not mutate old state, request the network, write storage, or depend on randomness inside a reducer. Put side effects in an appropriate event handler or effect.' },
+      { title: 'Boundaries are part of the rules', body: 'Handle the zero boundary, reset, unknown actions, and preservation of other fields as well as ordinary increments and decrements. A reducer helps make transitions predictable and testable; it does not automatically solve application complexity.' }
     ], example: 'function reducer(state, action) {\n  switch (action.type) {\n    case "increment": return { ...state, count: state.count + 1 };\n    case "reset": return { ...state, count: 0 };\n    default: return state;\n  }\n}', source: 'https://react.dev/learn/extracting-state-logic-into-a-reducer',
-    rubric: ['解释 state、action 与 dispatch 的关系', '说明 reducer 纯函数和不可变更新要求', '说明边界与未知 action 的处理', '举例区分状态转换与副作用'],
-    prediction: [0, 1].map(() => ({ prompt: '下面哪项不适合在 reducer 内部完成？', code: 'function reducer(state, action) {\n  // 哪项职责应该移到外面？\n}', choices: ['根据 action 返回新状态', '保留没有改变的字段', '发送网络请求并写入数据库'], answer: 2, explanation: 'Reducer 应纯粹地计算状态。网络和存储属于副作用，不应放在 reducer 中。' })),
-    hints: ['先列出每一种 action 的新状态，以及不应该改变的字段。', '减少时处理零边界；未知 action 返回旧状态；每次更新都保护旧对象。']
+    rubric: ['Explain the relationship between state, actions, and dispatch', 'Explain reducer purity and immutable updates', 'Explain boundary handling and unknown actions', 'Distinguish a state transition from a side effect with an example'],
+    prediction: [0, 1].map(() => ({ prompt: 'Which responsibility does not belong inside a reducer?', code: 'function reducer(state, action) {\n  // Which responsibility should move outside?\n}', choices: ['Return the next state based on an action', 'Preserve unchanged fields', 'Send a network request and write to a database'], answer: 2, explanation: 'A reducer should purely calculate state. Network and storage operations are side effects and belong elsewhere.' })),
+    hints: ['List the next state for each action and the fields that must stay unchanged.', 'Clamp decrements at zero, return old state for unknown actions, and protect the previous object on every update.']
   }
 ];
 
@@ -91,18 +91,18 @@ export function getLesson(id: string): Lesson {
 export function challengeFor(id: LessonId, variant: number, transfer = false): Challenge {
   const kind = id; const n = variant % 2; const base = { kind, variant: transfer ? n + 2 : n };
   switch (id) {
-    case 'props': return { ...base, title: transfer ? '迁移：可复用的项目标签' : '实现一个真正接收输入的问候组件', brief: transfer ? '组件接收 name 和 role，显示 “name · role”。props 改变后也要更新；role 缺省为 Member。' : '组件接收 name prop，显示 “Hello, name!”。请修复写死的内容，并确保换一个名字仍然正确。', criteria: transfer ? ['读取两项 props', 'role 有缺省值 Member', '重新传入 props 时正确更新'] : ['显示当前 name', '支持不同名字', '修改 props 后界面更新'], starter: transfer ? 'function Exercise({ name, role }) {\n  return <p data-testid="greeting">Ada · Developer</p>;\n}' : 'function Exercise({ name = "Ada" }) {\n  return <h2 data-testid="greeting">Hello, Ada!</h2>;\n}' };
-    case 'snapshot': return { ...base, title: transfer ? '迁移：一次补货增加指定数量' : '修复一次点击 +3 的计数器', brief: transfer ? 'Exercise 接收 step prop（缺省为 4）。点击一次按钮后，通过队列中的连续 +1 更新增加 step 次。保留 data-testid。' : '按钮应该一次增加 3，并在连续多次点击后保持正确。请用依赖前值的更新修复代码。', criteria: ['初始值为 0', transfer ? '遵守 step 输入' : '每次点击增加 3', '连续点击不会丢失更新'], starter: `function Exercise(${transfer ? '{ step = 4 }' : ''}) {\n  const [count, setCount] = React.useState(0);\n  function add() {\n${transfer ? '    for (let i = 0; i < step; i++) {\n      setCount(count + 1);\n    }' : '    setCount(count + 1);\n    setCount(count + 1);\n    setCount(count + 1);'}\n  }\n  return <button data-testid="counter" onClick={add}>{count}</button>;\n}` };
-    case 'immutable': return { ...base, title: transfer ? '迁移：保护传入的项目数据' : '修复不可变的待办项切换', brief: 'Exercise 接收 initialItems。点击某一项按钮切换它的 done，显示完整 label 与 done/todo。不要改变初始输入或其他项目；保留标识。', criteria: ['目标项可来回切换', '其他项保持不变', '冻结的初始输入不会被修改'], starter: 'function Exercise({ initialItems }) {\n  const [items, setItems] = React.useState(initialItems);\n  function toggle(id) {\n    const item = items.find(item => item.id === id);\n    item.done = !item.done;\n    setItems([...items]);\n  }\n  return <div>{items.map(item =>\n    <button key={item.id} data-testid={"item-" + item.id}\n      onClick={() => toggle(item.id)}>\n      {item.label}: {item.done ? "done" : "todo"}\n    </button>\n  )}</div>;\n}' };
-    case 'keys': return { ...base, title: transfer ? '迁移：重新排序后保留每个人的草稿' : '修复重排后的输入框身份', brief: 'Exercise 接收 initialItems。每行输入框有自己的编辑状态。点击 Reverse 之后，输入内容必须跟着对应 ID 移动。保留按钮和 aria-label。', criteria: ['输入可以编辑', '反转顺序正确', '草稿跟随项目 ID，而不是位置'], starter: 'function Row({ item }) {\n  const [value, setValue] = React.useState(item.label);\n  return <input aria-label={item.id} value={value}\n    onChange={event => setValue(event.target.value)} />;\n}\nfunction Exercise({ initialItems }) {\n  const [items, setItems] = React.useState(initialItems);\n  return <div>\n    <button data-testid="reverse" onClick={() => setItems([...items].reverse())}>Reverse</button>\n    {items.map((item, index) => <Row key={index} item={item} />)}\n  </div>;\n}' };
-    case 'derived': return { ...base, title: transfer ? '迁移：输入和数据同时变化的搜索' : '让筛选结果始终和 props 一致', brief: 'Exercise 接收 items 字符串数组和 query，显示忽略大小写后包含 query 的项目。请直接派生结果，保持 data-testid="results"。', criteria: ['初始筛选正确', 'query 更新后立即同步', 'items 更新和空 query 正确'], starter: 'function Exercise({ items, query }) {\n  const [visible] = React.useState(\n    items.filter(item => item.toLowerCase().includes(query.toLowerCase()))\n  );\n  return <ul data-testid="results">\n    {visible.map(item => <li key={item}>{item}</li>)}\n  </ul>;\n}' };
-    case 'reducer': return { ...base, title: transfer ? '迁移：新初始值下的状态约束' : '实现可验证的计数 reducer', brief: '实现 reducer(state, action)。支持 increment、decrement（最低为 0）、reset（count 为 0）、未知 action（保持不变）。保护旧状态并保留其他字段。修复组件按钮。', criteria: ['increment 与 decrement 正确', '零边界和 reset 正确', '旧状态和额外字段不被破坏'], starter: 'function reducer(state, action) {\n  switch (action.type) {\n    case "increment": return { ...state, count: state.count + 1 };\n    case "decrement": return { count: state.count - 1 };\n    case "reset": return { count: 0 };\n    default: return { count: 0 };\n  }\n}\nfunction Exercise({ initialCount = 0 }) {\n  const [state, dispatch] = React.useReducer(reducer, { count: initialCount });\n  return <div>\n    <output data-testid="value">{state.count}</output>\n    <button data-testid="increment" onClick={() => dispatch({ type: "increment" })}>+</button>\n    <button data-testid="decrement" onClick={() => dispatch({ type: "decrement" })}>−</button>\n    <button data-testid="reset" onClick={() => dispatch({ type: "reset" })}>Reset</button>\n  </div>;\n}' };
+    case 'props': return { ...base, title: transfer ? 'Transfer: a reusable project label' : 'Build a greeting component that uses its inputs', brief: transfer ? 'Accept name and role and display “name · role”. Update when props change and default role to Member.' : 'Accept a name prop and display “Hello, name!”. Replace the hardcoded content and make sure an unfamiliar name also works.', criteria: transfer ? ['Read both props', 'Default role to Member', 'Update correctly when props change'] : ['Display the current name', 'Support different names', 'Update the UI when props change'], starter: transfer ? 'function Exercise({ name, role }) {\n  return <p data-testid="greeting">Ada · Developer</p>;\n}' : 'function Exercise({ name = "Ada" }) {\n  return <h2 data-testid="greeting">Hello, Ada!</h2>;\n}' };
+    case 'snapshot': return { ...base, title: transfer ? 'Transfer: restock a configurable quantity' : 'Fix the counter to add 3 per click', brief: transfer ? 'Exercise receives a step prop, defaulting to 4. On each click, increase the count by step using consecutive +1 updater functions in the queue. Keep data-testid.' : 'Each click should add 3, including after repeated clicks. Fix the code using updates that depend on the previous value.', criteria: ['Start at 0', transfer ? 'Respect the step input' : 'Add 3 per click', 'Keep every update across repeated clicks'], starter: `function Exercise(${transfer ? '{ step = 4 }' : ''}) {\n  const [count, setCount] = React.useState(0);\n  function add() {\n${transfer ? '    for (let i = 0; i < step; i++) {\n      setCount(count + 1);\n    }' : '    setCount(count + 1);\n    setCount(count + 1);\n    setCount(count + 1);'}\n  }\n  return <button data-testid="counter" onClick={add}>{count}</button>;\n}` };
+    case 'immutable': return { ...base, title: transfer ? 'Transfer: protect incoming item data' : 'Fix an immutable todo toggle', brief: 'Exercise receives initialItems. Clicking an item toggles its done value and displays its full label with done/todo. Do not mutate the initial input or other items. Preserve identifiers.', criteria: ['Toggle the target in both directions', 'Leave other items unchanged', 'Never mutate the frozen initial input'], starter: 'function Exercise({ initialItems }) {\n  const [items, setItems] = React.useState(initialItems);\n  function toggle(id) {\n    const item = items.find(item => item.id === id);\n    item.done = !item.done;\n    setItems([...items]);\n  }\n  return <div>{items.map(item =>\n    <button key={item.id} data-testid={"item-" + item.id}\n      onClick={() => toggle(item.id)}>\n      {item.label}: {item.done ? "done" : "todo"}\n    </button>\n  )}</div>;\n}' };
+    case 'keys': return { ...base, title: transfer ? 'Transfer: preserve drafts after sorting' : 'Fix input identity after reordering', brief: 'Exercise receives initialItems. Each row has its own editable input state. After Reverse, each draft must move with its matching ID. Preserve the button and aria-label.', criteria: ['Allow editing', 'Reverse the order correctly', 'Keep drafts with item IDs rather than positions'], starter: 'function Row({ item }) {\n  const [value, setValue] = React.useState(item.label);\n  return <input aria-label={item.id} value={value}\n    onChange={event => setValue(event.target.value)} />;\n}\nfunction Exercise({ initialItems }) {\n  const [items, setItems] = React.useState(initialItems);\n  return <div>\n    <button data-testid="reverse" onClick={() => setItems([...items].reverse())}>Reverse</button>\n    {items.map((item, index) => <Row key={index} item={item} />)}\n  </div>;\n}' };
+    case 'derived': return { ...base, title: transfer ? 'Transfer: search as inputs and data change' : 'Keep filtered results consistent with props', brief: 'Exercise receives an items array of strings and a query. Display items containing query, ignoring case. Derive the result directly and keep data-testid="results".', criteria: ['Filter the initial items correctly', 'Update immediately when query changes', 'Handle changed items and an empty query'], starter: 'function Exercise({ items, query }) {\n  const [visible] = React.useState(\n    items.filter(item => item.toLowerCase().includes(query.toLowerCase()))\n  );\n  return <ul data-testid="results">\n    {visible.map(item => <li key={item}>{item}</li>)}\n  </ul>;\n}' };
+    case 'reducer': return { ...base, title: transfer ? 'Transfer: state rules with a new initial value' : 'Implement a testable counter reducer', brief: 'Implement reducer(state, action). Support increment, decrement with a minimum of 0, reset to count 0, and unknown actions that preserve state. Protect previous state and other fields. Fix the component buttons.', criteria: ['Handle increment and decrement', 'Handle the zero boundary and reset', 'Preserve previous state and extra fields'], starter: 'function reducer(state, action) {\n  switch (action.type) {\n    case "increment": return { ...state, count: state.count + 1 };\n    case "decrement": return { count: state.count - 1 };\n    case "reset": return { count: 0 };\n    default: return { count: 0 };\n  }\n}\nfunction Exercise({ initialCount = 0 }) {\n  const [state, dispatch] = React.useReducer(reducer, { count: initialCount });\n  return <div>\n    <output data-testid="value">{state.count}</output>\n    <button data-testid="increment" onClick={() => dispatch({ type: "increment" })}>+</button>\n    <button data-testid="decrement" onClick={() => dispatch({ type: "decrement" })}>−</button>\n    <button data-testid="reset" onClick={() => dispatch({ type: "reset" })}>Reset</button>\n  </div>;\n}' };
   }
 }
 
 export const roadmap = [
-  { phase: '01', title: '建立 React 心智模型', subtitle: 'FOUNDATIONS', items: ['props', 'snapshot', 'immutable'] },
-  { phase: '02', title: '写出可靠的交互', subtitle: 'INTERMEDIATE', items: ['keys', 'derived'] },
-  { phase: '03', title: '管理复杂度', subtitle: 'ADVANCED', items: ['reducer'] },
-  { phase: '04', title: '从组件到真实应用', subtitle: 'NEXT MILESTONE', planned: ['Effect 清理与异步竞态', '自定义 Hooks 与复用边界', 'Context 与组件组合', '性能分析与 memo', '错误边界、Suspense 与项目架构'] }
+  { phase: '01', title: 'Build a React mental model', subtitle: 'FOUNDATIONS', items: ['props', 'snapshot', 'immutable'] },
+  { phase: '02', title: 'Create reliable interactions', subtitle: 'INTERMEDIATE', items: ['keys', 'derived'] },
+  { phase: '03', title: 'Manage complexity', subtitle: 'ADVANCED', items: ['reducer'] },
+  { phase: '04', title: 'From components to real applications', subtitle: 'NEXT MILESTONE', planned: ['Effect cleanup and async races', 'Custom hooks and reuse boundaries', 'Context and component composition', 'Profiling and memoization', 'Error boundaries, Suspense, and architecture'] }
 ];

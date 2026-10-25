@@ -12,7 +12,7 @@ A local-first AI learning platform for React. A topic is assessed through indepe
 - Independent proof requires all evidence gates, a correct first prediction, and no recorded hints in that attempt. Assisted practice remains useful but cannot award independent proof.
 - Initial success is **provisional**. Delayed review supplies additional retention evidence. Early practice cannot pretend to be delayed recall or postpone review deadlines.
 - SQLite learning records, draft autosave, an evidence journal, and full JSON export.
-- Responsive English navigation with Chinese teaching material. All course code and programming terminology use normal React conventions.
+- English interface, lessons, exercises, hints, and AI feedback. Learners may answer in any language; quoted evidence preserves their original words. Existing learning records remain unchanged.
 
 Later advanced topics are visibly marked **Planned**. This version does not claim to contain a complete advanced React curriculum or guarantee permanent mastery.
 

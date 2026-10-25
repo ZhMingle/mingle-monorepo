@@ -103,7 +103,7 @@ const server = createServer(async (req, res) => {
         case '/api/assess': {
           const transfer = input.transfer === true; stageReady(session, transfer ? 'transfer' : 'explain');
           if (transfer && !session.transfer?.passed) throw new Error('Pass the transfer code tests first.');
-          const answer = text(input.answer, 6000).trim(); if (answer.length < 40) throw new Error('请至少写几句话，说明为什么、怎么做，并给出一个新例子。');
+          const answer = text(input.answer, 6000).trim(); if (answer.length < 40) throw new Error('Write a few sentences explaining why it works, how to implement it, and a new example.');
           if (busy.has(session.id)) throw Object.assign(new Error('This session is already being assessed'), { status: 409 });
           if (transfer) session.transferText = answer; else session.explanationText = answer;
           record(session, transfer ? 'transfer-explanation-submitted' : 'explanation-submitted', { answer, codeRunId: transfer ? session.transfer?.runId : session.build?.runId }); busy.add(session.id);
@@ -111,8 +111,8 @@ const server = createServer(async (req, res) => {
             const assessment = await assess(session, answer, transfer);
             // Re-read so a concurrently saved draft/hint can never be lost.
             const latest = getSession(session.id);
-            if ((transfer ? latest.transfer?.runId : latest.build?.runId) !== (transfer ? session.transfer?.runId : session.build?.runId)) throw Object.assign(new Error('代码已经改变，请基于最新通过测试的代码重新提交解释。'), { status: 409 });
-            if ((transfer ? latest.transferText : latest.explanationText).trim() !== answer) throw Object.assign(new Error('讲解已经改变，请提交最新版本以获得对应评估。'), { status: 409 });
+            if ((transfer ? latest.transfer?.runId : latest.build?.runId) !== (transfer ? session.transfer?.runId : session.build?.runId)) throw Object.assign(new Error('The code has changed. Resubmit your explanation using the latest code that passed the checks.'), { status: 409 });
+            if ((transfer ? latest.transferText : latest.explanationText).trim() !== answer) throw Object.assign(new Error('Your explanation has changed. Submit the latest version for a matching assessment.'), { status: 409 });
             if (transfer) { latest.transferText = answer; latest.transferExplanation = assessment; } else { latest.explanationText = answer; latest.explanation = assessment; }
             record(latest, transfer ? 'transfer-explanation' : 'explanation', assessment); send(res, 200, payload(latest));
           } finally { busy.delete(session.id); }
