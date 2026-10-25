@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+- Simplified explanation pages to four short requirements; moved passing rules into a disclosure and removed repeated coaching copy.
+- Added a persistent English/Chinese switch for navigation, all six lessons, exercises, hints, and reference answers.
+- New AI assessments follow the selected language. Existing drafts, code, evidence quotes, and historical feedback keep their original text.
+
 ## 0.1.6
 
 - Added visible hint and reference-code controls above both coding editors, including transfer tasks before code checks pass.

@@ -122,7 +122,7 @@ const server = createServer(async (req, res) => {
           if (transfer) session.transferText = answer; else session.explanationText = answer;
           record(session, transfer ? 'transfer-explanation-submitted' : 'explanation-submitted', { answer, codeRunId: transfer ? session.transfer?.runId : session.build?.runId }); busy.add(session.id);
           try {
-            const assessment = await assess(session, answer, transfer);
+            const assessment = await assess(session, answer, transfer, req.headers['x-clarity-language'] === 'zh' ? 'zh' : 'en');
             // Re-read so a concurrently saved draft/hint can never be lost.
             const latest = getSession(session.id);
             if ((transfer ? latest.transfer?.runId : latest.build?.runId) !== (transfer ? session.transfer?.runId : session.build?.runId)) throw Object.assign(new Error('The code has changed. Resubmit your explanation using the latest code that passed the checks.'), { status: 409 });
