@@ -54,6 +54,7 @@ namespace Mingle.ActivityReminder
         public string date = DateTime.Now.ToString("yyyy-MM-dd");
         public bool floating = true;
         public string codexPath;
+        public bool awaitingStart;
         public int miniX = int.MinValue;
         public int miniY = int.MinValue;
     }
@@ -62,6 +63,7 @@ namespace Mingle.ActivityReminder
     {
         internal SavedState State;
         internal bool Paused;
+        internal bool AwaitingStart { get { return State.awaitingStart; } }
         internal const double RestDurationSeconds = 300;
         private readonly Func<DateTime> utcNow;
         private DateTime? restEndsUtc;
@@ -83,10 +85,10 @@ namespace Mingle.ActivityReminder
             {
                 // Break time is actual elapsed time away from the computer.
                 // Locking, sleeping, idling, and delayed UI ticks must not stop it.
-                if (RestRemaining <= 0) { State.breaks++; BeginStudy(); }
+                if (RestRemaining <= 0) { State.breaks++; PrepareStudy(); }
                 return;
             }
-            double used = Count(elapsed, EffectiveIdle(idle), State.idle, locked, Paused);
+            double used = Count(elapsed, EffectiveIdle(idle), State.idle, locked, Paused || AwaitingStart);
             State.total += used;
             State.cycle += used;
             SnoozeRemaining = Math.Max(0, SnoozeRemaining - used);
@@ -95,17 +97,22 @@ namespace Mingle.ActivityReminder
         {
             get { return Resting ? RestRemaining : SnoozeRemaining > 0 ? SnoozeRemaining : Math.Max(0, State.interval * 60 - State.cycle); }
         }
-        internal bool Due { get { return !Resting && !Paused && State.cycle >= State.interval * 60 && SnoozeRemaining <= 0; } }
-        internal void StartRest() { restEndsUtc = utcNow().AddSeconds(RestDurationSeconds); SnoozeRemaining = 0; }
-        private void BeginStudy()
+        internal bool Due { get { return !Resting && !AwaitingStart && !Paused && State.cycle >= State.interval * 60 && SnoozeRemaining <= 0; } }
+        internal void StartRest() { State.awaitingStart = false; restEndsUtc = utcNow().AddSeconds(RestDurationSeconds); SnoozeRemaining = 0; }
+        private void PrepareStudy()
         {
             restEndsUtc = null; State.cycle = 0; SnoozeRemaining = 0; Paused = false;
-            studyStartedUtc = utcNow();
+            State.awaitingStart = true; studyStartedUtc = null;
+        }
+        internal bool ConfirmStudy()
+        {
+            if (!AwaitingStart) return false;
+            State.awaitingStart = false; Paused = false; studyStartedUtc = utcNow(); return true;
         }
         internal bool SkipRest()
         {
             if (!Resting && State.cycle < State.interval * 60) return false;
-            BeginStudy(); return true;
+            PrepareStudy(); return true;
         }
         internal double EffectiveIdle(double idle)
         {
@@ -227,7 +234,7 @@ namespace Mingle.ActivityReminder
         internal void RefreshClock(string text)
         {
             countdown.Text = UsageClock.Format(main.Clock.Remaining); status.Text = text;
-            pause.Text = main.Clock.Resting ? "Skip break" : main.Clock.Paused ? "Resume" : "Pause";
+            pause.Text = main.Clock.Resting ? "Skip break" : main.Clock.AwaitingStart ? "Start session" : main.Clock.Paused ? "Resume" : "Pause";
             quota.Text = main.QuotaSummary;
             quotaAge.Text = main.QuotaCompactStatus;
         }
@@ -256,6 +263,8 @@ namespace Mingle.ActivityReminder
         private readonly CheckBox floating;
         private readonly MiniWindow mini;
         private Form reminder;
+        private Form studyReadyWindow;
+        private bool studyPromptShown;
         private double last, lastSave;
         private bool saveFailed;
         internal QuotaSnapshot Quota;
@@ -311,7 +320,7 @@ namespace Mingle.ActivityReminder
             dial = new TimerDial { Location = new Point(100, 46), Size = new Size(290, 234) };
             timerCard.Controls.Add(dial);
             pause = Theme.Button(timerCard, "Pause timer", 24, 288, 210, false, TogglePause);
-            breakAction = Theme.Button(timerCard, "Take a 5-minute break", 248, 288, 218, true, delegate { if (Clock.Resting) SkipRest(); else StartRest(); });
+            breakAction = Theme.Button(timerCard, "Take a 5-minute break", 248, 288, 218, true, delegate { if (Clock.AwaitingStart) ConfirmStudy(); else if (Clock.Resting) SkipRest(); else StartRest(); });
 
             Panel settings = Theme.CardPanel(this, 542, 116, 284, 344);
             Theme.Label(settings, "Your break rhythm", 22, 19, 245, 32, 14, Theme.White);
@@ -344,6 +353,7 @@ namespace Mingle.ActivityReminder
             menu.Items.Add("Open app", null, delegate { ShowMain(); });
             menu.Items.Add("Show floating timer", null, delegate { SetFloating(true); });
             menu.Items.Add("Pause / Resume", null, delegate { TogglePause(); });
+            menu.Items.Add("Start next session", null, delegate { ConfirmStudy(); });
             menu.Items.Add("Codex usage", null, delegate { ShowQuota(); });
             menu.Items.Add("Refresh usage", null, delegate { RefreshQuota(); });
             menu.Items.Add(new ToolStripSeparator());
@@ -412,6 +422,7 @@ namespace Mingle.ActivityReminder
             idle = Clock.EffectiveIdle(idle);
             if (wasResting && !Clock.Resting) Save();
             RefreshDisplay(idle, locked);
+            if (Clock.AwaitingStart && !locked && !studyPromptShown) ShowStudyReady();
             if (Clock.Due && !locked && idle < Clock.State.idle && reminder == null) ShowReminder();
             if (now - lastSave >= 15) { Save(); lastSave = now; }
             if (quotaSchedule.Ready(now) && !QuotaLoading) RefreshQuota();
@@ -419,20 +430,20 @@ namespace Mingle.ActivityReminder
         private void RefreshDisplay(double idle, bool locked)
         {
             idle = Clock.EffectiveIdle(idle);
-            string text = Clock.Resting ? "On a break - time to move" : Clock.Paused ? "Paused - resume when ready" : locked ? "Screen locked - auto-paused" : idle >= Clock.State.idle ? "Away - auto-paused" : "Tracking active time";
+            string text = Clock.Resting ? "On a break - time to move" : Clock.AwaitingStart ? "Ready - start when you are" : Clock.Paused ? "Paused - resume when ready" : locked ? "Screen locked - auto-paused" : idle >= Clock.State.idle ? "Away - auto-paused" : "Tracking active time";
             if (!Clock.Resting && Clock.SnoozeRemaining > 0) text += " · Snoozed";
             status.Text = "●  " + text;
             status.ForeColor = !Clock.Resting && (Clock.Paused || locked || idle >= Clock.State.idle) ? Theme.Muted : Theme.Mint;
             dial.Time = UsageClock.Format(Clock.Remaining);
-            dial.Caption = Clock.Resting ? "Rest your eyes. Move a little." : Clock.SnoozeRemaining > 0 ? "Until the next reminder" : "Until your next break";
+            dial.Caption = Clock.Resting ? "Rest your eyes. Move a little." : Clock.AwaitingStart ? "Waiting for your confirmation" : Clock.SnoozeRemaining > 0 ? "Until the next reminder" : "Until your next break";
             dial.Progress = Clock.Resting ? 1 - Clock.RestRemaining / UsageClock.RestDurationSeconds : Math.Min(1, Clock.State.cycle / (Clock.State.interval * 60));
             dial.AccessibleName = dial.Caption + " " + dial.Time; dial.Invalidate();
             total.Text = ((int)(Clock.State.total / 60)).ToString() + " min";
             cycle.Text = UsageClock.Format(Clock.State.cycle);
             breaks.Text = Clock.State.breaks.ToString() + (Clock.State.breaks == 1 ? " break" : " breaks");
-            pause.Text = Clock.Resting ? "On a break" : Clock.Paused ? "Resume timer" : "Pause timer";
-            pause.Enabled = !Clock.Resting;
-            breakAction.Text = Clock.Resting ? "Skip break" : "Take a 5-minute break";
+            pause.Text = Clock.Resting ? "On a break" : Clock.AwaitingStart ? "Waiting to start" : Clock.Paused ? "Resume timer" : "Pause timer";
+            pause.Enabled = !Clock.Resting && !Clock.AwaitingStart;
+            breakAction.Text = Clock.AwaitingStart ? "Start next session" : Clock.Resting ? "Skip break" : "Take a 5-minute break";
             usageLine.Text = QuotaSummary + (quotaError != null && Quota != null ? " (last known)" : "");
             if (mini != null) mini.RefreshClock(text);
             if (tray != null) tray.Text = "Rise · " + dial.Time + " · " + text;
@@ -499,12 +510,14 @@ namespace Mingle.ActivityReminder
         }
         internal void TogglePause()
         {
+            if (Clock.AwaitingStart) { ConfirmStudy(); return; }
             if (Clock.Resting) { SkipRest(); return; }
             Clock.Paused = !Clock.Paused; RefreshDisplay(Native.Idle(), Native.Locked());
         }
         internal void SkipRest()
         {
             if (!Clock.SkipRest()) { if (reminder != null) reminder.Close(); return; }
+            studyPromptShown = false;
             if (reminder != null) reminder.Close();
             Save(); RefreshDisplay(Native.Idle(), Native.Locked());
         }
@@ -517,6 +530,7 @@ namespace Mingle.ActivityReminder
         }
         private void StartRest()
         {
+            studyPromptShown = false;
             Clock.StartRest();
             if (reminder != null) reminder.Close();
             SetFloating(true); RefreshDisplay(0, false);
@@ -530,14 +544,34 @@ namespace Mingle.ActivityReminder
             reminder = r;
             Theme.Label(r, "Take five minutes.", 30, 28, 440, 54, 26, Theme.Mint);
             Theme.Label(r, "Stand up. Stretch. Walk a little.", 32, 99, 436, 36, 17, Theme.White);
-            Theme.Label(r, "Relax your shoulders and look into the distance.\nYour timer restarts after this break.", 32, 151, 436, 66, 11, Theme.Muted);
+            Theme.Label(r, "Relax your shoulders and look into the distance.\nStart your next session when you are ready.", 32, 151, 436, 66, 11, Theme.Muted);
             Theme.Button(r, "Start 5-minute break", 32, 244, 211, true, StartRest);
             Theme.Button(r, "Snooze for 5 minutes", 257, 244, 211, false, delegate { Clock.Snooze(); r.Close(); });
-            Theme.Button(r, "Skip break and start next session", 32, 298, 436, false, SkipRest);
+            Theme.Button(r, "Skip break", 32, 298, 436, false, SkipRest);
             r.FormClosed += delegate { reminder = null; if (!Clock.Resting && Clock.State.cycle >= Clock.State.interval * 60 && Clock.SnoozeRemaining <= 0) Clock.Snooze(); RefreshDisplay(Native.Idle(), Native.Locked()); };
             System.Media.SystemSounds.Asterisk.Play(); r.Show(); r.Activate();
         }
         private void ExitApp() { Exiting = true; Close(); }
+        internal void ConfirmStudy()
+        {
+            if (!Clock.ConfirmStudy()) return;
+            if (studyReadyWindow != null) studyReadyWindow.Close();
+            Save(); RefreshDisplay(Native.Idle(), Native.Locked());
+        }
+        private void ShowStudyReady()
+        {
+            studyPromptShown = true;
+            var ready = new Form { Text = "Rise - Ready for your next session?", ClientSize = new Size(500, 245), BackColor = Theme.Bg,
+                ForeColor = Theme.White, Icon = Icon, AutoScaleMode = AutoScaleMode.Dpi, StartPosition = FormStartPosition.CenterScreen,
+                FormBorderStyle = FormBorderStyle.FixedDialog, TopMost = true, MaximizeBox = false, MinimizeBox = false };
+            studyReadyWindow = ready;
+            Theme.Label(ready, "Ready when you are.", 28, 24, 444, 48, 24, Theme.Mint);
+            Theme.Label(ready, "Your next session is waiting.\nThe timer stays paused until you choose Start.", 30, 90, 440, 60, 11, Theme.Muted);
+            Theme.Button(ready, "Start next session", 30, 173, 214, true, ConfirmStudy);
+            Theme.Button(ready, "Later", 258, 173, 212, false, delegate { ready.Close(); });
+            ready.FormClosed += delegate { studyReadyWindow = null; };
+            System.Media.SystemSounds.Asterisk.Play(); ready.Show();
+        }
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -547,6 +581,7 @@ namespace Mingle.ActivityReminder
                 if (tray != null) { tray.Visible = false; tray.Dispose(); }
                 if (mini != null) mini.Dispose();
                 if (reminder != null) reminder.Dispose();
+                if (studyReadyWindow != null) studyReadyWindow.Dispose();
                 if (usageWindow != null) usageWindow.Dispose();
                 if (usageMonitor != null) usageMonitor.Dispose();
                 if (usageConnection != null) usageConnection.Dispose();
@@ -591,20 +626,29 @@ namespace Mingle.ActivityReminder
                 if (clock.Resting) throw new Exception("Break must complete after sleep");
                 clock.Step(1, 1200, true, today); Equal(clock.State.breaks, 1, "break completion counted once");
                 Equal(clock.State.total, 2, "break time is not computer usage");
-                if (clock.Paused) throw new Exception("Completed break must resume the next study session");
-                Equal(clock.Remaining, 1800, "completed break starts a full learning cycle");
+                if (!clock.AwaitingStart) throw new Exception("Completed break must wait for confirmation");
+                Equal(clock.Remaining, 1800, "completed break prepares a full learning cycle");
+                utc = utc.AddSeconds(600); clock.Step(1, 0, false, today);
+                Equal(clock.State.cycle, 0, "mouse activity and waiting time cannot start a session");
+                Equal(clock.State.total, 2, "waiting for confirmation is not computer usage");
+                if (!clock.ConfirmStudy() || clock.AwaitingStart) throw new Exception("Explicit confirmation starts study");
                 utc = utc.AddSeconds(1); clock.Step(1, 1201, false, today);
                 Equal(clock.State.cycle, 1, "previous break idle time must not immediately pause next session");
                 var skipped = new UsageClock(new SavedState { interval = 45, cycle = 2700, breaks = 2, date = today.ToString("yyyy-MM-dd") }, () => utc);
                 skipped.StartRest(); skipped.Paused = true;
                 utc = utc.AddSeconds(30);
-                if (!skipped.SkipRest() || skipped.Resting || skipped.Paused) throw new Exception("Skip break must immediately enter study mode");
+                if (!skipped.SkipRest() || skipped.Resting || !skipped.AwaitingStart) throw new Exception("Skip break must wait for confirmation");
                 Equal(skipped.Remaining, 2700, "skip uses configured learning duration");
                 Equal(skipped.SnoozeRemaining, 0, "skip clears snooze");
                 Equal(skipped.State.breaks, 2, "skipped rest is not a completed break");
                 utc = utc.AddSeconds(400); skipped.Step(1, 0, false, today);
                 Equal(skipped.State.breaks, 2, "skipped rest deadline cannot complete later");
+                Equal(skipped.State.cycle, 0, "skipped break does not start study without confirmation");
+                var restored = new UsageClock(new JavaScriptSerializer().Deserialize<SavedState>(new JavaScriptSerializer().Serialize(skipped.State)), () => utc);
+                restored.Step(1, 0, false, today);
+                if (!restored.AwaitingStart || restored.State.cycle != 0) throw new Exception("Waiting confirmation survives restart");
                 if (skipped.SkipRest()) throw new Exception("Skip outside a break must not reset study progress");
+                if (!skipped.ConfirmStudy() || skipped.ConfirmStudy()) throw new Exception("Start confirmation is applied only once");
                 var due = new UsageClock(new SavedState { cycle = 1800, date = today.ToString("yyyy-MM-dd") }, () => utc);
                 if (!due.SkipRest() || due.Due) throw new Exception("Skip reminder before starting rest");
                 Equal(due.Remaining, 1800, "skipping due reminder starts next session");
@@ -616,7 +660,7 @@ namespace Mingle.ActivityReminder
                 if (Native.Idle() < 0) throw new Exception("native idle"); Native.Locked();
                 QuotaTests.Run();
                 UsageUpdateTests.Run();
-                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test-result.txt"), "PASS: timer rules, automatic study transitions, skip-break behavior, completed-break statistics and quota completion monitoring.");
+                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test-result.txt"), "PASS: timer rules, confirmation-gated study sessions, skip-break waiting, confirmation persistence and quota completion monitoring.");
                 return 0;
             }
             catch (Exception ex)

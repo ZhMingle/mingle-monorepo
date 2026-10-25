@@ -20,11 +20,13 @@ The default reminder interval is 30 minutes of active use. Choose 15, 30, 45, or
 
 When a break is due, the app plays a system sound and opens a reminder above other windows. Start a five-minute break or snooze for five more minutes of active use. Closing the reminder also snoozes it. **Preview reminder** opens the reminder immediately.
 
-Breaks use an actual five-minute deadline, independent of keyboard/mouse activity and the work timer's paused state. You can leave the computer, lock the screen, or let it sleep. After waking, the countdown catches up to elapsed time. A completed break increases the daily break count exactly once and automatically starts a new learning session of the selected length. It clears any previous manual pause or snooze. Break time never counts as active computer use.
+Breaks use an actual five-minute deadline, independent of keyboard/mouse activity and the work timer's paused state. You can leave the computer, lock the screen, or let it sleep. After waking, the countdown catches up to elapsed time. A completed break increases the daily break count exactly once and prepares a new learning session of the selected length. **The next session does not count down until you explicitly choose Start next session.** Break time and time waiting for confirmation never count as active computer use.
 
-Select **Skip break** in the main window or floating timer during a break to immediately start the next learning session. The reminder also offers **Skip break and start next session** before a break begins. Skipped breaks do not increase completed-break statistics. A skipped countdown is canceled, so its former deadline cannot interrupt your new session.
+Select **Skip break** in the main window, floating timer, or reminder to end or skip the break and prepare the next session. Skipped breaks do not increase completed-break statistics. A skipped countdown is canceled, so its former deadline cannot interrupt your new session. Skipping also waits for your Start confirmation.
 
-Each new learning session starts with a fresh idle window: time spent away during the previous break does not immediately pause it. Learning still pauses when locked, manually paused, or when there is no input for the configured idle threshold measured from the new session. You do not need to click Resume when a break ends.
+After a break, a confirmation window offers **Start next session** and **Later**. Closing it or choosing Later keeps the timer stopped; you can start later from the dashboard or the floating timer's **Start session** button. Keyboard/mouse activity alone never starts it. If the screen is locked, the confirmation window waits until unlock. The waiting state is saved, so restarting the application does not bypass confirmation.
+
+Each confirmed learning session starts with a fresh idle window: time spent away during the previous break or waiting for confirmation does not immediately pause it. Learning still pauses when locked, manually paused, or when there is no input for the configured idle threshold measured from the confirmed start.
 
 The application must remain running to send reminders. It does not run while the computer is shut down.
 
