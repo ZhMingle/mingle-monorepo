@@ -1,0 +1,7 @@
+node_modules/
+dist/
+data/
+public/sandbox-runner.js
+*.log
+.env
+.env.local
