@@ -1,3 +1,9 @@
+## 2026-10-26 — Continuous learning and cumulative progress
+
+- Add previous/next topic controls, a topic picker, and direct choice-to-code continuation, saving drafts before navigation.
+- Add overall and current-path completion bars on catalog/path/practice pages; count distinct successful choice/code results across variations and original React labs.
+- Explain React curriculum gaps explicitly; progress measures available practice, not complete React coverage or mastery.
+
 ## 2026-10-26 — Choice and code only
 
 - Remove keyword blanks from all active learning routes and new lesson generation. Normalize older sessions to start at choice; count only choice/code results out of two. Preserve historical keyword records and drafts.

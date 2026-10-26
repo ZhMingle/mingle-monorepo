@@ -8,6 +8,8 @@ import { topicContext } from './topic-practice.ts';
 import { learningPaths } from '../shared/paths.ts';
 import { aliasMatches, completedKinds, englishKeyword, publicStudy, studyKinds, studyVersion, validateBlankResults, validateCodeReview, validateStudyLesson, validateExecution } from '../shared/study.ts';
 import type { BlankResult, StudyDraft, StudyKind, StudyPayload, StudySession } from '../shared/study.ts';
+import { learningOverview } from '../shared/learning-progress.ts';
+import { sessionList } from './store.ts';
 
 const str={type:'string'};const strings={type:'array',items:str};
 const object=(properties:Record<string,unknown>)=>({type:'object',additionalProperties:false,properties,required:Object.keys(properties)});
@@ -31,7 +33,11 @@ export function latestStudy(topicId:string):StudySession|null {
 }
 export function studyProgress(pathId:string){
   const path=learningPaths.find(p=>p.id===pathId);if(!path)throw new Error('Unknown path.');
-  return {topics:Object.fromEntries(path.stages.flatMap(s=>s.topics).map(topic=>{const s=latestStudy(topic.id);return[topic.id,s?{completed:completedKinds(s).length,total:2,supported:publicStudy(s).supported}:null];}))};
+  return {topics:studyOverview().paths[pathId].topics};
+}
+export function studyOverview(){
+  const sessions=(db.prepare('SELECT payload FROM study_sessions').all() as {payload:string}[]).map(r=>JSON.parse(r.payload) as StudySession);
+  return learningOverview(learningPaths,sessions,sessionList(true));
 }
 function draftFor(s:StudySession,input:Record<string,unknown>):StudyDraft {
   const raw=input.keywords;

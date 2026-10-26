@@ -11,7 +11,7 @@ import { markReferenceViewed, referenceAnswerFor } from './reference-answers.ts'
 import { codeHintsFor, codeReferenceFor } from './code-support.ts';
 import { understandingAction, understandingPayload, understandingSessions } from './understanding.ts';
 import { topicAction, topicProgress } from './topic-practice.ts';
-import { studyAction, studyProgress } from './study.ts';
+import { studyAction, studyProgress, studyOverview } from './study.ts';
 import type { LearningSession, RunReport, SessionMode, Stage } from '../shared/types.ts';
 
 const port = Number(process.env.PORT ?? 4317);
@@ -53,6 +53,7 @@ const server = createServer(async (req, res) => {
       if (req.method !== 'POST') { send(res, 404, { error: 'Not found' }); return; }
       if (!origins.has(req.headers.origin ?? '') || req.headers['x-clarity-request'] !== '1' || !req.headers['content-type']?.startsWith('application/json')) { send(res, 403, { error: 'Only requests from the local application are accepted' }); return; }
       const input = await body(req);
+      if (url.pathname === '/api/study/overview') { send(res, 200, studyOverview()); return; }
       if (url.pathname === '/api/study/progress') {
         send(res, 200, studyProgress(text(input.pathId, 40))); return;
       }

@@ -89,3 +89,10 @@ test('old keyword history cannot block or inflate the two-format progress',async
   const p=publicStudy(s);assert.equal(p.session.current,'choice');assert.deepEqual(p.completed,[]);assert.equal(p.supported,false);assert.deepEqual(p.references,{});
   const fresh=await create();await assert.rejects(studyAction('step',{id:fresh,kind:'keywords'},'en'),/Unknown exercise/);
 });
+test('starting a fresh variation keeps earlier route progress and drafts can be saved before moving on',async()=>{
+  const id=await create();await studyAction('answer',{id,kind:'choice',...draft},'en');
+  const before=studyProgress('typescript').topics['typescript.inference'].completed;
+  await create();assert.equal(studyProgress('typescript').topics['typescript.inference'].completed,before);
+  await studyAction('draft',{id,...draft,code:'// my unsent draft'},'en');
+  assert.equal(getStudy(id).draft.code,'// my unsent draft');
+});

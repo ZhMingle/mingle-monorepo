@@ -8,6 +8,14 @@ All seven paths (78 topics) now use **multiple choice + coding validation**. The
 
 Choice and code results count independently toward a two-part practice result. Old keyword records remain in SQLite/export but do not count toward completion or assistance. Existing drafts, earlier reviews, and original React labs remain intact. Older saved React tasks without a runner descriptor retain their original AI review behavior; generate a new variation to get browser execution.
 
+### Continuous learning and progress
+
+Every topic includes previous/next navigation, a topic picker, and a direct choice-to-code action. Moving to another topic saves the current draft first; navigating does not generate a lesson or award completion.
+
+The catalog, path page, and practice page show overall/current-path progress. Each available topic contributes two checks (choice and code). Distinct successful results accumulate across all variations, including earlier original React prediction/build results. Repeated passes do not add extra credit, and starting a fresh variation cannot erase earlier completion. Historical keyword checks do not contribute. Progress refreshes after submissions and navigation, without polling or AI calls.
+
+React currently has six focused topics, not comprehensive coverage. The React path has an explicit coverage section listing gaps such as Effects, refs, Context, custom Hooks, performance, Suspense, modern forms, and application integration, with official documentation links. The progress denominator covers available practice, not all React knowledge.
+
 ## Original React labs
 
 - **Understanding Lab** (`/#lab`): an experienced-learner experiment for state snapshots and update queues. Three short probes vary the inputs and operation order. Numbers and repair choices are checked deterministically; Codex evaluates the explanation with a verbatim evidence quote. Correct predictions alone, fluency, and generic recall cannot verify a probe.
