@@ -1,3 +1,10 @@
+## 2026-10-26 — English keyword blanks, choices, and coding
+
+- Make all 78 topics across seven paths, including React, available in three question formats without long explanations.
+- Accept equivalent English terminology and noun/adjective forms using local aliases and explicit AI semantic fallback.
+- Add practical choice checks, editable coding tasks, visible cases, AI code review, per-format completion, and persisted drafts/history.
+- Preserve original React browser labs and prior reasoning sessions; do not equate vocabulary recall or model-reviewed code with mastery.
+
 ## 2026-10-26 — Interactive practice across learning paths
 
 - Add on-demand AI lessons, outcome-and-reasoning tasks, changed-condition transfer, targeted feedback, references, and resumable topic progress across all 72 new topics.

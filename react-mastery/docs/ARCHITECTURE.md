@@ -10,12 +10,17 @@ This is a modular monolith: a React/TypeScript client and a local Node HTTP serv
 - `server/coach.ts`: Codex discovery and evaluation adapter. Keep provider-specific code here so an authenticated API adapter can replace it later.
 - `server/index.ts`: request validation and stage boundaries. Re-read sessions after long AI work so concurrent hint/draft changes are not overwritten; reject an assessment against superseded code.
 - `src/sandbox/runner.tsx`: actual React rendering, behavior tests, and error/loop reporting.
+- `shared/paths.ts`: seven learning paths, including mappings from original React topics to the common topic model.
+- `shared/study.ts`, `server/study.ts`: current three-format practice. The shared layer owns semantic alias rules, result validation, public projections, and per-format completion. The server owns generated content, answer keys, Codex calls, and durable sessions. Known English equivalents and keyed choices do not require a model call; unfamiliar terms use explicit semantic review. Coding is AI-reviewed, never executed by this service.
+- `shared/topic-practice.ts`, `server/topic-practice.ts`: version-one reasoning sessions, kept readable for existing history. New practice uses `/api/study/*` and a separate table rather than rewriting historical records.
 
 ## Durable evidence
 
 Store the original code, test results, learner explanation, hints, AI rubric version, curriculum version, and evaluation time. Update the session and evidence/progress transactionally. Do not change historical grades when an authored rubric changes; create a fresh assessment under the new version.
 
-The initial SQLite migration sets `PRAGMA user_version=1`. Future schema changes need ordered migrations with backup and restore verification. Avoid replacing the database with ad hoc JSON overwrites. Never commit user work or credentials.
+The original schema used `PRAGMA user_version=1`. Additive migrations now create understanding sessions (v2), topic-v1 sessions (v3), and mixed-format study sessions (v4), without rewriting original records. Export includes all four record families. Future destructive schema changes need ordered migrations with backup and restore verification. Avoid replacing the database with ad hoc JSON overwrites. Never commit user work or credentials.
+
+Generated study content stores its version, language, source topic, keys, rubric, and correct/incorrect fixtures. The public projection omits keys, aliases, fixtures, and reference code until explicitly requested. Drafts and attempts are saved before model calls; a per-session lock prevents concurrent mutations from overwriting assistance or answers. Model errors remain errors. Generated keys and fixtures are not an independently verified oracle, so this feature reports practice completion, not mastery or runtime test success.
 
 ## Code execution boundary
 

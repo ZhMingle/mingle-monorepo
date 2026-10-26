@@ -1,8 +1,14 @@
-# Clarity — React Mastery Lab
+# Clarity — Developer Learning Lab
 
-A local-first AI learning platform for React. A topic is assessed through independent prediction, real React code checks, explanation, transfer, and delayed recall. Watching a lesson or asking the AI to mark a checkbox never awards mastery.
+A local-first AI learning platform for React, TypeScript, HTML/CSS, C#/.NET, MySQL, SQL Server, and PostgreSQL. A topic is assessed through independent prediction, real React code checks, explanation, transfer, and delayed recall. Watching a lesson or asking the AI to mark a checkbox never awards mastery.
 
-## First version
+## Current learning experience
+
+All seven paths (78 topics) now use **English keyword blanks + practical multiple choice + editable coding tasks**. No long written rationale is required. Keyword scoring accepts equivalent English technical names and noun/adjective forms (for example, idempotent / idempotence / idempotency). Known aliases are checked locally; unfamiliar wording uses AI semantic review only on explicit submission. Choice checks use the saved key. Coding tasks use explicit cases and AI code review; they are not executed.
+
+Sessions resume with drafts, current question type, and submission history. Reference views mark supported practice without replacing the learner draft. Completion is recorded per question type and is not promoted to mastery/retention. The original executable React labs and earlier reasoning sessions remain accessible separately; their history is preserved.
+
+## Original React labs
 
 - **Understanding Lab** (`/#lab`): an experienced-learner experiment for state snapshots and update queues. Three short probes vary the inputs and operation order. Numbers and repair choices are checked deterministically; Codex evaluates the explanation with a verbatim evidence quote. Correct predictions alone, fluency, and generic recall cannot verify a probe.
 - A failed probe gets one focused clarification rather than requiring the whole explanation again. Earlier answers remain saved. Help and evaluated retries remain supported practice, and users can continue with an explicit gap. This is evidence for one narrow skill, not a general mastery certificate.
@@ -91,10 +97,10 @@ See [product principles](docs/PRODUCT.md) and [architecture and maintenance](doc
 
 Open **Learning paths** for React, TypeScript, HTML/CSS, C#/.NET, MySQL, SQL Server, and PostgreSQL. Search topics or filter by frontend, backend, and databases. Paths have stable links such as `/#roadmap/typescript`.
 
-The six new paths each contain 12 bilingual topics across foundations, practice, and advanced work. Each topic has a goal, a concrete self-check question, and official documentation; each phase has a project milestone. Every topic now opens interactive practice: a short AI-generated lesson, an outcome prediction with a causal explanation, and a distinct transfer scenario. Saved sessions resume without another generation call. Explicitly generating a variation or submitting an answer uses the existing Codex sign-in; reading, drafts, and reference answers do not. All prose is generated in the chosen language; existing generated sessions retain their original language.
+The six new paths each contain 12 bilingual topics across foundations, practice, and advanced work. Each topic has a goal, a concrete self-check question, and official documentation; each phase has a project milestone. Every topic opens the current three-format practice described above. Lesson generation and code/semantic review use Codex; reading saved lessons, known-alias checks, keyed choices, drafts, and reference answers do not. Saved generated lessons keep their original language; generating a new variation uses the current interface language.
 
-These are **AI-reviewed reasoning exercises**, not compiled/executed TypeScript, C#, HTML/CSS, or SQL labs. Generated tasks and keys can be wrong; use the official source to check disputed behavior or request a fresh variation. The reference answer records assistance. Two independently sufficient answers earn first-practice evidence only, not retention, project competence, or certification. The original React code labs remain available.
+AI-generated exercises can contain mistakes. Check the official source or generate a new variation for disputed behavior. No TypeScript, C#, HTML/CSS, or SQL code is executed by the new practice service. The original React labs provide real browser checks.
 
-Topic sessions, drafts, feedback, references viewed, and content versions persist in SQLite and the JSON export. Drafts also have a local browser copy for navigation or transient connection failures. The topic route shows the latest practice status. No code, SQL, or model-generated commands are executed by the topic practice service.
+Study sessions, topic-v1 reasoning sessions, original React records, drafts, feedback, references viewed, and content versions all remain in SQLite and the JSON export (schema v4). Browser drafts provide an additional copy during navigation or transient failures. Progress shows question types completed, never a mastery percentage for vocabulary recall.
 
-Validation: `pnpm test`, `pnpm build`. The opt-in `node scripts/verify-topic-practice.ts` uses real Codex allowance to check six route samples, correct causal reasoning, and rejection of generic recall in an isolated database under ignored `data/topic-smoke`.
+Validation: `pnpm test`, `pnpm build`. Optional `node scripts/verify-study.ts --all` uses real Codex allowance to check seven route samples, synonymous vs opposite English answers, and correct vs broken code, in ignored `data/mixed-smoke`. The earlier `verify-topic-practice.ts` remains for topic-v1 compatibility.

@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS progress (lesson_id TEXT PRIMARY KEY, payload TEXT NO
 CREATE TABLE IF NOT EXISTS understanding_sessions (id TEXT PRIMARY KEY, created_at TEXT NOT NULL, payload TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS topic_sessions (id TEXT PRIMARY KEY, topic_id TEXT NOT NULL, created_at TEXT NOT NULL, payload TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS topic_sessions_topic ON topic_sessions(topic_id, created_at);
-PRAGMA user_version=3;`);
+CREATE TABLE IF NOT EXISTS study_sessions (id TEXT PRIMARY KEY, topic_id TEXT NOT NULL, created_at TEXT NOT NULL, payload TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS study_sessions_topic ON study_sessions(topic_id, created_at);
+PRAGMA user_version=4;`);
 
 export function progressList(): Progress[] {
   return (db.prepare('SELECT payload FROM progress').all() as { payload: string }[]).map(row => {
@@ -55,5 +57,5 @@ export function record(session: LearningSession, kind: string, payload: unknown)
 }
 export function moveStage(session: LearningSession, stage: Stage) { session.stage = stage; saveSession(session); }
 export function exportData() {
-  return { schemaVersion: 3, topicPracticeVersion: 'topic-practice-v1', topicSessions: (db.prepare('SELECT payload FROM topic_sessions ORDER BY created_at').all() as {payload:string}[]).map(row => JSON.parse(row.payload)), curriculumVersion, exportedAt: new Date().toISOString(), progress: progressList(), sessions: sessionList(true), understandingSessions: (db.prepare('SELECT payload FROM understanding_sessions ORDER BY created_at').all() as {payload:string}[]).map(row => JSON.parse(row.payload)), evidence: (db.prepare('SELECT * FROM evidence ORDER BY created_at').all() as Record<string, unknown>[]).map(row => ({ ...row, payload: JSON.parse(String(row.payload)) })) };
+  return { schemaVersion: 4, studyVersion: 'mixed-practice-v1', studySessions: (db.prepare('SELECT payload FROM study_sessions ORDER BY created_at').all() as {payload:string}[]).map(row => JSON.parse(row.payload)), topicPracticeVersion: 'topic-practice-v1', topicSessions: (db.prepare('SELECT payload FROM topic_sessions ORDER BY created_at').all() as {payload:string}[]).map(row => JSON.parse(row.payload)), curriculumVersion, exportedAt: new Date().toISOString(), progress: progressList(), sessions: sessionList(true), understandingSessions: (db.prepare('SELECT payload FROM understanding_sessions ORDER BY created_at').all() as {payload:string}[]).map(row => JSON.parse(row.payload)), evidence: (db.prepare('SELECT * FROM evidence ORDER BY created_at').all() as Record<string, unknown>[]).map(row => ({ ...row, payload: JSON.parse(String(row.payload)) })) };
 }
