@@ -1,6 +1,6 @@
 export const uiZh: Record<string, string> = {
   'Learning paths':'学习路线','DEVELOPER LEARNING LAB':'技术学习实验室','DEVELOPER LEARNING PATHS':'技术学习路线',
-  'Browse learning paths':'选择学习路线','3 question types':'三种题型',
+  'Browse learning paths':'选择学习路线','2 question types':'两种题型',
   'Understanding lab':'理解验证','Try the understanding lab':'体验理解验证',
   'checks passed':'项检查通过',
   'Language':'语言','Correctness':'概念准确','Causality':'因果理解','Clarity':'表达清晰','Transfer':'迁移',
