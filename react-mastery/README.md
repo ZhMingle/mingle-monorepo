@@ -87,3 +87,14 @@ data/               Local data; never committed
 ```
 
 See [product principles](docs/PRODUCT.md) and [architecture and maintenance](docs/ARCHITECTURE.md).
+## Learning paths
+
+Open **Learning paths** for React, TypeScript, HTML/CSS, C#/.NET, MySQL, SQL Server, and PostgreSQL. Search topics or filter by frontend, backend, and databases. Paths have stable links such as `/#roadmap/typescript`.
+
+The six new paths each contain 12 bilingual topics across foundations, practice, and advanced work. Each topic has a goal, a concrete self-check question, and official documentation; each phase has a project milestone. Every topic now opens interactive practice: a short AI-generated lesson, an outcome prediction with a causal explanation, and a distinct transfer scenario. Saved sessions resume without another generation call. Explicitly generating a variation or submitting an answer uses the existing Codex sign-in; reading, drafts, and reference answers do not. All prose is generated in the chosen language; existing generated sessions retain their original language.
+
+These are **AI-reviewed reasoning exercises**, not compiled/executed TypeScript, C#, HTML/CSS, or SQL labs. Generated tasks and keys can be wrong; use the official source to check disputed behavior or request a fresh variation. The reference answer records assistance. Two independently sufficient answers earn first-practice evidence only, not retention, project competence, or certification. The original React code labs remain available.
+
+Topic sessions, drafts, feedback, references viewed, and content versions persist in SQLite and the JSON export. Drafts also have a local browser copy for navigation or transient connection failures. The topic route shows the latest practice status. No code, SQL, or model-generated commands are executed by the topic practice service.
+
+Validation: `pnpm test`, `pnpm build`. The opt-in `node scripts/verify-topic-practice.ts` uses real Codex allowance to check six route samples, correct causal reasoning, and rejection of generic recall in an isolated database under ignored `data/topic-smoke`.

@@ -1,4 +1,5 @@
 export const uiZh: Record<string, string> = {
+  'Learning paths':'学习路线',
   'Understanding lab':'理解验证','Try the understanding lab':'体验理解验证',
   'checks passed':'项检查通过',
   'Language':'语言','Correctness':'概念准确','Causality':'因果理解','Clarity':'表达清晰','Transfer':'迁移',

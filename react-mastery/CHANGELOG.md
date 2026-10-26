@@ -1,3 +1,10 @@
+## 2026-10-26 — Interactive practice across learning paths
+
+- Add on-demand AI lessons, outcome-and-reasoning tasks, changed-condition transfer, targeted feedback, references, and resumable topic progress across all 72 new topics.
+- Keep task keys and reference mechanisms on the server; validate quoted evidence and distinguish independent first evidence from supported completion.
+- Persist topic records and draft history in SQLite/export without changing existing React records. Code in these tasks is for reasoning, not execution.
+- Add structural, privacy, persistence, concurrency, evidence, and live-model regression checks.
+
 # Changelog
 
 ## 0.3.0
@@ -57,3 +64,8 @@
 - Added independent evidence gates, assisted-practice tracking, and delayed review.
 - Added SQLite evidence history, autosaved drafts, and full data export.
 - Added domain regression tests and a disposable browser code harness.
+# 2026-10-25 — Learning path catalog
+
+- Add TypeScript, HTML/CSS, C#/.NET, MySQL, SQL Server, and PostgreSQL guides: 72 bilingual topics, self-check questions, project milestones, and official references.
+- Add searchable, filterable learning paths with direct route links; retain existing React labs and progress.
+- Label study guides separately from assessed labs; reading does not change mastery.
