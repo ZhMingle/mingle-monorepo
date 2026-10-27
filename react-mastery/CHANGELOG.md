@@ -1,3 +1,9 @@
+## 2026-10-27 — Node.js learning path
+
+- Add 12 bilingual Node.js topics across foundations, practice, and advanced service engineering, with official references and phase projects.
+- Connect choice/code practice, JavaScript highlighting/formatting, continuous navigation, completion states, and cumulative progress.
+- State Node.js 24 assumptions and use injected/in-memory I/O in generated exercises; Node.js code remains AI-reviewed rather than host-executed.
+
 ## 2026-10-27 — Clear topic completion states
 
 - Distinguish completed, in-progress, and not-started topics with separate icons, colored row backgrounds/borders, and fixed-position status badges.

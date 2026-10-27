@@ -28,6 +28,6 @@ test('invalid syntax is rejected and formatting never executes learner code',asy
   await formatSource('globalThis.__formatTestExecuted = true;','javascript');assert.equal((globalThis as Record<string,unknown>).__formatTestExecuted,undefined);
 });
 test('path dialect takes priority and unknown/C# text never goes through a JS parser',async()=>{
-  assert.equal(codeFlavor('SQL','mysql'),'mysql');assert.equal(codeFlavor('SQL','postgresql'),'postgresql');assert.equal(codeFlavor('SQL','sqlserver'),'tsql');assert.equal(codeFlavor('TypeScript'),'typescript');assert.equal(codeFlavor('TSX'),'tsx');assert.equal(codeFlavor('C#'),'csharp');assert.equal(codeFlavor('CSS','html-css'),'css');assert.equal(codeFlavor('HTML/CSS','html-css'),'html');
+  assert.equal(codeFlavor('Node.js','nodejs'),'javascript');assert.equal(codeFlavor('SQL','mysql'),'mysql');assert.equal(codeFlavor('SQL','postgresql'),'postgresql');assert.equal(codeFlavor('SQL','sqlserver'),'tsql');assert.equal(codeFlavor('TypeScript'),'typescript');assert.equal(codeFlavor('TSX'),'tsx');assert.equal(codeFlavor('C#'),'csharp');assert.equal(codeFlavor('CSS','html-css'),'css');assert.equal(codeFlavor('HTML/CSS','html-css'),'html');
   await assert.rejects(formatSource('class Program {}','csharp'),/indentation/);assert.equal(codeFlavor('unknown'),'text');
 });

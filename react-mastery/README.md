@@ -1,10 +1,10 @@
 # Clarity — Developer Learning Lab
 
-A local-first AI learning platform for React, TypeScript, HTML/CSS, C#/.NET, MySQL, SQL Server, and PostgreSQL. A topic is assessed through independent prediction, real React code checks, explanation, transfer, and delayed recall. Watching a lesson or asking the AI to mark a checkbox never awards mastery.
+A local-first AI learning platform for React, TypeScript, HTML/CSS, C#/.NET, Node.js, MySQL, SQL Server, and PostgreSQL. A topic is assessed through independent prediction, real React code checks, explanation, transfer, and delayed recall. Watching a lesson or asking the AI to mark a checkbox never awards mastery.
 
 ## Current learning experience
 
-All seven paths (78 topics) now use **multiple choice + coding validation**. There are no keyword blanks or required long written explanations. New React coding tasks use the existing isolated browser runner and authored behavioral checks. Other languages use clearly labeled AI code review, not compiler or database execution.
+All eight paths (90 topics) now use **multiple choice + coding validation**. There are no keyword blanks or required long written explanations. New React coding tasks use the existing isolated browser runner and authored behavioral checks. Other languages use clearly labeled AI code review, not compiler or database execution.
 
 Choice and code results count independently toward a two-part practice result. Old keyword records remain in SQLite/export but do not count toward completion or assistance. Existing drafts, earlier reviews, and original React labs remain intact. Older saved React tasks without a runner descriptor retain their original AI review behavior; generate a new variation to get browser execution.
 
@@ -109,12 +109,14 @@ data/               Local data; never committed
 See [product principles](docs/PRODUCT.md) and [architecture and maintenance](docs/ARCHITECTURE.md).
 ## Learning paths
 
-Open **Learning paths** for React, TypeScript, HTML/CSS, C#/.NET, MySQL, SQL Server, and PostgreSQL. Search topics or filter by frontend, backend, and databases. Paths have stable links such as `/#roadmap/typescript`.
+Open **Learning paths** for React, TypeScript, HTML/CSS, C#/.NET, Node.js, MySQL, SQL Server, and PostgreSQL. Search topics or filter by frontend, backend, and databases. Paths have stable links such as `/#roadmap/typescript`.
 
-The six new paths each contain 12 bilingual topics across foundations, practice, and advanced work. Each topic has a goal, a concrete self-check question, and official documentation; each phase has a project milestone. Every topic opens the current two-format practice described above. Lesson generation and code/semantic review use Codex; reading saved lessons, keyed choices, drafts, and reference answers do not. Saved generated lessons keep their original language; generating a new variation uses the current interface language.
+The seven additional paths each contain 12 bilingual topics across foundations, practice, and advanced work. Each topic has a goal, a concrete self-check question, and official documentation; each phase has a project milestone. Every topic opens the current two-format practice described above. Lesson generation and code/semantic review use Codex; reading saved lessons, keyed choices, drafts, and reference answers do not. Saved generated lessons keep their original language; generating a new variation uses the current interface language.
 
 AI-generated exercises can contain mistakes. Check the official source or generate a new variation for disputed behavior. TypeScript, C#, HTML/CSS, and SQL tasks currently use AI code review. New React tasks and original React labs provide real browser checks.
 
 Study sessions, topic-v1 reasoning sessions, original React records, drafts, feedback, references viewed, and content versions all remain in SQLite and the JSON export (schema v4). Browser drafts provide an additional copy during navigation or transient failures. Progress shows question types completed, never a mastery percentage for vocabulary recall.
 
-Validation: `pnpm test`, `pnpm build`. Optional `node scripts/verify-study.ts --all` uses real Codex allowance to check seven route samples, choice/code generation and correct vs broken SQL code, in ignored `data/choice-code-smoke`. The earlier `verify-topic-practice.ts` remains for topic-v1 compatibility.
+Validation: `pnpm test`, `pnpm build`. Optional `node scripts/verify-study.ts --all` uses real Codex allowance to check route samples, choice/code generation and correct vs broken SQL code, in ignored `data/choice-code-smoke`. The earlier `verify-topic-practice.ts` remains for topic-v1 compatibility.
+
+Node.js includes 12 topics across runtime/configuration, modules, asynchronous errors, file data, event-loop scheduling, HTTP, events, testing, streams, workers, cancellation, and diagnostics. It uses the shared choice/code flow and JavaScript editor. Node.js code is AI-reviewed, not executed by the app; exercises use stated Node.js 24 assumptions and injected/in-memory boundaries. Existing completion records remain intact; the overall denominator expands to 90 topics / 180 checks.

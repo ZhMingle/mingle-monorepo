@@ -15,8 +15,10 @@ test('progress counts distinct choice/code evidence across variations, not brows
   assert.equal(p.paths.react.topics['react.snapshot'].completed,0);
   assert.equal(p.paths.react.topics['react.snapshot'].started,true);
   assert.equal(p.paths.react.topics['react.keys'].started,false);
-  assert.equal(p.overall.completedChecks,2);assert.equal(p.overall.totalChecks,156);assert.equal(p.overall.totalTopics,78);
+  assert.equal(p.overall.completedChecks,2);assert.equal(p.overall.totalChecks,180);assert.equal(p.overall.totalTopics,90);
   assert.equal(p.overall.completedTopics,1);
+  assert.equal(p.paths.nodejs.totalChecks,24);
+  assert.equal(p.paths.nodejs.completedChecks,0);
   assert.deepEqual(learningOverview(learningPaths,[...records,session('react.props',[])]),p);
 });
 test('original React choice and executable-code completions count without duplication or granting mastery',()=>{
@@ -32,4 +34,5 @@ test('topic navigation follows the curriculum across phase boundaries and handle
   const last=topicNeighbors(react,'react.reducer');assert.equal(last.next,null);assert.equal(last.previous?.id,'react.derived');
   assert.equal(topicNeighbors(react,'missing').next,null);
   assert.equal(topicNeighbors(findLearningPath('typescript')!,'typescript.generics').previous?.id,'typescript.unknown');
+  assert.equal(topicNeighbors(findLearningPath('nodejs')!,'nodejs.file-data').next?.id,'nodejs.event-loop');
 });

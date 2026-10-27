@@ -4,6 +4,7 @@ export function codeFlavor(language:string,pathId=''):CodeFlavor {
   if(pathId==='react'||name.includes('jsx')&&!name.includes('tsx'))return 'jsx';
   if(name.includes('tsx'))return 'tsx';
   if(pathId==='typescript'||name.includes('typescript'))return 'typescript';
+  if(pathId==='nodejs'||name.includes('node.js')||name==='node')return 'javascript';
   if(pathId==='mysql'||name.includes('mysql'))return 'mysql';
   if(pathId==='postgresql'||name.includes('postgres'))return 'postgresql';
   if(pathId==='sqlserver'||name.includes('sql server')||name.includes('tsql')||name.includes('t-sql'))return 'tsql';

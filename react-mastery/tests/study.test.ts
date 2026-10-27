@@ -24,7 +24,7 @@ test('keyword aliases accept meaning and word forms without matching opposite co
   assert.equal(aliasMatches(lesson.keywords[1],'mutable'),false);assert.equal(aliasMatches(lesson.keywords[1],'immutability'),true);
 });
 test('React and every new path can generate only choice and code formats without altering old records',async()=>{
-  for(const topicId of ['react.props','typescript.inference','html-css.semantics','dotnet.types','mysql.model','sqlserver.model','postgresql.model']){
+  for(const topicId of ['react.props','typescript.inference','html-css.semantics','dotnet.types','nodejs.runtime','mysql.model','sqlserver.model','postgresql.model']){
     const id=await create(topicId);const s=getStudy(id);assert.equal(s.topicId,topicId);assert.equal(s.draft.code,s.lesson.coding.starter);assert.equal(s.current,'choice');assert.deepEqual(s.lesson.keywords,[]);
     assert.equal((await studyAction('latest',{topicId},'zh') as StudyPayload).session.id,id);
   }
