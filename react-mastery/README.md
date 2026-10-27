@@ -8,6 +8,12 @@ All seven paths (78 topics) now use **multiple choice + coding validation**. The
 
 Choice and code results count independently toward a two-part practice result. Old keyword records remain in SQLite/export but do not count toward completion or assistance. Existing drafts, earlier reviews, and original React labs remain intact. Older saved React tasks without a runner descriptor retain their original AI review behavior; generate a new variation to get browser execution.
 
+### Code editor
+
+Current coding tasks and original React labs use CodeMirror with syntax colors, line numbers, bracket matching, completion, auto indentation, and Tab/Shift+Tab indentation. Use **Format** or **Shift+Alt+F**; automatic formatting on blur is enabled by default and can be disabled in the toolbar. JavaScript/JSX, TypeScript/TSX, HTML/CSS use local Prettier parsers. SQL uses the path-specific MySQL, PostgreSQL, or SQL Server formatter. C# provides syntax colors and indentation cleanup, not a full C# formatter.
+
+**Restore initial code** restores the exercise starter, never the reference solution. Reset and formatting are isolated undo steps; use Undo or Ctrl+Z to restore the previous code. Invalid syntax produces a formatting error and leaves the draft intact. An asynchronous formatter cannot overwrite newer typing, a reset, or a submitted/read-only editor. Formatting is local and does not execute code, send it to AI, or consume Codex allowance.
+
 ### Continuous learning and progress
 
 Every topic includes previous/next navigation, a topic picker, and a direct choice-to-code action. Moving to another topic saves the current draft first; navigating does not generate a lesson or award completion.

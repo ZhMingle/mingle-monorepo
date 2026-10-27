@@ -1,3 +1,9 @@
+## 2026-10-27 — Code editor
+
+- Replace plain code textareas in current tasks and original React labs with CodeMirror syntax highlighting, line numbers, bracket matching, completions, and indentation.
+- Add local manual/automatic formatting, per-language parsers, error preservation, and protection against stale async results. C# supports indentation cleanup.
+- Add restore-to-starter and undo, with formatting/reset isolated in history and normal draft persistence.
+
 ## 2026-10-26 — Continuous learning and cumulative progress
 
 - Add previous/next topic controls, a topic picker, and direct choice-to-code continuation, saving drafts before navigation.
