@@ -162,6 +162,8 @@ const server = createServer(async (req, res) => {
     if (file !== root && !file.startsWith(root + sep)) { send(res, 403, { error: 'Invalid path' }); return; }
     try { if (!(await stat(file)).isFile()) file = resolve(root, 'index.html'); } catch { file = resolve(root, 'index.html'); }
     const types: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };
+    // Pick up the latest hashed editor bundle after a build.
+    res.setHeader('Cache-Control', extname(file) === '.html' ? 'no-store' : 'no-cache');
     res.setHeader('Content-Type', types[extname(file)] ?? 'application/octet-stream'); res.end(await readFile(file));
   } catch (error) {
     const e = error as Error & { status?: number }; send(res, e.status ?? 400, { error: e.message });

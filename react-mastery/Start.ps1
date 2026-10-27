@@ -15,4 +15,5 @@ if (!$running) {
     }
 }
 if (!$running) { throw 'The local server did not start. Check data/server-error.log.' }
-Start-Process $url
+# Bypass entry documents cached by older server versions.
+Start-Process "$url/?launch=$([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())"
