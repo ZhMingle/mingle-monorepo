@@ -13,6 +13,8 @@ test('progress counts distinct choice/code evidence across variations, not brows
   assert.deepEqual(p.paths.react.topics['react.props'].kinds,['choice','code']);
   assert.equal(p.paths.react.completedChecks,2);assert.equal(p.paths.react.totalChecks,12);assert.equal(p.paths.react.completedTopics,1);
   assert.equal(p.paths.react.topics['react.snapshot'].completed,0);
+  assert.equal(p.paths.react.topics['react.snapshot'].started,true);
+  assert.equal(p.paths.react.topics['react.keys'].started,false);
   assert.equal(p.overall.completedChecks,2);assert.equal(p.overall.totalChecks,156);assert.equal(p.overall.totalTopics,78);
   assert.equal(p.overall.completedTopics,1);
   assert.deepEqual(learningOverview(learningPaths,[...records,session('react.props',[])]),p);

@@ -2,7 +2,7 @@ import type { LearningPath } from './path-types.ts';
 import type { LearningSession } from './types.ts';
 import type { StudySession } from './study.ts';
 
-export interface TopicProgress {completed:number;total:number;kinds:('choice'|'code')[]}
+export interface TopicProgress {completed:number;total:number;kinds:('choice'|'code')[];started:boolean}
 export interface ProgressSummary {completedChecks:number;totalChecks:number;completedTopics:number;totalTopics:number;percent:number}
 export interface PathProgress extends ProgressSummary {topics:Record<string,TopicProgress>}
 export interface LearningOverview {overall:ProgressSummary;paths:Record<string,PathProgress>}
@@ -14,13 +14,14 @@ export function summarizeTopics(topics:Record<string,TopicProgress>):ProgressSum
 // an earlier completion, and duplicate attempts never inflate the denominator.
 export function learningOverview(paths:LearningPath[],sessions:StudySession[],legacy:LearningSession[]=[]):LearningOverview {
   const evidence=new Map<string,Set<'choice'|'code'>>();
+  const started=new Set([...sessions.map(s=>s.topicId),...legacy.map(s=>`react.${s.lessonId}`)]);
   const add=(id:string,kind:'choice'|'code')=>{if(!evidence.has(id))evidence.set(id,new Set());evidence.get(id)!.add(kind);};
   for(const s of sessions)for(const a of s.attempts)if(a.accepted&&!a.error&&(a.kind==='choice'||a.kind==='code'))add(s.topicId,a.kind);
   for(const s of legacy){if(s.prediction?.correct)add(`react.${s.lessonId}`,'choice');if(s.build?.passed)add(`react.${s.lessonId}`,'code');}
   const result:LearningOverview={overall:summarizeTopics({}),paths:{}};const all:Record<string,TopicProgress>={};
   for(const path of paths){
     const topics=Object.fromEntries(path.stages.flatMap(s=>s.topics).map(topic=>{
-      const kinds=(['choice','code'] as const).filter(k=>evidence.get(topic.id)?.has(k));return [topic.id,{completed:kinds.length,total:2,kinds}];
+      const kinds=(['choice','code'] as const).filter(k=>evidence.get(topic.id)?.has(k));return [topic.id,{completed:kinds.length,total:2,kinds,started:started.has(topic.id)}];
     }));
     result.paths[path.id]={...summarizeTopics(topics),topics};Object.assign(all,topics);
   }

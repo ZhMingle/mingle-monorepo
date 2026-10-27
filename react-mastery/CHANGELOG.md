@@ -1,3 +1,9 @@
+## 2026-10-27 — Clear topic completion states
+
+- Distinguish completed, in-progress, and not-started topics with separate icons, colored row backgrounds/borders, and fixed-position status badges.
+- Track whether practice has started even before the first passing answer; preserve existing completion calculations and records.
+- Show choice/code pass details and contextual Start, Continue, or Review actions when a topic opens.
+
 ## 2026-10-27 — Code editor
 
 - Replace plain code textareas in current tasks and original React labs with CodeMirror syntax highlighting, line numbers, bracket matching, completions, and indentation.
