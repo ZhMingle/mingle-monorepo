@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { request } from './api.ts';
 import { useLanguage } from './language.tsx';
 import type { PathTopic } from '../shared/path-types.ts';
-import { studyKinds } from '../shared/study.ts';
+import { canContinueStudy,studyKinds } from '../shared/study.ts';
 import type { StudyDraft,StudyKind,StudyPayload } from '../shared/study.ts';
 import './topic-practice.css';
 import { findLearningPath } from '../shared/paths.ts';
@@ -20,6 +20,7 @@ export default function MixedPractice({topic,pathId,overview,progressError,reloa
   const live=useRef(true);const saving=useRef<Promise<unknown>>(Promise.resolve());
   const questionCard=useRef<HTMLDivElement|null>(null);
   const session=payload?.session;const lesson=session?.lesson;
+  const canContinue=canContinueStudy(session);
   const path=findLearningPath(pathId)!;const journey=topicNeighbors(path,topic.id);
   const labels={keywords:say('English keywords','英文关键词填空'),choice:say('Choose an answer','选择题'),code:say('Write code','编程题')};
   function apply(next:StudyPayload,restore=false){
@@ -74,6 +75,10 @@ export default function MixedPractice({topic,pathId,overview,progressError,reloa
     }catch(e){if(live.current)setError((e as Error).message);}
     finally{if(live.current)setBusy('');}
   }
+  async function continueTopic(){
+    if(!canContinue)return;
+    await openTopic(journey.next?.id);
+  }
   const attempts=session?.attempts.filter(a=>a.kind===current)??[];const latest=attempts.at(-1);
   const canSubmit=current==='choice'?draft.choice>=0:draft.code.trim().length>=4;
   return <section className="topic-practice mixed-practice">
@@ -83,7 +88,7 @@ export default function MixedPractice({topic,pathId,overview,progressError,reloa
     <nav className="topic-journey" aria-label={say('Topic navigation','知识点导航')}>
       <button disabled={!!busy||!journey.previous} onClick={()=>void openTopic(journey.previous!.id)}>← {say('Previous topic','上一知识点')}</button>
       <label><span>{journey.index+1}/{journey.topics.length}</span><select aria-label={say('Current topic','当前知识点')} value={topic.id} disabled={!!busy} onChange={e=>void openTopic(e.target.value)}>{journey.topics.map(item=><option key={item.id} value={item.id}>{item.title[language]}</option>)}</select></label>
-      <button disabled={!!busy||!journey.next} onClick={()=>void openTopic(journey.next!.id)}>{say('Next topic','下一知识点')} →</button>
+      {canContinue&&journey.next&&<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next topic','下一知识点')} →</button>}
     </nav>
     {error&&<div role="alert" className="tp-error">{error}<button disabled={!!busy} onClick={()=>session?void action('load'):location.reload()}>{say('Reload saved practice','重新读取练习')}</button></div>}
     {loading?<p role="status">{say('Loading…','正在读取…')}</p>:!session?<div className="tp-card"><h2>{say('Choose, then build.','先选择，再写代码。')}</h2><p>{say('Solve a practical multiple-choice question, then implement a small feature. No terminology blanks or long explanations.','先通过选择题判断场景，再用代码完成一个小功能。无需填术语或写长篇解释。')}</p><p>{say('Two question types, saved drafts and feedback. Generation and AI reviews use Codex.','两种题型，保留草稿和反馈。出题与 AI 评审使用 Codex 额度。')}</p><button className="tp-primary" disabled={!!busy} onClick={()=>void action('new')}>{busy?say('Preparing exercises…','正在准备题目…'):say('Start practice','开始练习')}</button></div>:lesson&&<>
@@ -104,7 +109,7 @@ export default function MixedPractice({topic,pathId,overview,progressError,reloa
     </>}
     <nav className="topic-continuation" aria-label={say('Continue learning','继续学习')}>
       {session&&current==='choice'?<button className="tp-primary" disabled={!!busy} onClick={()=>void navigate('code')}>{say('Continue to code →','继续编程题 →')}</button>:<span/>}
-      {journey.next?<button disabled={!!busy} onClick={()=>void openTopic(journey.next!.id)}>{say('Next: ','下一部分：')}{journey.next.title[language]} →</button>:<button disabled={!!busy} onClick={()=>void openTopic()}>{say('End of path · view progress','已到路线末尾 · 查看进度')} →</button>}
+      {canContinue?(journey.next?<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next: ','下一部分：')}{journey.next.title[language]} →</button>:<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('End of path · view progress','已到路线末尾 · 查看进度')} →</button>):session&&<p role="status">{payload.completed.includes('choice')?say('Pass the code task to unlock the next topic.','通过编程题后解锁下一部分。'):payload.completed.includes('code')?say('Pass the choice question to unlock the next topic.','通过选择题后解锁下一部分。'):say('Pass both tasks to unlock the next topic.','两项任务都通过后解锁下一部分。')}</p>}
     </nav>
     <p className="tp-source"><a href={topic.source} target="_blank" rel="noreferrer">{say('Official reference ↗','官方资料 ↗')}</a></p>
   </section>;
