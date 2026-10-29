@@ -1,4 +1,4 @@
-export type CodeFlavor='jsx'|'javascript'|'typescript'|'tsx'|'html'|'css'|'mysql'|'postgresql'|'tsql'|'csharp'|'text';
+export type CodeFlavor='jsx'|'javascript'|'typescript'|'tsx'|'html'|'css'|'mysql'|'postgresql'|'tsql'|'csharp'|'java'|'python'|'go'|'text';
 export function codeFlavor(language:string,pathId=''):CodeFlavor {
   const name=language.toLowerCase();
   if(pathId==='react'||name.includes('jsx')&&!name.includes('tsx'))return 'jsx';
@@ -9,6 +9,9 @@ export function codeFlavor(language:string,pathId=''):CodeFlavor {
   if(pathId==='postgresql'||name.includes('postgres'))return 'postgresql';
   if(pathId==='sqlserver'||name.includes('sql server')||name.includes('tsql')||name.includes('t-sql'))return 'tsql';
   if(pathId==='dotnet'||name.includes('c#')||name.includes('csharp'))return 'csharp';
+  if(pathId==='java'||name==='java')return 'java';
+  if(pathId==='python'||name.includes('python'))return 'python';
+  if(pathId==='go'||name==='go'||name==='golang')return 'go';
   if(name.includes('html'))return 'html';
   if(name.includes('css'))return 'css';
   if(name.includes('sql'))return 'postgresql';
@@ -21,7 +24,7 @@ export async function formatSource(code:string,flavor:CodeFlavor):Promise<string
     const {format}=await import('sql-formatter');
     return format(code,{language:flavor as 'mysql'|'postgresql'|'tsql',tabWidth:2,keywordCase:'upper'});
   }
-  if(flavor==='csharp'||flavor==='text')throw new Error('Use editor indentation for this language.');
+  if(['csharp','java','python','go'].includes(flavor)||flavor==='text')throw new Error('Use editor indentation for this language.');
   const {format}=await import('prettier/standalone');
   if(flavor==='html'){
     const html=await import('prettier/plugins/html');const css=await import('prettier/plugins/postcss');

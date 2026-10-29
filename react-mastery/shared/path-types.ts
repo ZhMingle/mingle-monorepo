@@ -1,5 +1,5 @@
 import type { Bilingual } from './understanding.ts';
-export type PathId = 'react' | 'typescript' | 'html-css' | 'dotnet' | 'nodejs' | 'mysql' | 'sqlserver' | 'postgresql';
+export type PathId = 'react' | 'typescript' | 'html-css' | 'dotnet' | 'nodejs' | 'java' | 'python' | 'go' | 'mysql' | 'sqlserver' | 'postgresql';
 export interface PathTopic { id:string; title:Bilingual; goal:Bilingual; check:Bilingual; source:string }
 export interface PathStage { id:'foundation'|'practice'|'advanced'; project:Bilingual; topics:PathTopic[] }
 export interface LearningPath {

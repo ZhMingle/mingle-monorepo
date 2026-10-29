@@ -31,3 +31,10 @@ test('path dialect takes priority and unknown/C# text never goes through a JS pa
   assert.equal(codeFlavor('Node.js','nodejs'),'javascript');assert.equal(codeFlavor('SQL','mysql'),'mysql');assert.equal(codeFlavor('SQL','postgresql'),'postgresql');assert.equal(codeFlavor('SQL','sqlserver'),'tsql');assert.equal(codeFlavor('TypeScript'),'typescript');assert.equal(codeFlavor('TSX'),'tsx');assert.equal(codeFlavor('C#'),'csharp');assert.equal(codeFlavor('CSS','html-css'),'css');assert.equal(codeFlavor('HTML/CSS','html-css'),'html');
   await assert.rejects(formatSource('class Program {}','csharp'),/indentation/);assert.equal(codeFlavor('unknown'),'text');
 });
+test('Java, Python and Go select their own highlighting and never use a JavaScript formatter',async()=>{
+  for(const id of ['java','python','go'] as const){
+    assert.equal(codeFlavor('generated language label',id),id);
+    assert.equal(codeFlavor(id),id);
+    await assert.rejects(formatSource('preserve learner source',id),/indentation/);
+  }
+});

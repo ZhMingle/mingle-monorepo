@@ -8,7 +8,9 @@ import {javascript} from '@codemirror/lang-javascript';
 import {html} from '@codemirror/lang-html';
 import {css} from '@codemirror/lang-css';
 import {sql,MySQL,PostgreSQL,MSSQL} from '@codemirror/lang-sql';
-import {csharp} from '@codemirror/legacy-modes/mode/clike';
+import {csharp,java} from '@codemirror/legacy-modes/mode/clike';
+import {python} from '@codemirror/legacy-modes/mode/python';
+import {go} from '@codemirror/legacy-modes/mode/go';
 import {oneDark} from '@codemirror/theme-one-dark';
 import {codeFlavor,formatSource} from './code-format.ts';
 import type {CodeFlavor} from './code-format.ts';
@@ -21,8 +23,11 @@ function languageExtension(flavor:CodeFlavor){
     case 'typescript':return javascript({typescript:true});case 'tsx':return javascript({typescript:true,jsx:true});
     case 'html':return html();case 'css':return css();
     case 'mysql':return sql({dialect:MySQL});case 'postgresql':return sql({dialect:PostgreSQL});case 'tsql':return sql({dialect:MSSQL});
-    case 'csharp':return StreamLanguage.define(csharp);default:return [];
+    case 'java':return StreamLanguage.define(java);case 'python':return StreamLanguage.define(python);case 'go':return StreamLanguage.define(go);case 'csharp':return StreamLanguage.define(csharp);default:return [];
   }
+}
+function languageConfiguration(flavor:CodeFlavor){
+  return [languageExtension(flavor),indentUnit.of(flavor==='python'?'    ':flavor==='go'?'\t':'  ')];
 }
 interface Props {value:string;starter:string;language:string;pathId?:string;disabled?:boolean;maxLength?:number;label:string;onChange:(code:string)=>void}
 export default function CodeEditor(props:Props){
@@ -39,9 +44,9 @@ export default function CodeEditor(props:Props){
   const flavor=codeFlavor(props.language,props.pathId);
   async function formatDocument(){
     const view=editor.current;if(!view||latest.current.disabled||formattingNow.current)return;
-    const kind=codeFlavor(latest.current.language,latest.current.pathId);if(kind==='text')return;
+    const kind=codeFlavor(latest.current.language,latest.current.pathId);if(kind==='text'||kind==='python')return;
     setMessage('');setFailed(false);
-    if(kind==='csharp'){
+    if(['csharp','java','go'].includes(kind)){
       view.dispatch({changes:indentRange(view.state,0,view.state.doc.length),annotations:[Transaction.userEvent.of('input.format'),isolateHistory.of('full')]});
       setMessage(say('Indentation updated.','缩进已整理。'));return;
     }
@@ -68,8 +73,8 @@ export default function CodeEditor(props:Props){
     view.focus();setFailed(false);setMessage(say('Initial code restored. Ctrl+Z to undo.','已恢复初始代码，可用 Ctrl+Z 撤销。'));
   }
   useEffect(()=>{
-    const view=new EditorView({parent:host.current!,doc:latest.current.value,extensions:[basicSetup,oneDark,EditorView.lineWrapping,indentUnit.of('  '),
-      mode.current.of(languageExtension(codeFlavor(latest.current.language,latest.current.pathId))),
+    const view=new EditorView({parent:host.current!,doc:latest.current.value,extensions:[basicSetup,oneDark,EditorView.lineWrapping,
+      mode.current.of(languageConfiguration(codeFlavor(latest.current.language,latest.current.pathId))),
       configuration.current.of([EditorState.readOnly.of(!!latest.current.disabled),EditorView.editable.of(!latest.current.disabled)]),
       accessible.current.of(EditorView.contentAttributes.of({'aria-label':latest.current.label,spellcheck:'false',autocapitalize:'off',autocorrect:'off'})),
       keymap.of([{key:'Shift-Alt-f',run:()=>{formatter.current();return true;}},indentWithTab]),
@@ -83,18 +88,18 @@ export default function CodeEditor(props:Props){
     return()=>{generation.current++;editor.current=null;view.destroy();};
   },[]);
   useEffect(()=>{const view=editor.current;if(view&&view.state.doc.toString()!==props.value)view.dispatch({changes:{from:0,to:view.state.doc.length,insert:props.value}});},[props.value]);
-  useEffect(()=>{generation.current++;editor.current?.dispatch({effects:mode.current.reconfigure(languageExtension(flavor))});},[flavor]);
+  useEffect(()=>{generation.current++;editor.current?.dispatch({effects:mode.current.reconfigure(languageConfiguration(flavor))});},[flavor]);
   useEffect(()=>{editor.current?.dispatch({effects:configuration.current.reconfigure([EditorState.readOnly.of(!!props.disabled),EditorView.editable.of(!props.disabled)])});},[props.disabled]);
   useEffect(()=>{editor.current?.dispatch({effects:accessible.current.reconfigure(EditorView.contentAttributes.of({'aria-label':props.label,spellcheck:'false',autocapitalize:'off',autocorrect:'off'}))});},[props.label]);
   return <div className="code-editor">
     <div className="code-editor-toolbar"><strong>{props.language}</strong><div>
-      <label><input type="checkbox" checked={autoFormat} disabled={!!props.disabled||flavor==='text'} onChange={e=>{setAutoFormat(e.target.checked);try{localStorage.setItem('clarity.editor.autoFormat',String(e.target.checked));}catch{/* Preference still works in this session. */}}}/>{say('Format on blur','离开时自动格式化')}</label>
-      <button type="button" disabled={!!props.disabled||formatting||flavor==='text'} onClick={()=>void formatDocument()}>{formatting?say('Formatting…','格式化中…'):flavor==='csharp'?say('Reindent','整理缩进'):say('Format','格式化')}</button>
+      <label><input type="checkbox" checked={autoFormat} disabled={!!props.disabled||(flavor==='text'||flavor==='python')} onChange={e=>{setAutoFormat(e.target.checked);try{localStorage.setItem('clarity.editor.autoFormat',String(e.target.checked));}catch{/* Preference still works in this session. */}}}/>{say('Format on blur','离开时自动格式化')}</label>
+      <button type="button" disabled={!!props.disabled||formatting||(flavor==='text'||flavor==='python')} onClick={()=>void formatDocument()}>{formatting?say('Formatting…','格式化中…'):['csharp','java','go'].includes(flavor)?say('Reindent','整理缩进'):say('Format','格式化')}</button>
       <button type="button" disabled={!!props.disabled||props.value===props.starter} onClick={reset}>{say('Restore initial code','恢复初始代码')}</button>
       <button type="button" disabled={!!props.disabled||!canUndo} onClick={()=>{if(editor.current){generation.current++;undo(editor.current);editor.current.focus();setMessage('');}}}>{say('Undo','撤销')}</button>
     </div></div>
     <div ref={host}/>
-    <div className="code-editor-hint">{say('Tab: indent · Shift+Alt+F: format · Ctrl+Z: undo','Tab 缩进 · Shift+Alt+F 格式化 · Ctrl+Z 撤销')}{flavor==='csharp'&&` · ${say('C#: indentation only','C#：仅整理缩进')}`}</div>
+    <div className="code-editor-hint">{flavor==='python'?say('Tab: indent · Ctrl+Z: undo · Python automatic formatting unavailable; indentation is preserved','Tab 缩进 · Ctrl+Z 撤销 · Python 暂不支持自动格式化，保留原有缩进'):say('Tab: indent · Shift+Alt+F: format · Ctrl+Z: undo','Tab 缩进 · Shift+Alt+F 格式化 · Ctrl+Z 撤销')}{['csharp','java','go'].includes(flavor)&&` · ${say('Indentation only','仅整理缩进')}`}</div>
     {message&&<p className={`code-editor-message ${failed?'format-error':''}`} role={failed?'alert':'status'}>{message}</p>}
   </div>;
 }
