@@ -296,7 +296,7 @@ namespace Mingle.ActivityReminder
             {
                 if (QuotaLoading) return "Refreshing from your local Codex sign-in...";
                 if (quotaError != null) return (Quota == null ? "" : "Showing last known usage. ") + quotaError;
-                return Quota == null ? "No usage data yet." : "Updated " + Quota.FetchedUtc.ToLocalTime().ToString("MMM d, HH:mm:ss") + (usageMonitor != null && usageMonitor.Watching ? " · Updates after each completed task" : " · Task monitoring unavailable; reconnect to Codex");
+                return Quota == null ? "No usage data yet." : "Updated " + Quota.FetchedUtc.ToLocalTime().ToString("MMM d, HH:mm:ss") + (usageMonitor != null && usageMonitor.Watching ? " · Live usage events + 15-second sync" : " · Syncs every 15 seconds");
             }
         }
         internal MainWindow(EventWaitHandle wake)

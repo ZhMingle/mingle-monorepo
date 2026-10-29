@@ -35,8 +35,8 @@ namespace Mingle.ActivityReminder
         }
         private bool IsCompletion(string record)
         {
-            // Ignore reasoning, token updates, tools, and assistant messages.
-            if (record.IndexOf("task_complete", StringComparison.Ordinal) < 0 && record.IndexOf("turn_aborted", StringComparison.Ordinal) < 0) return false;
+            // Usage records arrive during a turn, before its completion record.
+            if (record.IndexOf("task_complete", StringComparison.Ordinal) < 0 && record.IndexOf("turn_aborted", StringComparison.Ordinal) < 0 && record.IndexOf("rate_limits", StringComparison.Ordinal) < 0) return false;
             try
             {
                 var json = new JavaScriptSerializer { MaxJsonLength = 2 * 1024 * 1024 };
@@ -44,6 +44,7 @@ namespace Mingle.ActivityReminder
                 if (Convert.ToString(QuotaSnapshot.Get(message, "type")) != "event_msg") return false;
                 var payload = QuotaSnapshot.Map(QuotaSnapshot.Get(message, "payload"));
                 string kind = Convert.ToString(QuotaSnapshot.Get(payload, "type"));
+                if (kind == "token_count") return QuotaSnapshot.Map(QuotaSnapshot.Get(payload, "rate_limits")) != null;
                 if (kind != "task_complete" && kind != "turn_aborted") return false;
                 string id = Convert.ToString(QuotaSnapshot.Get(payload, "turn_id"));
                 string root = Convert.ToString(QuotaSnapshot.Get(payload, "root_turn_id"));
@@ -138,17 +139,17 @@ namespace Mingle.ActivityReminder
         }
     }
 
-    // Coalesce completed tasks and retain completions received during a request.
+    // Coalesce live usage/completion events; poll even without local activity.
     internal sealed class UsageUpdateSchedule
     {
-        private double first = double.PositiveInfinity, last, notBefore;
+        private double first = double.PositiveInfinity, last, notBefore, nextPoll = 15;
         internal bool Pending { get { return !double.IsPositiveInfinity(first); } }
         internal void Signal(double now) { if (!Pending) first = now; last = now; }
         internal bool Ready(double now)
         {
-            return Pending && now >= notBefore && (now - last >= 0.8 || now - first >= 3);
+            return now >= notBefore && (now >= nextPoll || (Pending && (now - last >= 0.8 || now - first >= 3)));
         }
-        internal void Started(double now) { first = double.PositiveInfinity; notBefore = now + 3; }
+        internal void Started(double now) { first = double.PositiveInfinity; notBefore = now + 3; nextPoll = now + 15; }
     }
 
     // One persistent, private stdio connection. No listening network port or model turns.
@@ -178,17 +179,17 @@ namespace Mingle.ActivityReminder
                 TaskCompletionSource<Dictionary<string, object>> completion;
                 lock (gate) { if (!pending.TryGetValue(id, out completion)) return; pending.Remove(id); }
                 if (QuotaSnapshot.Get(message, "error") != null)
-                    completion.TrySetException(new InvalidOperationException("Could not read Codex usage. Check your connection. Rise will try again after the next completed task."));
+                    completion.TrySetException(new InvalidOperationException("Could not read Codex usage. Check your connection. Rise will try again on the next automatic refresh."));
                 else completion.TrySetResult(QuotaSnapshot.Map(QuotaSnapshot.Get(message, "result")));
                 return;
             }
-            // Unsolicited quota notifications must not refresh the UI mid-task.
+            // This private connection runs no turns; session usage events and periodic reads keep the UI current.
         }
         private void FailPending()
         {
             lock (gate)
             {
-                foreach (var completion in pending.Values) completion.TrySetException(new IOException("Codex connection closed. Will reconnect after the next completed task."));
+                foreach (var completion in pending.Values) completion.TrySetException(new IOException("Codex connection closed. Will reconnect on the next automatic refresh."));
                 pending.Clear();
             }
         }
@@ -201,7 +202,7 @@ namespace Mingle.ActivityReminder
             {
                 process.StandardInput.WriteLine(json.Serialize(new { method = method, id = id, @params = parameters }));
                 process.StandardInput.Flush();
-                if (!completion.Task.Wait(25000)) throw new TimeoutException("Codex usage request timed out. Will retry after the next completed task.");
+                if (!completion.Task.Wait(25000)) throw new TimeoutException("Codex usage request timed out. Will retry on the next automatic refresh.");
                 return completion.Task.GetAwaiter().GetResult();
             }
             catch (AggregateException ex) { throw ex.InnerException ?? ex; }
@@ -247,11 +248,11 @@ namespace Mingle.ActivityReminder
         internal static void Run()
         {
             var schedule = new UsageUpdateSchedule();
-            if (schedule.Ready(1000000)) throw new Exception("Idle monitor must not poll");
+            if (schedule.Ready(14.9) || !schedule.Ready(15)) throw new Exception("Periodic usage refresh deadline");
             schedule.Signal(1);
             if (schedule.Ready(1.5) || !schedule.Ready(1.9)) throw new Exception("Activity debounce");
             schedule.Started(1.9);
-            if (schedule.Ready(1000000)) throw new Exception("No periodic refresh after success");
+            if (schedule.Ready(16.8) || !schedule.Ready(16.9)) throw new Exception("Periodic refresh after success or failure");
             schedule.Signal(2); schedule.Signal(3);
             if (schedule.Ready(4) || !schedule.Ready(5)) throw new Exception("Activity while request in flight must be retained");
             schedule.Started(5);
@@ -261,6 +262,7 @@ namespace Mingle.ActivityReminder
             Func<string, int> consume = value => { byte[] data = System.Text.Encoding.UTF8.GetBytes(value); return reader.Consume(data, data.Length); };
             if (consume("{\"type\":\"event_msg\",\"payload\":{\"type\":\"task_started\",\"turn_id\":\"a\"}}\n") != 0) throw new Exception("Task start must not refresh");
             if (consume("{\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\"}}\n") != 0) throw new Exception("Thinking/token usage must not refresh");
+            if (consume("{\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"rate_limits\":{\"primary\":{\"used_percent\":12}}}}\n") != 1) throw new Exception("Mid-turn quota event must refresh");
             if (consume("{\"type\":\"event_msg\",\"payload\":{\"type\":\"item_completed\"}}\n") != 0) throw new Exception("Tool completion must not refresh");
             if (consume("{\"type\":\"response_item\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"fake\"}}\n") != 0) throw new Exception("Only lifecycle events count");
             string completion = "{\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\",\"turn_id\":\"a\",\"root_turn_id\":\"a\"}}";
