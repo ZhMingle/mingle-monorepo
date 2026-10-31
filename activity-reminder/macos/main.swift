@@ -5,7 +5,7 @@ import CoreGraphics
     let clock: UsageClock
     let saveURL: URL
     let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: 738), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-    let panel = NSPanel(contentRect: NSRect(x: 70, y: 100, width: 304, height: 234), styleMask: [.titled, .utilityWindow, .nonactivatingPanel], backing: .buffered, defer: false)
+    let panel = NSPanel(contentRect: NSRect(x: 70, y: 100, width: 220, height: 162), styleMask: [.titled, .utilityWindow, .nonactivatingPanel], backing: .buffered, defer: false)
     var status: NSStatusItem!
     var timer: Timer?
     var last = ProcessInfo.processInfo.systemUptime
@@ -90,12 +90,12 @@ import CoreGraphics
         place(button("Choose CLI…", #selector(chooseCLI)), quota, 657, 28, 119, 36)
         place(label("Auto-pauses when locked or idle  ·  Close the window to keep Rise in the menu bar", size: 11, color: Theme.muted), root, 34, 706, 790, 18)
         panel.title = "Rise"; panel.level = .floating; panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]; panel.isMovableByWindowBackground = true; panel.setFrameAutosaveName("RiseFloating"); panel.appearance = NSAppearance(named: .darkAqua); panel.backgroundColor = Theme.card; panel.titlebarAppearsTransparent = true
-        let miniRoot = Surface(NSRect(x: 0, y: 0, width: 304, height: 234), color: Theme.card); panel.contentView = miniRoot
-        Theme.text(miniStatus, size: 11, color: Theme.muted); place(miniStatus, miniRoot, 20, 16, 264, 20)
-        Theme.text(mini, size: 46, color: Theme.mint, weight: .light); mini.font = .monospacedDigitSystemFont(ofSize: 46, weight: .light); place(mini, miniRoot, 17, 43, 270, 60)
-        Theme.text(miniUsage, size: 11, color: Theme.muted); miniUsage.maximumNumberOfLines = 3; place(miniUsage, miniRoot, 20, 111, 264, 52)
-        place(button("Open app", #selector(show)), miniRoot, 20, 170, 126, 40)
-        miniAction.target = self; miniAction.action = #selector(miniToggle); Theme.button(miniAction); place(miniAction, miniRoot, 158, 170, 126, 40)
+        let miniRoot = Surface(NSRect(x: 0, y: 0, width: 220, height: 162), color: Theme.card); panel.contentView = miniRoot; panel.setContentSize(NSSize(width: 220, height: 162))
+        Theme.text(miniStatus, size: 10, color: Theme.muted); miniStatus.lineBreakMode = .byTruncatingTail; place(miniStatus, miniRoot, 12, 8, 196, 16)
+        Theme.text(mini, size: 34, color: Theme.mint, weight: .light); mini.font = .monospacedDigitSystemFont(ofSize: 34, weight: .light); place(mini, miniRoot, 10, 26, 198, 43)
+        Theme.text(miniUsage, size: 10, color: Theme.muted); miniUsage.maximumNumberOfLines = 3; place(miniUsage, miniRoot, 12, 73, 196, 40)
+        let openMini = button("Open app", #selector(show)); openMini.font = .systemFont(ofSize: 11, weight: .medium); place(openMini, miniRoot, 12, 120, 92, 30)
+        miniAction.target = self; miniAction.action = #selector(miniToggle); Theme.button(miniAction); miniAction.font = .systemFont(ofSize: 11, weight: .medium); place(miniAction, miniRoot, 112, 120, 96, 30)
         status = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         let menu = NSMenu(); menu.addItem(withTitle: "Open Rise", action: #selector(show), keyEquivalent: ""); menu.addItem(withTitle: "Pause / Start session", action: #selector(toggle), keyEquivalent: ""); menu.addItem(.separator()); menu.addItem(withTitle: "Quit Rise", action: #selector(quit), keyEquivalent: "q"); for item in menu.items { item.target = self }; status.menu = menu
         let center = NSWorkspace.shared.notificationCenter
@@ -112,6 +112,10 @@ import CoreGraphics
                 if let bitmap = root.bitmapImageRepForCachingDisplay(in: root.bounds) {
                     root.cacheDisplay(in: root.bounds, to: bitmap)
                     if let data = bitmap.representation(using: .png, properties: [:]) { try? data.write(to: URL(fileURLWithPath: "/private/tmp/rise-preview.png")) }
+                }
+                if let bitmap = miniRoot.bitmapImageRepForCachingDisplay(in: miniRoot.bounds) {
+                    miniRoot.cacheDisplay(in: miniRoot.bounds, to: bitmap)
+                    if let data = bitmap.representation(using: .png, properties: [:]) { try? data.write(to: URL(fileURLWithPath: "/private/tmp/rise-mini-preview.png")) }
                 }
                 NSApp.terminate(nil)
             }
@@ -146,7 +150,7 @@ import CoreGraphics
         caption.stringValue = clock.restEnd != nil ? "Rest your eyes. Move a little." : clock.state.awaitingStart ? "Waiting for your confirmation" : clock.snooze > 0 ? "Until the next reminder" : "Until your next break"
         countdown.setAccessibilityLabel(caption.stringValue + " " + text)
         breakAction.title = clock.restEnd != nil ? "Skip break" : clock.state.awaitingStart ? "Start next session" : "Take a 5-minute break"
-        action.title = clock.actionTitle(idle: idle, locked: locked, now: now); miniAction.title = clock.restEnd != nil ? "Skip break" : action.title
+        action.title = clock.actionTitle(idle: idle, locked: locked, now: now); miniAction.title = clock.restEnd != nil ? "Skip break" : clock.state.awaitingStart ? "Start session" : action.title
         action.isEnabled = !locked && clock.restEnd == nil; miniAction.isEnabled = !locked
         if clock.state.floating { panel.orderFrontRegardless() } else { panel.orderOut(nil) }
     }
