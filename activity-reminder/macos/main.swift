@@ -4,8 +4,8 @@ import CoreGraphics
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let clock: UsageClock
     let saveURL: URL
-    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: 738), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-    let panel = NSPanel(contentRect: NSRect(x: 70, y: 100, width: 220, height: 102), styleMask: [.titled, .utilityWindow, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
+    let window = DraggableWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: 738), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
+    let panel = DraggablePanel(contentRect: NSRect(x: 70, y: 100, width: 220, height: 102), styleMask: [.titled, .utilityWindow, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
     var status: NSStatusItem!
     var timer: Timer?
     var last = ProcessInfo.processInfo.systemUptime
