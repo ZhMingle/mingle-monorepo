@@ -1,8 +1,31 @@
 # Rise - Activity Reminder
 
-A Windows desktop app that tracks active computer time and reminds you to stand up and move.
+A desktop app that tracks active computer time and reminds you to stand up and move. Includes the original Windows application and a native macOS version.
 
-## Run
+## macOS
+
+Double-click **Start-Mac.command** in Finder. The first launch builds `macos/build/Rise.app` and opens it. Later you can open that app directly, or copy it to Applications. Requires macOS 13 or later and Apple Command Line Tools (`xcode-select --install`) to build. The build targets the current Mac architecture; build separately on Intel and Apple Silicon. No Node.js, Python packages, or .NET runtime are needed.
+
+The native AppKit version includes a dashboard, menu bar timer, draggable floating timer, configurable active-use intervals and idle thresholds, pause/resume, five-minute breaks and snooze, manual confirmation before the next session, daily statistics, and Codex usage. Closing the dashboard keeps Rise running; use **Quit Rise** in the menu bar to exit. The timer excludes idle, locked, inactive login sessions, and sleep. Reading or watching a video without input eventually counts as idle. Reminders require Rise to remain running.
+
+Settings and statistics are stored separately from Windows at `~/Library/Application Support/MingleActivityReminder/macos-v1.json`. The floating position is saved by macOS. Windows data is not automatically imported. Break and snooze countdowns and manual pause are not restored on quit; waiting for session confirmation is restored.
+
+Codex usage uses a private, persistent `codex app-server` connection, refreshing every 15 seconds, with a manual refresh button and executable picker. The Mac version does not watch session files for earlier event-triggered updates. Install and sign into Codex first. Missing/failed usage does not stop the reminder. Last successful readings are labeled when refresh fails. The app does not read login tokens or start model turns.
+
+Build and verify from Terminal:
+
+```sh
+./macos/build.sh
+./macos/test.sh
+# Optional: verify two real usage reads using your existing Codex sign-in
+./macos/test.sh --quota-test
+# UI smoke test (opens windows briefly, does not save app settings)
+./macos/build/Rise.app/Contents/MacOS/Rise --smoke-test
+```
+
+The generated app is locally ad-hoc signed, not notarized for distribution. Automatic startup at login and cross-device sync are not included.
+
+## Windows — Run
 
 Open this folder in File Explorer and double-click **ActivityReminder.exe**. No Python, Node.js, or third-party packages are required. The app uses the .NET Framework included with Windows. `Start.bat` also launches it. File links inside Codex may open a preview instead of running the application.
 
