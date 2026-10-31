@@ -52,6 +52,12 @@ final class DraggableWindow: NSWindow {
 }
 
 final class DraggablePanel: NSPanel {
+    // The floating timer may share the Dock's strip at the screen edge.
+    // AppKit's default constraint uses the work area and pushes it back up.
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        frameRect
+    }
+
     override func sendEvent(_ event: NSEvent) {
         if !handleWindowDrag(event, in: self) { super.sendEvent(event) }
     }
