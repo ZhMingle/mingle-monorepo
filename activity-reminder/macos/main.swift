@@ -5,7 +5,7 @@ import CoreGraphics
     let clock: UsageClock
     let saveURL: URL
     let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: 738), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-    let panel = NSPanel(contentRect: NSRect(x: 70, y: 100, width: 220, height: 122), styleMask: [.titled, .utilityWindow, .nonactivatingPanel], backing: .buffered, defer: false)
+    let panel = NSPanel(contentRect: NSRect(x: 70, y: 100, width: 220, height: 102), styleMask: [.titled, .utilityWindow, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
     var status: NSStatusItem!
     var timer: Timer?
     var last = ProcessInfo.processInfo.systemUptime
@@ -38,7 +38,6 @@ import CoreGraphics
     let totalMetric = NSTextField(labelWithString: "0 min")
     let cycleMetric = NSTextField(labelWithString: "00:00")
     let breaksMetric = NSTextField(labelWithString: "0")
-    let miniStatus = NSTextField(labelWithString: "Tracking active time")
     let breakAction = NSButton(title: "Take a break", target: nil, action: nil)
     func label(_ text: String, size: CGFloat = 13, color: NSColor = Theme.white, weight: NSFont.Weight = .regular) -> NSTextField {
         let field = NSTextField(labelWithString: text); Theme.text(field, size: size, color: color, weight: weight); return field
@@ -89,13 +88,12 @@ import CoreGraphics
         place(button("↻ Refresh", #selector(refresh)), quota, 546, 28, 101, 36)
         place(button("Choose CLI…", #selector(chooseCLI)), quota, 657, 28, 119, 36)
         place(label("Auto-pauses when locked or idle  ·  Close the window to keep Rise in the menu bar", size: 11, color: Theme.muted), root, 34, 706, 790, 18)
-        panel.title = "Rise"; panel.level = .floating; panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]; panel.isMovableByWindowBackground = true; panel.setFrameAutosaveName("RiseFloating"); panel.appearance = NSAppearance(named: .darkAqua); panel.backgroundColor = Theme.card; panel.titlebarAppearsTransparent = true
-        let miniRoot = Surface(NSRect(x: 0, y: 0, width: 220, height: 122), color: Theme.card); panel.contentView = miniRoot; panel.setContentSize(NSSize(width: 220, height: 122))
-        Theme.text(miniStatus, size: 10, color: Theme.muted); miniStatus.lineBreakMode = .byTruncatingTail; place(miniStatus, miniRoot, 12, 8, 196, 16)
-        Theme.text(mini, size: 34, color: Theme.mint, weight: .light); mini.font = .monospacedDigitSystemFont(ofSize: 34, weight: .light); place(mini, miniRoot, 10, 26, 100, 43)
-        Theme.text(miniUsage, size: 10, color: Theme.muted); miniUsage.maximumNumberOfLines = 3; miniUsage.lineBreakMode = .byTruncatingTail; place(miniUsage, miniRoot, 116, 30, 92, 40)
-        let openMini = button("Open app", #selector(show)); openMini.font = .systemFont(ofSize: 11, weight: .medium); place(openMini, miniRoot, 12, 80, 92, 30)
-        miniAction.target = self; miniAction.action = #selector(miniToggle); Theme.button(miniAction); miniAction.font = .systemFont(ofSize: 11, weight: .medium); place(miniAction, miniRoot, 112, 80, 96, 30)
+        panel.title = "Rise"; panel.titleVisibility = .hidden; panel.level = .floating; panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]; panel.isMovableByWindowBackground = true; panel.setFrameAutosaveName("RiseFloating"); panel.appearance = NSAppearance(named: .darkAqua); panel.backgroundColor = Theme.card; panel.titlebarAppearsTransparent = true
+        let miniRoot = Surface(NSRect(x: 0, y: 0, width: 220, height: 102), color: Theme.card); panel.contentView = miniRoot; panel.setContentSize(NSSize(width: 220, height: 102))
+        Theme.text(mini, size: 34, color: Theme.mint, weight: .light); mini.font = .monospacedDigitSystemFont(ofSize: 34, weight: .light); place(mini, miniRoot, 108, 8, 100, 43)
+        Theme.text(miniUsage, size: 10, color: Theme.muted); miniUsage.maximumNumberOfLines = 3; miniUsage.lineBreakMode = .byTruncatingTail; place(miniUsage, miniRoot, 12, 12, 92, 40)
+        let openMini = button("Open app", #selector(show)); openMini.font = .systemFont(ofSize: 11, weight: .medium); place(openMini, miniRoot, 12, 60, 92, 30)
+        miniAction.target = self; miniAction.action = #selector(miniToggle); Theme.button(miniAction); miniAction.font = .systemFont(ofSize: 11, weight: .medium); place(miniAction, miniRoot, 112, 60, 96, 30)
         status = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         let menu = NSMenu(); menu.addItem(withTitle: "Open Rise", action: #selector(show), keyEquivalent: ""); menu.addItem(withTitle: "Pause / Start session", action: #selector(toggle), keyEquivalent: ""); menu.addItem(.separator()); menu.addItem(withTitle: "Quit Rise", action: #selector(quit), keyEquivalent: "q"); for item in menu.items { item.target = self }; status.menu = menu
         let center = NSWorkspace.shared.notificationCenter
@@ -143,7 +141,7 @@ import CoreGraphics
         let now = Date(), idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .null)
         let autoIdle = clock.isIdle(idle, now: now)
         let state = clock.restEnd != nil ? "Take a five-minute break" : clock.state.awaitingStart ? "Ready when you are" : clock.paused ? "Paused" : locked ? "Screen inactive · auto-paused" : autoIdle ? "Away · auto-paused" : "Tracking active time"
-        detail.stringValue = "●  " + state; miniStatus.stringValue = state
+        detail.stringValue = "●  " + state
         totalMetric.stringValue = "\(Int(clock.state.total / 60)) min"
         cycleMetric.stringValue = UsageClock.format(clock.state.cycle); breaksMetric.stringValue = "\(clock.state.breaks)"
         dial.progress = clock.restEnd != nil ? 1 - clock.remaining(Date()) / 300 : clock.state.cycle / Double(clock.state.interval * 60)
