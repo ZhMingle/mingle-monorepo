@@ -5,7 +5,7 @@ import CoreGraphics
     let clock: UsageClock
     let saveURL: URL
     let window = DraggableWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: 738), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-    let panel = DraggablePanel(contentRect: NSRect(x: 70, y: 100, width: 220, height: 102), styleMask: [.titled, .utilityWindow, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
+    let panel = DraggablePanel(contentRect: NSRect(x: 70, y: 100, width: 220, height: 76), styleMask: [.titled, .utilityWindow, .nonactivatingPanel, .fullSizeContentView], backing: .buffered, defer: false)
     var status: NSStatusItem!
     var timer: Timer?
     var last = ProcessInfo.processInfo.systemUptime
@@ -89,11 +89,11 @@ import CoreGraphics
         place(button("Choose CLI…", #selector(chooseCLI)), quota, 657, 28, 119, 36)
         place(label("Auto-pauses when locked or idle  ·  Close the window to keep Rise in the menu bar", size: 11, color: Theme.muted), root, 34, 706, 790, 18)
         panel.title = "Rise"; panel.titleVisibility = .hidden; panel.level = .floating; panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]; panel.isMovableByWindowBackground = true; panel.setFrameAutosaveName("RiseFloating"); panel.appearance = NSAppearance(named: .darkAqua); panel.backgroundColor = Theme.card; panel.titlebarAppearsTransparent = true
-        let miniRoot = Surface(NSRect(x: 0, y: 0, width: 220, height: 102), color: Theme.card); panel.contentView = miniRoot; panel.setContentSize(NSSize(width: 220, height: 102))
-        Theme.text(mini, size: 34, color: Theme.mint, weight: .light); mini.font = .monospacedDigitSystemFont(ofSize: 34, weight: .light); place(mini, miniRoot, 108, 8, 100, 43)
-        Theme.text(miniUsage, size: 10, color: Theme.muted); miniUsage.maximumNumberOfLines = 3; miniUsage.lineBreakMode = .byTruncatingTail; place(miniUsage, miniRoot, 12, 12, 92, 40)
-        let openMini = button("Open app", #selector(show)); openMini.font = .systemFont(ofSize: 11, weight: .medium); place(openMini, miniRoot, 12, 60, 92, 30)
-        miniAction.target = self; miniAction.action = #selector(miniToggle); Theme.button(miniAction); miniAction.font = .systemFont(ofSize: 11, weight: .medium); place(miniAction, miniRoot, 112, 60, 96, 30)
+        let miniRoot = Surface(NSRect(x: 0, y: 0, width: 220, height: 76), color: Theme.card); panel.contentView = miniRoot; panel.setContentSize(NSSize(width: 220, height: 76))
+        Theme.text(mini, size: 28, color: Theme.mint, weight: .light); mini.font = .monospacedDigitSystemFont(ofSize: 28, weight: .light); place(mini, miniRoot, 108, 4, 100, 36)
+        Theme.text(miniUsage, size: 10, color: Theme.muted); miniUsage.maximumNumberOfLines = 3; miniUsage.lineBreakMode = .byTruncatingTail; place(miniUsage, miniRoot, 12, 5, 92, 36)
+        let openMini = button("Open app", #selector(show)); openMini.font = .systemFont(ofSize: 11, weight: .medium); place(openMini, miniRoot, 12, 46, 92, 24)
+        miniAction.target = self; miniAction.action = #selector(miniToggle); Theme.button(miniAction); miniAction.font = .systemFont(ofSize: 11, weight: .medium); place(miniAction, miniRoot, 112, 46, 96, 24)
         status = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         let menu = NSMenu(); menu.addItem(withTitle: "Open Rise", action: #selector(show), keyEquivalent: ""); menu.addItem(withTitle: "Pause / Start session", action: #selector(toggle), keyEquivalent: ""); menu.addItem(.separator()); menu.addItem(withTitle: "Quit Rise", action: #selector(quit), keyEquivalent: "q"); for item in menu.items { item.target = self }; status.menu = menu
         let center = NSWorkspace.shared.notificationCenter
