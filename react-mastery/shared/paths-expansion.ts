@@ -161,7 +161,7 @@ const additions:Partial<Record<PathId,TopicSpec[]>>={
 
 export function expandPath(path:LearningPath):LearningPath{
   const extra=additions[path.id];if(!extra)return path;
-  const contexts:Record<LearningPath['category'],[string,string]>={frontend:['an editable customer-facing interface','可编辑的用户界面'],backend:['an order-processing service','订单处理服务'],database:['an order and inventory database','订单与库存数据库'],cloud:['a staged application release','分阶段应用发布']};
+  const contexts:Record<LearningPath['category'],[string,string]>={frontend:['an editable customer-facing interface','可编辑的用户界面'],backend:['an order-processing service','订单处理服务'],database:['an order and inventory database','订单与库存数据库'],cloud:['a staged application release','分阶段应用发布'],tools:['a versioned delivery workflow','版本化交付流程']};
   const [scenario,scenarioZh]=contexts[path.category];
   const engineering:TopicSpec[]=[
     ['delivery-contract','Requirements & acceptance boundaries','需求与验收边界',`Define observable acceptance cases for ${scenario} using ${path.name.en}.`,`为基于 ${path.name.zh} 的${scenarioZh}定义可观测验收用例。`,'Which empty, invalid, and duplicate-input cases belong in the acceptance contract?','验收约束应包含哪些空值、非法输入与重复输入场景？'],

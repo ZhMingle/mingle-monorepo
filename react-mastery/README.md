@@ -151,3 +151,8 @@ Azure 路线涵盖资源与身份、网络、计算与存储、Key Vault、Azure
 ### Django 与 Angular 学习路线
 
 新增 Django（后端）与 Angular（前端）路线，各 24 个双语主题，均分为基础、实践和进阶三个阶段，并提供目标、自测、阶段项目与官方资料。Django 涵盖模型、迁移、视图、表单、认证授权、事务、查询优化、测试及部署；Angular 涵盖独立组件、模板、信号、依赖注入、路由、响应式表单、HTTP、RxJS、测试、SSR 与水合。练习明确框架版本和依赖假设，由 AI 评审；不启动框架服务或在 React 沙箱运行。当前目录共 19 条路线、450 个知识点。官方参考：[Django 5.2](https://docs.djangoproject.com/en/5.2/)、[Angular](https://angular.dev/overview)。
+
+
+### Docker、Kubernetes 与 Git 学习路线
+
+新增工程工具分类及 Docker、Kubernetes、Git 三条路线，各 24 个中英双语主题，均含基础、实践、进阶阶段与阶段项目、学习目标、自测和官方资料。Docker 覆盖镜像、容器、Dockerfile、Compose、网络存储、构建缓存、安全与恢复；Kubernetes 覆盖 Pod、Deployment、Service、配置、探针、资源、RBAC、扩缩容、发布与恢复；Git 覆盖工作区与暂存区、提交、分支、远端协作、冲突、变基、撤销恢复和发布。练习使用具有明确初始状态与版本假设的配置或命令方案，由 AI 评审，不执行容器、集群或 Git 操作。目录现共 22 条路线、522 个知识点、1044 项选择题/编程题完成检查。官方资料：[Docker](https://docs.docker.com/get-started/)、[Kubernetes](https://kubernetes.io/docs/concepts/)、[Git](https://git-scm.com/docs)。

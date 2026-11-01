@@ -21,7 +21,7 @@ const draft={keywords:{k1:'idempotency',k2:'immutability'},choice:1,code:lesson.
 
 test('every expanded stage and cloud topic can start without being mistaken for a static React lab',async()=>{
   for(const path of learningPaths){
-    const topics=(path.category==='cloud'||['nextjs','django','angular'].includes(path.id))?path.stages.flatMap(s=>s.topics):path.stages.flatMap(s=>s.topics.slice(-4));
+    const topics=(path.category==='cloud'||path.category==='tools'||['nextjs','django','angular'].includes(path.id))?path.stages.flatMap(s=>s.topics):path.stages.flatMap(s=>s.topics.slice(-4));
     for(const topic of topics){
       const id=await create(topic.id);const saved=getStudy(id);
       assert.equal(saved.topicId,topic.id);assert.equal(saved.lesson.coding.execution,undefined);

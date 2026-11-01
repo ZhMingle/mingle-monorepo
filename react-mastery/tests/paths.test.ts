@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { learningPaths, findLearningPath } from '../shared/paths.ts';
 
 test('catalog includes all requested paths with complete bilingual study guides',()=>{
-  assert.deepEqual(learningPaths.map(p=>p.id),['react','typescript','html-css','dotnet','nodejs','java','python','go','mysql','sqlserver','postgresql','shopify','wordpress','react-native','azure','aws-cicd','nextjs','django','angular']);
+  assert.deepEqual(learningPaths.map(p=>p.id),['react','typescript','html-css','dotnet','nodejs','java','python','go','mysql','sqlserver','postgresql','shopify','wordpress','react-native','azure','aws-cicd','nextjs','django','angular','docker','kubernetes','git']);
   const ids=new Set<string>();
   for(const path of learningPaths){
     assert.ok(path.name.en && path.name.zh && path.prerequisite.en && path.prerequisite.zh);
@@ -14,11 +14,11 @@ test('catalog includes all requested paths with complete bilingual study guides'
       for(const topic of stage.topics){
         assert.ok(!ids.has(topic.id));ids.add(topic.id);
         for(const field of [topic.title,topic.goal,topic.check])assert.ok(field.en && field.zh);
-        assert.ok(['react.dev','www.typescriptlang.org','developer.mozilla.org','learn.microsoft.com','dev.mysql.com','www.postgresql.org','nodejs.org','dev.java','docs.python.org','go.dev','shopify.dev','developer.wordpress.org','reactnative.dev','docs.aws.amazon.com','nextjs.org','docs.djangoproject.com','angular.dev'].includes(new URL(topic.source).hostname));
+        assert.ok(['react.dev','www.typescriptlang.org','developer.mozilla.org','learn.microsoft.com','dev.mysql.com','www.postgresql.org','nodejs.org','dev.java','docs.python.org','go.dev','shopify.dev','developer.wordpress.org','reactnative.dev','docs.aws.amazon.com','nextjs.org','docs.djangoproject.com','angular.dev','docs.docker.com','kubernetes.io','git-scm.com'].includes(new URL(topic.source).hostname));
       }
     }
   }
-  assert.equal(ids.size,450);
+  assert.equal(ids.size,522);
   assert.equal(findLearningPath('missing'),undefined);
   assert.equal(findLearningPath('postgresql')?.category,'database');
 });
