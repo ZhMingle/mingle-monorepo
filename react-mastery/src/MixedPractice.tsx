@@ -84,7 +84,7 @@ export default function MixedPractice({topic,pathId,overview,progressError,reloa
   }
   const attempts=session?.attempts.filter(a=>a.kind===current)??[];const latest=attempts.at(-1);
   const canSubmit=current==='choice'?draft.choice>=0:draft.code.trim().length>=4;
-  return <section className="topic-practice mixed-practice">
+  return <div className="practice-workspace"><section className="topic-practice mixed-practice">
     <a href={`#roadmap/${pathId}`}>← {say('Back to path','返回路线')}</a>
     <header><span className="eyebrow">{say('PRACTICE IN CONTEXT','在场景中练习')}</span><h1>{topic.title[language]}</h1><p>{topic.goal[language]}</p></header>
     <LearningProgress overview={overview} pathId={pathId} error={progressError} onRetry={reloadProgress}/>
@@ -101,7 +101,7 @@ export default function MixedPractice({topic,pathId,overview,progressError,reloa
       <details className="tp-card tp-lesson"><summary>{say('Quick explanation & example','简短讲解与示例')}</summary><p>{lesson.overview}</p><pre>{lesson.example}</pre><aside><strong>{say('Common pitfall','常见坑')}</strong><p>{lesson.pitfall}</p></aside></details>
       <nav className="tp-tabs" aria-label={say('Question types','题型')}>{studyKinds.map(k=><button key={k} aria-pressed={current===k} disabled={!!busy} onClick={()=>void navigate(k)}>{labels[k]}{payload.completed.includes(k)?' ✓':''}</button>)}</nav>
 
-      <ExerciseTutor key={session.id} id={session.id} mode="study" step={current} onHelp={()=>{void request<StudyPayload>('study/load',{id:session.id}).then(setPayload).catch(e=>setError(e.message));reloadProgress();}}/>
+
       <div className="tp-card" ref={questionCard}>
         {['react.props','react.snapshot','react.immutable','react.keys','react.derived','react.reducer'].includes(topic.id)&&!lesson.coding.execution&&current==='code'&&<p className="tp-meta">{say('This saved task uses AI review. Start a new variation for browser execution checks; your earlier work stays saved.','这道旧题使用 AI 评审。换一组题即可使用浏览器运行检查；原有作答仍会保留。')}</p>}
         {current==='choice'?<><p>{lesson.choice.scenario}</p>{lesson.choice.code&&<pre>{lesson.choice.code}</pre>}<h2>{lesson.choice.question}</h2><fieldset disabled={!!busy}><legend>{say('Choose one answer','选择一个答案')}</legend>{lesson.choice.options.map((option,i)=><label className="tp-choice" key={i}><input type="radio" name={`choice-${session.id}`} checked={draft.choice===i} onChange={()=>setDraft({...draft,choice:i})}/><span>{String.fromCharCode(65+i)}. {option}</span></label>)}</fieldset></>:<><p>{t(lesson.coding.scenario)}</p><ul>{lesson.coding.requirements.map(r=><li key={r}>{t(r)}</li>)}</ul>{lesson.coding.cases.length>0&&<details><summary>{say('Example cases','示例用例')}</summary>{lesson.coding.cases.map(c=><div key={c.id}><strong>{c.id}</strong><pre>{c.input}{'\n→ '}{c.expected}</pre></div>)}</details>}<CodeEditor key={session.id} language={lesson.coding.language} pathId={pathId} value={draft.code} starter={lesson.coding.starter} label={say('Your code','你的代码')} disabled={!!busy} maxLength={12000} onChange={code=>setDraft(previous=>({...previous,code}))}/><p className="tp-meta">{lesson.coding.execution?say('Runs in an isolated browser and checks actual behavior.','在隔离浏览器运行，并检查实际行为。'):say('AI code review · this language is not executed here.','AI 代码评审 · 此处暂不执行该语言。')}</p></>}
@@ -118,5 +118,7 @@ export default function MixedPractice({topic,pathId,overview,progressError,reloa
       {canContinue?(journey.next?<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next: ','下一部分：')}{journey.next.title[language]} →</button>:<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('End of path · view progress','已到路线末尾 · 查看进度')} →</button>):session&&<p role="status">{payload.completed.includes('choice')?say('Pass the code task to unlock the next topic.','通过编程题后解锁下一部分。'):payload.completed.includes('code')?say('Pass the choice question to unlock the next topic.','通过选择题后解锁下一部分。'):say('Pass both tasks to unlock the next topic.','两项任务都通过后解锁下一部分。')}</p>}
     </nav>
     <p className="tp-source"><a href={topic.source} target="_blank" rel="noreferrer">{say('Official reference ↗','官方资料 ↗')}</a></p>
-  </section>;
+  </section>
+    {session&&<ExerciseTutor key={session.id} id={session.id} mode="study" step={current} onHelp={()=>{void request<StudyPayload>('study/load',{id:session.id}).then(setPayload).catch(e=>setError(e.message));reloadProgress();}}/>}
+  </div>;
 }
