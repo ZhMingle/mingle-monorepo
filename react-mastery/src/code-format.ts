@@ -4,14 +4,14 @@ export function codeFlavor(language:string,pathId=''):CodeFlavor {
   if(pathId==='react'||name.includes('jsx')&&!name.includes('tsx'))return 'jsx';
   if(pathId==='nextjs')return 'tsx';
   if(name.includes('tsx'))return 'tsx';
-  if(pathId==='typescript'||name.includes('typescript'))return 'typescript';
+  if(pathId==='angular'||pathId==='typescript'||name.includes('typescript'))return 'typescript';
   if(pathId==='nodejs'||name.includes('node.js')||name==='node')return 'javascript';
   if(pathId==='mysql'||name.includes('mysql'))return 'mysql';
   if(pathId==='postgresql'||name.includes('postgres'))return 'postgresql';
   if(pathId==='sqlserver'||name.includes('sql server')||name.includes('tsql')||name.includes('t-sql'))return 'tsql';
   if(pathId==='dotnet'||name.includes('c#')||name.includes('csharp'))return 'csharp';
   if(pathId==='java'||name==='java')return 'java';
-  if(pathId==='python'||name.includes('python'))return 'python';
+  if(pathId==='django'||pathId==='python'||name.includes('python'))return 'python';
   if(pathId==='go'||name==='go'||name==='golang')return 'go';
   if(name.includes('html'))return 'html';
   if(name.includes('css'))return 'css';

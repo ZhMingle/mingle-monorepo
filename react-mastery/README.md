@@ -146,3 +146,8 @@ Azure 路线涵盖资源与身份、网络、计算与存储、Key Vault、Azure
 ### Next.js 学习路线
 
 新增 Next.js App Router 路线，共 24 个双语主题，分为基础、实践和进阶阶段，涵盖路由布局、服务端与客户端边界、数据获取、流式加载、路由处理器、表单写入、缓存与失效、身份与对象授权、水合、测试、部署、可观测性及升级回滚。每个主题含目标、自测、阶段项目与官方文档。练习使用有明确版本和缓存假设的 TSX/TypeScript 小任务，由 AI 评审，不会在浏览器沙箱执行 Next.js 服务端代码。总目录现为 17 条路线、402 个知识点。参考：https://nextjs.org/docs/app。
+
+
+### Django 与 Angular 学习路线
+
+新增 Django（后端）与 Angular（前端）路线，各 24 个双语主题，均分为基础、实践和进阶三个阶段，并提供目标、自测、阶段项目与官方资料。Django 涵盖模型、迁移、视图、表单、认证授权、事务、查询优化、测试及部署；Angular 涵盖独立组件、模板、信号、依赖注入、路由、响应式表单、HTTP、RxJS、测试、SSR 与水合。练习明确框架版本和依赖假设，由 AI 评审；不启动框架服务或在 React 沙箱运行。当前目录共 19 条路线、450 个知识点。官方参考：[Django 5.2](https://docs.djangoproject.com/en/5.2/)、[Angular](https://angular.dev/overview)。
