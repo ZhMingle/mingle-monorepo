@@ -1,4 +1,5 @@
 export const uiZh: Record<string, string> = {
+  'Reference code': '参考代码',
   'Learning paths':'学习路线','DEVELOPER LEARNING LAB':'技术学习实验室','DEVELOPER LEARNING PATHS':'技术学习路线',
   'Browse learning paths':'选择学习路线','2 question types':'两种题型',
   'Understanding lab':'理解验证','Try the understanding lab':'体验理解验证',

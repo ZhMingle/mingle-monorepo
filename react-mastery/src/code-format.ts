@@ -2,6 +2,7 @@ export type CodeFlavor='jsx'|'javascript'|'typescript'|'tsx'|'html'|'css'|'mysql
 export function codeFlavor(language:string,pathId=''):CodeFlavor {
   const name=language.toLowerCase();
   if(pathId==='react'||name.includes('jsx')&&!name.includes('tsx'))return 'jsx';
+  if(pathId==='nextjs')return 'tsx';
   if(name.includes('tsx'))return 'tsx';
   if(pathId==='typescript'||name.includes('typescript'))return 'typescript';
   if(pathId==='nodejs'||name.includes('node.js')||name==='node')return 'javascript';

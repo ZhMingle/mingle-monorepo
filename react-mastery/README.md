@@ -142,3 +142,7 @@ Shopify、WordPress 与 React Native 各提供基础、实践、进阶三个阶�
 Azure 路线涵盖资源与身份、网络、计算与存储、Key Vault、Azure Pipelines、制品、联合身份、Bicep、槽位、遥测、审批、回滚与恢复。AWS CI/CD 涵盖 IAM、源码连接、CodePipeline、CodeBuild/buildspec、S3、ECR、ECS、CodeDeploy、CloudFormation、CloudWatch、OIDC、跨账户、渐进发布与供应链验证。云主题使用有明确上下文的 YAML/JSON、配置或策略评审，不会从此本地平台执行云部署。课程完成度不授予高级工程师等级；真实项目交付、故障演练和团队评审仍需独立证据。
 
 课程来源：[React](https://react.dev/learn)、[Azure Architecture Center](https://learn.microsoft.com/en-us/azure/architecture/)、[Azure Pipelines](https://learn.microsoft.com/en-us/azure/devops/pipelines/?view=azure-devops)、[AWS CodePipeline](https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome.html)、[AWS CodeBuild](https://docs.aws.amazon.com/codebuild/latest/userguide/welcome.html)。各主题还保留对应平台的官方参考入口。
+
+### Next.js 学习路线
+
+新增 Next.js App Router 路线，共 24 个双语主题，分为基础、实践和进阶阶段，涵盖路由布局、服务端与客户端边界、数据获取、流式加载、路由处理器、表单写入、缓存与失效、身份与对象授权、水合、测试、部署、可观测性及升级回滚。每个主题含目标、自测、阶段项目与官方文档。练习使用有明确版本和缓存假设的 TSX/TypeScript 小任务，由 AI 评审，不会在浏览器沙箱执行 Next.js 服务端代码。总目录现为 17 条路线、402 个知识点。参考：https://nextjs.org/docs/app。
