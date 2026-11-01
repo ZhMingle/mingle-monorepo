@@ -17,8 +17,8 @@ const generate=async<T>():Promise<T>=>structuredClone(lesson) as T;
 function reviewer(reason:string,correct=true){return async<T>():Promise<T>=>({correctness:correct?2:0,causality:correct?2:0,application:correct?2:0,quote:reason.slice(0,20),feedback:'Specific feedback.',misconception:correct?'':'The mechanism is wrong.',followUp:'What changes if the input changes?'} satisfies TopicReview) as T;}
 async function create(topicId='typescript.inference'){return (await topicAction('new',{topicId},'en',generate) as TopicPayload).session.id;}
 
-test('all six paths can start a persisted practice; unknown topics cannot call the model',async()=>{
-  for(const id of ['typescript.inference','html-css.semantics','dotnet.types','mysql.model','sqlserver.model','postgresql.model']){
+test('all supported topic paths can start a persisted practice; unknown topics cannot call the model',async()=>{
+  for(const id of ['typescript.inference','html-css.semantics','dotnet.types','mysql.model','sqlserver.model','postgresql.model','shopify.architecture','wordpress.content','react-native.components']){
     const session=await create(id);assert.equal(getTopic(session).topicId,id);
     assert.equal((await topicAction('latest',{topicId:id},'zh') as TopicPayload).session.id,session);
   }

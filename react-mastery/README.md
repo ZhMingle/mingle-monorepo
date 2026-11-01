@@ -122,3 +122,7 @@ Validation: `pnpm test`, `pnpm build`. Optional `node scripts/verify-study.ts --
 Node.js includes 12 topics across runtime/configuration, modules, asynchronous errors, file data, event-loop scheduling, HTTP, events, testing, streams, workers, cancellation, and diagnostics. It uses the shared choice/code flow and JavaScript editor. Node.js code is AI-reviewed, not executed by the app; exercises use stated Node.js 24 assumptions and injected/in-memory boundaries. Existing completion records remain intact; the overall denominator expands to 126 topics / 252 checks.
 
 Java, Python, and Go each include 12 bilingual topics across three stages, with choice and AI-reviewed coding tasks. Baselines: Java 21 (no preview), Python 3.12, Go 1.22; standard libraries only. Syntax highlighting, Tab indentation and undoable reset are available. Java/Go offer editor reindentation only; Python automatic formatting is disabled to preserve semantic whitespace. No learner code is executed on the host. Existing progress is preserved; the larger catalog changes only total counts.
+
+### 新增学习路径
+
+Shopify、WordPress 与 React Native 各提供基础、实践、进阶三个阶段，共 12 个主题，包含中英文目标、自测问题、阶段项目与官方文档，并沿用现有主题学习与 AI 练习流程。实际运行和发布需在对应平台环境验证。
