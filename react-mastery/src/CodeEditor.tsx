@@ -17,7 +17,7 @@ import type {CodeFlavor} from './code-format.ts';
 import {useLanguage} from './language.tsx';
 import './code-editor.css';
 
-function languageExtension(flavor:CodeFlavor){
+export function languageExtension(flavor:CodeFlavor){
   switch(flavor){
     case 'jsx':return javascript({jsx:true});case 'javascript':return javascript();
     case 'typescript':return javascript({typescript:true});case 'tsx':return javascript({typescript:true,jsx:true});
