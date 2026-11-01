@@ -1,3 +1,4 @@
+import { usePresentation } from './usePresentation.ts';
 import CodeEditor from './CodeEditor.tsx';
 import { runCode } from './sandbox.ts';
 import { useEffect, useRef, useState } from 'react';
@@ -14,11 +15,12 @@ import { LearningProgress } from './LearningProgress.tsx';
 
 export default function MixedPractice({topic,pathId,overview,progressError,reloadProgress}:{topic:PathTopic;pathId:string;overview:LearningOverview|null;progressError?:string;reloadProgress:()=>void}){
   const {language,t}=useLanguage();const say=(en:string,zh:string)=>language==='zh'?zh:en;
-  const [payload,setPayload]=useState<StudyPayload|null>(null);const [loading,setLoading]=useState(true);
+  const [rawPayload,setPayload]=useState<StudyPayload|null>(null);const [loading,setLoading]=useState(true);
   const [current,setCurrent]=useState<StudyKind>('choice');const [draft,setDraft]=useState<StudyDraft>({keywords:{},choice:-1,code:''});
   const [busy,setBusy]=useState('');const [error,setError]=useState('');const [saved,setSaved]=useState(false);
   const live=useRef(true);const saving=useRef<Promise<unknown>>(Promise.resolve());
   const questionCard=useRef<HTMLDivElement|null>(null);
+  const {view:payload,translating,translationError,retryTranslation}=usePresentation(rawPayload,language);
   const session=payload?.session;const lesson=session?.lesson;
   const canContinue=canContinueStudy(session);
   const path=findLearningPath(pathId)!;const journey=topicNeighbors(path,topic.id);
@@ -50,7 +52,7 @@ export default function MixedPractice({topic,pathId,overview,progressError,reloa
     try{
       await saving.current.catch(()=>{});
       if(name==='answer'&&current==='code'&&lesson?.coding.execution)await request('study/draft',{id:session?.id,...draft});
-      const execution=name==='answer'&&current==='code'&&lesson?.coding.execution?await runCode(lesson.coding.execution,draft.code):undefined;
+      const execution=name==='answer'&&current==='code'&&lesson?.coding.execution?await runCode(rawPayload!.session.lesson.coding.execution!,draft.code):undefined;
       const next=await request<StudyPayload>(`study/${name}`,name==='new'?{topicId:topic.id}:{id:session?.id,kind:current,...draft,execution});
       if(live.current){apply(next,name==='new'||name==='load');if(name==='new')setDraft(next.session.draft);if(name==='answer')reloadProgress();}
     }catch(e){if(live.current)setError((e as Error).message);}
@@ -91,11 +93,13 @@ export default function MixedPractice({topic,pathId,overview,progressError,reloa
       {canContinue&&journey.next&&<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next topic','下一知识点')} →</button>}
     </nav>
     {error&&<div role="alert" className="tp-error">{error}<button disabled={!!busy} onClick={()=>session?void action('load'):location.reload()}>{say('Reload saved practice','重新读取练习')}</button></div>}
+    {translating&&<p role="status">{say('Translating this exercise…','正在切换题目语言…')}</p>}
+    {translationError&&<div role="alert" className="tp-error">{say('Translation failed: ','翻译未完成：')}{translationError}<button onClick={retryTranslation}>{say('Retry translation','重试翻译')}</button></div>}
     {loading?<p role="status">{say('Loading…','正在读取…')}</p>:!session?<div className="tp-card"><h2>{say('Choose, then build.','先选择，再写代码。')}</h2><p>{say('Solve a practical multiple-choice question, then implement a small feature. No terminology blanks or long explanations.','先通过选择题判断场景，再用代码完成一个小功能。无需填术语或写长篇解释。')}</p><p>{say('Two question types, saved drafts and feedback. Generation and AI reviews use Codex.','两种题型，保留草稿和反馈。出题与 AI 评审使用 Codex 额度。')}</p><button className="tp-primary" disabled={!!busy} onClick={()=>void action('new')}>{busy?say('Preparing exercises…','正在准备题目…'):say('Start practice','开始练习')}</button></div>:lesson&&<>
       <div className="tp-toolbar"><span role="status">{payload.completed.length}/2 {say('completed','已完成')}{payload.supported?` · ${say('with support','含辅助练习')}`:''}</span><button disabled={!!busy} onClick={()=>void action('new')}>{say('New variation · Codex','换一组题 · 使用额度')}</button></div>
       <details className="tp-card tp-lesson"><summary>{say('Quick explanation & example','简短讲解与示例')}</summary><p>{lesson.overview}</p><pre>{lesson.example}</pre><aside><strong>{say('Common pitfall','常见坑')}</strong><p>{lesson.pitfall}</p></aside></details>
       <nav className="tp-tabs" aria-label={say('Question types','题型')}>{studyKinds.map(k=><button key={k} aria-pressed={current===k} disabled={!!busy} onClick={()=>void navigate(k)}>{labels[k]}{payload.completed.includes(k)?' ✓':''}</button>)}</nav>
-      {session.language!==language&&<p className="tp-meta">{say('This saved exercise keeps its original language. Generate a new variation for the selected language.','已保存题目保留原始语言；换一组题可使用当前语言。')}</p>}
+
       <div className="tp-card" ref={questionCard}>
         {pathId==='react'&&!lesson.coding.execution&&current==='code'&&<p className="tp-meta">{say('This saved task uses AI review. Start a new variation for browser execution checks; your earlier work stays saved.','这道旧题使用 AI 评审。换一组题即可使用浏览器运行检查；原有作答仍会保留。')}</p>}
         {current==='choice'?<><p>{lesson.choice.scenario}</p>{lesson.choice.code&&<pre>{lesson.choice.code}</pre>}<h2>{lesson.choice.question}</h2><fieldset disabled={!!busy}><legend>{say('Choose one answer','选择一个答案')}</legend>{lesson.choice.options.map((option,i)=><label className="tp-choice" key={i}><input type="radio" name={`choice-${session.id}`} checked={draft.choice===i} onChange={()=>setDraft({...draft,choice:i})}/><span>{String.fromCharCode(65+i)}. {option}</span></label>)}</fieldset></>:<><p>{t(lesson.coding.scenario)}</p><ul>{lesson.coding.requirements.map(r=><li key={r}>{t(r)}</li>)}</ul>{lesson.coding.cases.length>0&&<details><summary>{say('Example cases','示例用例')}</summary>{lesson.coding.cases.map(c=><div key={c.id}><strong>{c.id}</strong><pre>{c.input}{'\n→ '}{c.expected}</pre></div>)}</details>}<CodeEditor key={session.id} language={lesson.coding.language} pathId={pathId} value={draft.code} starter={lesson.coding.starter} label={say('Your code','你的代码')} disabled={!!busy} maxLength={12000} onChange={code=>setDraft(previous=>({...previous,code}))}/><p className="tp-meta">{lesson.coding.execution?say('Runs in an isolated browser and checks actual behavior.','在隔离浏览器运行，并检查实际行为。'):say('AI code review · this language is not executed here.','AI 代码评审 · 此处暂不执行该语言。')}</p></>}
