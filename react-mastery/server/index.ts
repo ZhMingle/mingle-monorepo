@@ -13,6 +13,8 @@ import { understandingAction, understandingPayload, understandingSessions } from
 import { topicAction, topicProgress } from './topic-practice.ts';
 import { studyAction, studyProgress, studyOverview } from './study.ts';
 import { translatePresentation } from './presentation.ts';
+import { runtimeVersion } from '../shared/runtime-version.ts';
+import { tutorReply } from './tutor.ts';
 import type { LearningSession, RunReport, SessionMode, Stage } from '../shared/types.ts';
 
 const port = Number(process.env.PORT ?? 4317);
@@ -44,6 +46,7 @@ const server = createServer(async (req, res) => {
   try {
     if (url.pathname.startsWith('/api/')) {
       if (req.method === 'GET') {
+        if (url.pathname === '/api/runtime') { send(res, 200, { version: runtimeVersion, pid: process.pid, root: resolve('.') }); return; }
         if (url.pathname === '/api/understanding') { send(res, 200, understandingPayload(understandingSessions()[0] ?? null)); return; }
         if (url.pathname === '/api/bootstrap') {
           send(res, 200, { lessons: lessons.map(({ prediction: _, ...lesson }) => lesson), progress: progressList(), sessions: sessionList(), connection: { available: !!findCodex(), provider: 'Codex local sign-in', message: findCodex() ? 'CLI detected · connection verified on first assessment' : 'Codex CLI not found. Sign in locally or set CODEX_BIN.' }, now: new Date().toISOString() }); return;
@@ -54,6 +57,7 @@ const server = createServer(async (req, res) => {
       if (req.method !== 'POST') { send(res, 404, { error: 'Not found' }); return; }
       if (!origins.has(req.headers.origin ?? '') || req.headers['x-clarity-request'] !== '1' || !req.headers['content-type']?.startsWith('application/json')) { send(res, 403, { error: 'Only requests from the local application are accepted' }); return; }
       const input = await body(req);
+      if (url.pathname === '/api/tutor') { send(res, 200, await tutorReply(input, req.headers['x-clarity-language'] === 'zh' ? 'zh' : 'en')); return; }
       if (url.pathname === '/api/presentation') { send(res, 200, await translatePresentation(input)); return; }
       if (url.pathname === '/api/study/overview') { send(res, 200, studyOverview()); return; }
       if (url.pathname === '/api/study/progress') {
