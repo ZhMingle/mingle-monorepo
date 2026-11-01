@@ -9,7 +9,7 @@ import { learningPaths, findLearningPath } from '../shared/paths.ts';
 import { useLanguage } from './language.tsx';
 import './learning-paths.css';
 
-export function LearningPaths({reactRoadmap,reactTopicCount}:{reactRoadmap:ReactNode;reactTopicCount:number}) {
+export function LearningPaths({reactRoadmap}:{reactRoadmap:ReactNode}) {
   const {language}=useLanguage();
   const say=(en:string,zh:string)=>language==='zh'?zh:en;
   const [selected,setSelected]=useState(()=>location.hash.split('/')[1]??'');
@@ -35,8 +35,8 @@ export function LearningPaths({reactRoadmap,reactTopicCount}:{reactRoadmap:React
       {path.id==='react'&&<details className="path-stage"><summary>{say('Original React labs · executable browser checks','原有 React 实验室 · 浏览器运行检查')}</summary>{reactRoadmap}</details>}
     </>:<>
       <div className="page-heading"><div><span className="eyebrow">{say('YOUR DEVELOPER PATHS','你的技术学习路线')}</span><h1>{say('Choose your next skill.','选择下一个技能。')}</h1><p>{say('Learn from a roadmap. Start where your knowledge gets uncertain.','按路线学习，也可以直接从不确定的知识点开始。')}</p></div></div>
-      <div className="path-filters"><input aria-label={say('Search paths and topics','搜索路线与知识点')} placeholder={say('Search paths or topics…','搜索路线或知识点…')} value={query} onChange={e=>setQuery(e.target.value)}/><div>{[['all','All','全部'],['frontend','Frontend','前端'],['backend','Backend','后端'],['database','Databases','数据库']].map(([id,en,zh])=><button key={id} aria-pressed={category===id} onClick={()=>setCategory(id)}>{say(en,zh)}</button>)}</div></div>
-      <div className="path-catalog">{learningPaths.filter(p=>(category==='all'||p.category===category)&&JSON.stringify([p.name,p.description,p.stages]).toLowerCase().includes(query.trim().toLowerCase())).map(p=><a key={p.id} className="path-card" href={`#roadmap/${p.id}`}><span className="path-mark">{p.mark}</span><h2>{p.name[language]}</h2><p>{p.description[language]}</p><span className="path-kind">{p.mode==='labs'?`${reactTopicCount} ${say('topics · 2 question types','个知识点 · 两种题型')}`:`${p.stages.reduce((n,s)=>n+s.topics.length,0)} ${say('topics · 2 question types','个知识点 · 两种题型')}`}</span>{overview?.paths[p.id]&&<ProgressMeter value={overview.paths[p.id]} label={say('Practice progress','练习进度')}/>}<strong>{say('Explore path →','查看路线 →')}</strong></a>)}</div>
+      <div className="path-filters"><input aria-label={say('Search paths and topics','搜索路线与知识点')} placeholder={say('Search paths or topics…','搜索路线或知识点…')} value={query} onChange={e=>setQuery(e.target.value)}/><div>{[['all','All','全部'],['frontend','Frontend','前端'],['backend','Backend','后端'],['database','Databases','数据库'],['cloud','Cloud & CI/CD','云平台与 CI/CD']].map(([id,en,zh])=><button key={id} aria-pressed={category===id} onClick={()=>setCategory(id)}>{say(en,zh)}</button>)}</div></div>
+      <div className="path-catalog">{learningPaths.filter(p=>(category==='all'||p.category===category)&&JSON.stringify([p.name,p.description,p.stages]).toLowerCase().includes(query.trim().toLowerCase())).map(p=><a key={p.id} className="path-card" href={`#roadmap/${p.id}`}><span className="path-mark">{p.mark}</span><h2>{p.name[language]}</h2><p>{p.description[language]}</p><span className="path-kind">{p.stages.reduce((n,s)=>n+s.topics.length,0)} {say('topics · 2 question types','个知识点 · 两种题型')}</span>{overview?.paths[p.id]&&<ProgressMeter value={overview.paths[p.id]} label={say('Practice progress','练习进度')}/>}<strong>{say('Explore path →','查看路线 →')}</strong></a>)}</div>
       {!learningPaths.some(p=>(category==='all'||p.category===category)&&JSON.stringify([p.name,p.description,p.stages]).toLowerCase().includes(query.trim().toLowerCase()))&&<p role="status">{say('No matching paths. Try another topic.','没有匹配路线，请换个关键词。')}</p>}
     </>}
   </div>;

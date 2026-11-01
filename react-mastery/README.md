@@ -134,3 +134,11 @@ Shopify、WordPress 与 React Native 各提供基础、实践、进阶三个阶�
 ### 题目追问
 
 练习页点击「追问这道题」打开连续对话框，可结合当前题目逐步讲解、比较选项或要求更简单的例子。对话按题目保存在当前浏览器；关闭后可继续。发送使用 Codex，失败保留输入；成功获得讲解会标记对应题型为辅助练习，不授予通过或掌握。启动脚本会检查后端接口版本，并重启已确认的旧版本地服务。
+
+### 扩充路线与云端交付学习
+
+当前共有 16 条路线、378 个知识点：React 为 18 个（含 6 个原有可执行实验室），其他 13 条既有路线各 24 个；新增 Azure 云平台与 CI/CD、AWS CI/CD 各 24 个。既有主题编号保持不变，学习进度按扩充后的真实分母计算。每条既有路线新增 9 个技术主题与 3 个需求验收、质量证据、兼容变更评审主题。
+
+Azure 路线涵盖资源与身份、网络、计算与存储、Key Vault、Azure Pipelines、制品、联合身份、Bicep、槽位、遥测、审批、回滚与恢复。AWS CI/CD 涵盖 IAM、源码连接、CodePipeline、CodeBuild/buildspec、S3、ECR、ECS、CodeDeploy、CloudFormation、CloudWatch、OIDC、跨账户、渐进发布与供应链验证。云主题使用有明确上下文的 YAML/JSON、配置或策略评审，不会从此本地平台执行云部署。课程完成度不授予高级工程师等级；真实项目交付、故障演练和团队评审仍需独立证据。
+
+课程来源：[React](https://react.dev/learn)、[Azure Architecture Center](https://learn.microsoft.com/en-us/azure/architecture/)、[Azure Pipelines](https://learn.microsoft.com/en-us/azure/devops/pipelines/?view=azure-devops)、[AWS CodePipeline](https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome.html)、[AWS CodeBuild](https://docs.aws.amazon.com/codebuild/latest/userguide/welcome.html)。各主题还保留对应平台的官方参考入口。

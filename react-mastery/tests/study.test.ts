@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {aliasMatches,completedKinds,publicStudy,validateBlankResults,validateCodeReview,validateStudyLesson} from '../shared/study.ts';
 import type {StudyLesson,StudyPayload} from '../shared/study.ts';
+import { learningPaths } from '../shared/paths.ts';
 const scratch=mkdtempSync(join(tmpdir(),'clarity-study-test-'));process.env.DATA_DIR=scratch;
 const {db,exportData}=await import('../server/store.ts');
 const {studyAction,getStudy,saveStudy,studyProgress}=await import('../server/study.ts');
@@ -17,6 +18,17 @@ const generate=async<T>():Promise<T>=>structuredClone(lesson) as T;
 async function create(topicId='typescript.inference'){return (await studyAction('new',{topicId},'en',generate) as StudyPayload).session.id;}
 async function legacyCreate(){const id=await create();const s=getStudy(id);s.version='mixed-practice-v1';s.current='keywords';s.lesson.keywords=structuredClone(lesson.keywords);saveStudy(s);return id;}
 const draft={keywords:{k1:'idempotency',k2:'immutability'},choice:1,code:lesson.coding.fixtures.correct};
+
+test('every expanded stage and cloud topic can start without being mistaken for a static React lab',async()=>{
+  for(const path of learningPaths){
+    const topics=path.category==='cloud'?path.stages.flatMap(s=>s.topics):path.stages.flatMap(s=>s.topics.slice(-4));
+    for(const topic of topics){
+      const id=await create(topic.id);const saved=getStudy(id);
+      assert.equal(saved.topicId,topic.id);assert.equal(saved.lesson.coding.execution,undefined);
+      assert.deepEqual(saved.helped,[]);assert.deepEqual(saved.attempts,[]);
+    }
+  }
+});
 
 test('keyword aliases accept meaning and word forms without matching opposite concepts',()=>{
   for(const word of ['IDEMPOTENT','idempotence','idempotency',' Idempotency. '])assert.ok(aliasMatches(lesson.keywords[0],word));
