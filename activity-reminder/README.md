@@ -123,3 +123,8 @@ The build uses the system C# compiler and generates the application icon and EXE
 | `app.ico` | Application icon |
 | `build.ps1` | Build script |
 | `Start.bat` | Optional launcher |
+
+
+### Windows text clarity
+
+Floating quota and action buttons both use 10pt Segoe UI, with higher-contrast quota text and a regular-weight countdown. The build embeds a system-DPI-aware manifest and lays out forms from a 96-DPI baseline, avoiding DPI-unaware whole-window bitmap enlargement on the startup display. Restart Rise after installing or changing system scaling. This uses system DPI awareness, not per-monitor-v2: moving between displays with different scale factors may still need an app restart on the destination display. See [Microsoft DPI awareness documentation](https://learn.microsoft.com/en-us/windows/win32/hidpi/setting-the-default-dpi-awareness-for-a-process).

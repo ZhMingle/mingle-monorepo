@@ -172,9 +172,10 @@ namespace Mingle.ActivityReminder
         private readonly Button refresh;
         internal UsageWindow(MainWindow main)
         {
+            SuspendLayout();
             this.main = main; Text = "Rise - Codex Usage"; ClientSize = new Size(660, 510);
             AutoScaleMode = AutoScaleMode.Dpi; StartPosition = FormStartPosition.CenterParent;
-            BackColor = Theme.Bg; ForeColor = Theme.White; Icon = main.Icon; MinimumSize = Size;
+            BackColor = Theme.Bg; ForeColor = Theme.White; Icon = main.Icon;
             Theme.Label(this, "Codex usage remaining", 26, 22, 470, 42, 22, Theme.Mint);
             status = Theme.Label(this, "Checking your existing Codex sign-in...", 28, 76, 600, 48, 10, Theme.Muted);
             rows = new FlowLayoutPanel { Location = new Point(26, 136), Size = new Size(608, 250), FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right };
@@ -189,6 +190,9 @@ namespace Mingle.ActivityReminder
             choose.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             var note = Theme.Label(this, "Updates after each completed Codex task. Reset times use your local timezone.", 28, 466, 600, 28, 9, Theme.Muted);
             note.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            AutoScaleDimensions = new SizeF(96, 96);
+            ResumeLayout(true);
+            MinimumSize = Size;
             RefreshData();
         }
         internal void RefreshData()
@@ -205,6 +209,8 @@ namespace Mingle.ActivityReminder
                         Theme.Label(panel, bucket.Name + " / " + window.Period, 16, 12, 250, 24, 10, Theme.Muted);
                         Theme.Label(panel, window.Percent, 16, 40, 250, 40, 21, Theme.Mint);
                         Theme.Label(panel, window.Reset, 282, 38, 285, 44, 10, Theme.White);
+                        using (Graphics graphics = CreateGraphics())
+                            panel.Scale(new SizeF(graphics.DpiX / 96f, graphics.DpiY / 96f));
                         rows.Controls.Add(panel);
                     }
             rows.ResumeLayout();

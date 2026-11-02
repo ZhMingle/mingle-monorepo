@@ -140,6 +140,7 @@ namespace Mingle.ActivityReminder
     {
         [StructLayout(LayoutKind.Sequential)] private struct LastInput { public uint size; public uint time; }
         [DllImport("user32.dll")] private static extern bool GetLastInputInfo(ref LastInput info);
+        [DllImport("user32.dll")] internal static extern bool IsProcessDPIAware();
         [DllImport("kernel32.dll")] private static extern ulong GetTickCount64();
         [DllImport("user32.dll")] private static extern IntPtr OpenInputDesktop(uint flags, bool inherit, uint access);
         [DllImport("user32.dll")] private static extern bool SwitchDesktop(IntPtr desktop);
@@ -224,6 +225,7 @@ namespace Mingle.ActivityReminder
         [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
         internal MiniWindow(MainWindow main)
         {
+            SuspendLayout();
             this.main = main;
             Text = "Rise"; ClientSize = new Size(220, 96);
             FormBorderStyle = FormBorderStyle.None; StartPosition = FormStartPosition.Manual;
@@ -231,7 +233,7 @@ namespace Mingle.ActivityReminder
             AutoScaleMode = AutoScaleMode.Dpi; BackColor = Theme.Card; ForeColor = Theme.White;
             DoubleBuffered = true;
             TopMost = true; ShowInTaskbar = false; Icon = main.Icon;
-            var header = Theme.Label(this, "Rise", 12, 3, 172, 18, 8, Theme.Muted);
+            var header = Theme.Label(this, "Rise", 12, 3, 172, 18, 9, Theme.Muted);
             header.Cursor = Cursors.SizeAll;
             MouseEventHandler drag = delegate(object sender, MouseEventArgs e) {
                 if (e.Button != MouseButtons.Left) return;
@@ -244,18 +246,20 @@ namespace Mingle.ActivityReminder
             close.FlatAppearance.MouseOverBackColor = Color.FromArgb(48, 62, 72);
             close.AccessibleName = "Hide floating timer";
             details.SetToolTip(close, "Hide floating timer and open Rise");
-            countdown = Theme.Label(this, "30:00", 114, 23, 94, 38, 24, Theme.Mint);
-            countdown.Font = new Font("Segoe UI Light", 24);
+            countdown = Theme.Label(this, "30:00", 114, 21, 94, 43, 23, Theme.Mint);
+            countdown.Font = Theme.Font(23, FontStyle.Regular);
             countdown.TextAlign = ContentAlignment.MiddleCenter;
-            quota = Theme.Label(this, "Codex:\nConnecting...", 12, 23, 94, 38, 8, Theme.Muted);
+            quota = Theme.Label(this, "Codex:\nConnecting...", 12, 23, 94, 38, 10, Theme.White);
             quota.TextAlign = ContentAlignment.MiddleLeft;
             quota.AutoEllipsis = true; quota.Cursor = Cursors.Hand; quota.Click += delegate { main.ShowQuota(); };
             var open = Theme.Button(this, "Open app", 12, 66, 94, false, main.ShowMain);
             pause = Theme.Button(this, "Pause", 114, 66, 94, false, main.TogglePause);
             open.Height = pause.Height = 24;
-            open.Font = Theme.Font(9, FontStyle.Regular); pause.Font = Theme.Font(9, FontStyle.Regular);
+            open.Font = Theme.Font(10, FontStyle.Regular); pause.Font = Theme.Font(10, FontStyle.Regular);
             FormClosing += delegate(object sender, FormClosingEventArgs e) { if (!main.Exiting) { e.Cancel = true; main.SetFloating(false); main.ShowMain(); } };
             Move += delegate { if (Visible) { main.Clock.State.miniX = Left; main.Clock.State.miniY = Top; } };
+            AutoScaleDimensions = new SizeF(96, 96);
+            ResumeLayout(true);
         }
         protected override bool ShowWithoutActivation { get { return true; } }
         protected override void OnPaint(PaintEventArgs e)
@@ -350,10 +354,11 @@ namespace Mingle.ActivityReminder
         }
         internal MainWindow(EventWaitHandle wake)
         {
+            SuspendLayout();
             this.wake = wake;
             dataFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MingleActivityReminder", "desktop-v2.json");
             Clock = new UsageClock(LoadState());
-            Text = "Rise - Activity Reminder"; ClientSize = new Size(860, 654); MinimumSize = Size; MaximumSize = Size;
+            Text = "Rise - Activity Reminder"; ClientSize = new Size(860, 654);
             AutoScaleMode = AutoScaleMode.Dpi; StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedSingle; MaximizeBox = false;
             BackColor = Theme.Bg; ForeColor = Theme.White; Font = Theme.Font(10, FontStyle.Regular);
@@ -430,6 +435,9 @@ namespace Mingle.ActivityReminder
             timer.Tick += delegate { TickClock(); };
             last = watch.Elapsed.TotalSeconds; timer.Start();
             RefreshDisplay(0, false);
+            AutoScaleDimensions = new SizeF(96, 96);
+            ResumeLayout(true);
+            MinimumSize = Size; MaximumSize = Size;
         }
         private ComboBox Combo(Control parent, string[] items, int x, int y)
         {
@@ -602,6 +610,7 @@ namespace Mingle.ActivityReminder
                 AutoScaleMode = AutoScaleMode.Dpi, FormBorderStyle = FormBorderStyle.FixedDialog, StartPosition = FormStartPosition.CenterScreen, TopMost = true,
                 MaximizeBox = false, MinimizeBox = false, Icon = Icon };
             reminder = r;
+            r.SuspendLayout();
             Theme.Label(r, "Take five minutes.", 30, 28, 440, 54, 26, Theme.Mint);
             Theme.Label(r, "Stand up. Stretch. Walk a little.", 32, 99, 436, 36, 17, Theme.White);
             Theme.Label(r, "Relax your shoulders and look into the distance.\nStart your next session when you are ready.", 32, 151, 436, 66, 11, Theme.Muted);
@@ -609,6 +618,7 @@ namespace Mingle.ActivityReminder
             Theme.Button(r, "Snooze for 5 minutes", 257, 244, 211, false, delegate { Clock.Snooze(); r.Close(); });
             Theme.Button(r, "Skip break", 32, 298, 436, false, SkipRest);
             r.FormClosed += delegate { reminder = null; if (!Clock.Resting && Clock.State.cycle >= Clock.State.interval * 60 && Clock.SnoozeRemaining <= 0) Clock.Snooze(); RefreshDisplay(Native.Idle(), Native.Locked()); };
+            r.AutoScaleDimensions = new SizeF(96, 96); r.ResumeLayout(true);
             System.Media.SystemSounds.Asterisk.Play(); r.Show(); r.Activate();
         }
         private void ExitApp() { Exiting = true; Close(); }
@@ -625,11 +635,13 @@ namespace Mingle.ActivityReminder
                 ForeColor = Theme.White, Icon = Icon, AutoScaleMode = AutoScaleMode.Dpi, StartPosition = FormStartPosition.CenterScreen,
                 FormBorderStyle = FormBorderStyle.FixedDialog, TopMost = true, MaximizeBox = false, MinimizeBox = false };
             studyReadyWindow = ready;
+            ready.SuspendLayout();
             Theme.Label(ready, "Ready when you are.", 28, 24, 444, 48, 24, Theme.Mint);
             Theme.Label(ready, Clock.State.autoStartOnClick && clicks != null && clicks.Available ? "Click anywhere to start your next session.\nThe five-minute break is never interrupted." : "Your next session is waiting.\nThe timer stays paused until you choose Start.", 30, 90, 440, 60, 11, Theme.Muted);
             Theme.Button(ready, "Start next session", 30, 173, 214, true, ConfirmStudy);
             Theme.Button(ready, "Later", 258, 173, 212, false, delegate { ready.Close(); });
             ready.FormClosed += delegate { studyReadyWindow = null; };
+            ready.AutoScaleDimensions = new SizeF(96, 96); ready.ResumeLayout(true);
             System.Media.SystemSounds.Asterisk.Play(); ready.Show();
         }
         protected override void Dispose(bool disposing)
@@ -746,6 +758,7 @@ namespace Mingle.ActivityReminder
                 var json = new JavaScriptSerializer();
                 Equal(json.Deserialize<SavedState>(json.Serialize(clock.State)).cycle, 44, "state persistence");
                 if (Native.Idle() < 0) throw new Exception("native idle"); Native.Locked();
+                if (!Native.IsProcessDPIAware()) throw new Exception("Build must embed the DPI-aware manifest");
                 QuotaTests.Run();
                 UsageUpdateTests.Run();
                 File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test-result.txt"), "PASS: timer rules, click-start waiting/paused sessions, retained cycle/snooze, lock/break protection, setting migration/persistence and quota completion monitoring.");
