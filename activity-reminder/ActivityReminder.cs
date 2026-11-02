@@ -217,35 +217,50 @@ namespace Mingle.ActivityReminder
     internal sealed class MiniWindow : Form
     {
         private readonly MainWindow main;
-        private readonly Label countdown, status, quota, quotaAge;
+        private readonly Label countdown, quota;
         private readonly Button pause;
+        private readonly ToolTip details = new ToolTip();
         internal MiniWindow(MainWindow main)
         {
             this.main = main;
-            Text = "Rise - Floating Timer"; ClientSize = new Size(300, 244);
+            Text = "Rise"; ClientSize = new Size(220, 76);
             FormBorderStyle = FormBorderStyle.FixedToolWindow; StartPosition = FormStartPosition.Manual;
             AutoScaleMode = AutoScaleMode.Dpi; BackColor = Theme.Card; ForeColor = Theme.White;
             TopMost = true; ShowInTaskbar = false; Icon = main.Icon;
-            status = Theme.Label(this, "Tracking active time", 16, 10, 268, 25, 9, Theme.Muted);
-            status.AutoEllipsis = true;
-            countdown = Theme.Label(this, "30:00", 12, 33, 256, 63, 34, Theme.Mint);
-            countdown.Font = new Font("Segoe UI", 34);
-            quota = Theme.Label(this, "Codex: checking usage...", 16, 101, 268, 25, 10, Theme.Mint);
+            countdown = Theme.Label(this, "30:00", 108, 3, 104, 38, 26, Theme.Mint);
+            countdown.Font = new Font("Segoe UI Light", 26);
+            countdown.TextAlign = ContentAlignment.MiddleRight;
+            quota = Theme.Label(this, "Codex:\nConnecting...", 12, 5, 92, 36, 8, Theme.Muted);
             quota.AutoEllipsis = true; quota.Cursor = Cursors.Hand; quota.Click += delegate { main.ShowQuota(); };
-            quotaAge = Theme.Label(this, "", 16, 129, 268, 42, 9, Theme.Muted);
-            quotaAge.AutoEllipsis = true;
-            Theme.Button(this, "Open app", 16, 188, 128, false, main.ShowMain);
-            pause = Theme.Button(this, "Pause", 156, 188, 128, false, main.TogglePause);
+            var open = Theme.Button(this, "Open app", 12, 46, 92, false, main.ShowMain);
+            pause = Theme.Button(this, "Pause", 112, 46, 96, false, main.TogglePause);
+            open.Height = pause.Height = 24;
+            open.Font = Theme.Font(9, FontStyle.Regular); pause.Font = Theme.Font(9, FontStyle.Regular);
             FormClosing += delegate(object sender, FormClosingEventArgs e) { if (!main.Exiting) { e.Cancel = true; main.SetFloating(false); main.ShowMain(); } };
             Move += delegate { if (Visible) { main.Clock.State.miniX = Left; main.Clock.State.miniY = Top; } };
         }
         protected override bool ShowWithoutActivation { get { return true; } }
         internal void RefreshClock(string text)
         {
-            countdown.Text = UsageClock.Format(main.Clock.Remaining); status.Text = text;
-            pause.Text = main.Clock.Resting ? "Skip break" : main.Clock.AwaitingStart ? "Start session" : main.Clock.Paused ? "Resume" : "Pause";
-            quota.Text = main.QuotaSummary;
-            quotaAge.Text = main.QuotaCompactStatus;
+            countdown.Text = UsageClock.Format(main.Clock.Remaining);
+            countdown.AccessibleName = text + " " + countdown.Text;
+            details.SetToolTip(countdown, text);
+            pause.Text = main.Clock.Resting ? "Skip break" : main.Clock.AwaitingStart ? "Start" : main.Clock.Paused ? "Resume" : "Pause";
+            quota.Text = main.Quota == null ? (main.QuotaLoading ? "Codex:\nConnecting..." : "Codex:\nUnavailable") : CompactQuota(main.Quota.Main);
+            details.SetToolTip(quota, main.QuotaSummary + "\n" + main.QuotaCompactStatus);
+        }
+        private static string CompactQuota(QuotaBucket bucket)
+        {
+            if (bucket == null) return "Codex:\nUnavailable";
+            string text = "";
+            foreach (QuotaWindow window in bucket.Windows)
+                text += (text.Length == 0 ? "" : "\n") + window.Period + ": " + (window.Remaining.HasValue ? window.Remaining.Value.ToString("0.#") + "%" : "N/A");
+            return text.Length == 0 ? "Codex:\nUnavailable" : text;
+        }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) details.Dispose();
+            base.Dispose(disposing);
         }
         internal void Place()
         {
