@@ -55,6 +55,7 @@ namespace Mingle.ActivityReminder
         public bool floating = true;
         public string codexPath;
         public bool awaitingStart;
+        public bool autoStartOnClick = true;
         public int miniX = int.MinValue;
         public int miniY = int.MinValue;
     }
@@ -108,6 +109,11 @@ namespace Mingle.ActivityReminder
         {
             if (!AwaitingStart) return false;
             State.awaitingStart = false; Paused = false; studyStartedUtc = utcNow(); return true;
+        }
+        internal bool AutoStartOnClick(bool locked)
+        {
+            if (!State.autoStartOnClick || locked || Resting || Paused || !AwaitingStart) return false;
+            return ConfirmStudy();
         }
         internal bool SkipRest()
         {
@@ -265,6 +271,7 @@ namespace Mingle.ActivityReminder
         private Form reminder;
         private Form studyReadyWindow;
         private bool studyPromptShown;
+        private ClickMonitor clicks;
         private double last, lastSave;
         private bool saveFailed;
         internal QuotaSnapshot Quota;
@@ -335,6 +342,9 @@ namespace Mingle.ActivityReminder
             floating = new CheckBox { Text = "Show floating timer", Location = new Point(22, 224), Size = new Size(245, 29), ForeColor = Theme.White, Checked = Clock.State.floating };
             settings.Controls.Add(floating);
             floating.CheckedChanged += delegate { SetFloating(floating.Checked); };
+            var autoStart = new CheckBox { Text = "Click anywhere to start session", Location = new Point(22, 254), Size = new Size(245, 28), ForeColor = Theme.White, Checked = Clock.State.autoStartOnClick };
+            settings.Controls.Add(autoStart);
+            autoStart.CheckedChanged += delegate { Clock.State.autoStartOnClick = autoStart.Checked; if (clicks != null) clicks.Consume(); Save(); };
             Theme.Button(settings, "Preview reminder", 22, 288, 240, false, ShowReminder);
 
             Panel metric1 = Theme.CardPanel(this, 32, 480, 252, 98);
@@ -372,6 +382,8 @@ namespace Mingle.ActivityReminder
                 if (e.CloseReason == CloseReason.UserClosing && !Exiting) { e.Cancel = true; SetFloating(true); Hide(); }
                 else { Exiting = true; Save(); }
             };
+            clicks = new ClickMonitor();
+            autoStart.Enabled = clicks.Available;
             timer = new System.Windows.Forms.Timer { Interval = 250 };
             timer.Tick += delegate { TickClock(); };
             last = watch.Elapsed.TotalSeconds; timer.Start();
@@ -417,6 +429,12 @@ namespace Mingle.ActivityReminder
             if (wake.WaitOne(0)) ShowMain();
             double now = watch.Elapsed.TotalSeconds, elapsed = now - last; last = now;
             double idle = Native.Idle(); bool locked = Native.Locked();
+            if (clicks.Consume() && Clock.AutoStartOnClick(locked))
+            {
+                if (studyReadyWindow != null) studyReadyWindow.Close();
+                // Count from this click, never backfill the previous polling interval.
+                elapsed = 0; Save();
+            }
             bool wasResting = Clock.Resting;
             Clock.Step(elapsed, idle, locked, DateTime.Now);
             idle = Clock.EffectiveIdle(idle);
@@ -435,7 +453,7 @@ namespace Mingle.ActivityReminder
             status.Text = "●  " + text;
             status.ForeColor = !Clock.Resting && (Clock.Paused || locked || idle >= Clock.State.idle) ? Theme.Muted : Theme.Mint;
             dial.Time = UsageClock.Format(Clock.Remaining);
-            dial.Caption = Clock.Resting ? "Rest your eyes. Move a little." : Clock.AwaitingStart ? "Waiting for your confirmation" : Clock.SnoozeRemaining > 0 ? "Until the next reminder" : "Until your next break";
+            dial.Caption = Clock.Resting ? "Rest your eyes. Move a little." : Clock.AwaitingStart ? (Clock.State.autoStartOnClick && clicks != null && clicks.Available ? "Click anywhere to start" : "Waiting for your confirmation") : Clock.SnoozeRemaining > 0 ? "Until the next reminder" : "Until your next break";
             dial.Progress = Clock.Resting ? 1 - Clock.RestRemaining / UsageClock.RestDurationSeconds : Math.Min(1, Clock.State.cycle / (Clock.State.interval * 60));
             dial.AccessibleName = dial.Caption + " " + dial.Time; dial.Invalidate();
             total.Text = ((int)(Clock.State.total / 60)).ToString() + " min";
@@ -566,7 +584,7 @@ namespace Mingle.ActivityReminder
                 FormBorderStyle = FormBorderStyle.FixedDialog, TopMost = true, MaximizeBox = false, MinimizeBox = false };
             studyReadyWindow = ready;
             Theme.Label(ready, "Ready when you are.", 28, 24, 444, 48, 24, Theme.Mint);
-            Theme.Label(ready, "Your next session is waiting.\nThe timer stays paused until you choose Start.", 30, 90, 440, 60, 11, Theme.Muted);
+            Theme.Label(ready, Clock.State.autoStartOnClick && clicks != null && clicks.Available ? "Click anywhere to start your next session.\nManual pause and the five-minute break stay protected." : "Your next session is waiting.\nThe timer stays paused until you choose Start.", 30, 90, 440, 60, 11, Theme.Muted);
             Theme.Button(ready, "Start next session", 30, 173, 214, true, ConfirmStudy);
             Theme.Button(ready, "Later", 258, 173, 212, false, delegate { ready.Close(); });
             ready.FormClosed += delegate { studyReadyWindow = null; };
@@ -578,6 +596,7 @@ namespace Mingle.ActivityReminder
             {
                 Exiting = true;
                 if (timer != null) timer.Dispose();
+                if (clicks != null) clicks.Dispose();
                 if (tray != null) { tray.Visible = false; tray.Dispose(); }
                 if (mini != null) mini.Dispose();
                 if (reminder != null) reminder.Dispose();
@@ -649,6 +668,23 @@ namespace Mingle.ActivityReminder
                 if (!restored.AwaitingStart || restored.State.cycle != 0) throw new Exception("Waiting confirmation survives restart");
                 if (skipped.SkipRest()) throw new Exception("Skip outside a break must not reset study progress");
                 if (!skipped.ConfirmStudy() || skipped.ConfirmStudy()) throw new Exception("Start confirmation is applied only once");
+                var clickClock = new UsageClock(new SavedState { awaitingStart = true, cycle = 0, total = 73, date = today.ToString("yyyy-MM-dd") }, () => utc);
+                if (clickClock.AutoStartOnClick(true)) throw new Exception("Locked clicks must not start");
+                clickClock.State.autoStartOnClick = false;
+                if (clickClock.AutoStartOnClick(false)) throw new Exception("Disabled auto-start must wait");
+                clickClock.State.autoStartOnClick = true; clickClock.Paused = true;
+                if (clickClock.AutoStartOnClick(false)) throw new Exception("Manual pause must be respected");
+                clickClock.Paused = false;
+                if (!clickClock.AutoStartOnClick(false) || clickClock.AutoStartOnClick(false)) throw new Exception("Click starts waiting session exactly once");
+                Equal(clickClock.State.total, 73, "click does not backfill waiting time");
+                utc = utc.AddSeconds(1); clickClock.Step(1, 0, false, today);
+                Equal(clickClock.State.cycle, 1, "click-started session counts new active time");
+                clickClock.StartRest();
+                if (clickClock.AutoStartOnClick(false)) throw new Exception("Click must not interrupt a break");
+                var legacyState = new JavaScriptSerializer().Deserialize<SavedState>("{\"awaitingStart\":true}");
+                if (!legacyState.autoStartOnClick) throw new Exception("Existing settings enable click-start by default");
+                clickClock.State.autoStartOnClick = false;
+                if (new JavaScriptSerializer().Deserialize<SavedState>(new JavaScriptSerializer().Serialize(clickClock.State)).autoStartOnClick) throw new Exception("Click-start setting must persist");
                 var due = new UsageClock(new SavedState { cycle = 1800, date = today.ToString("yyyy-MM-dd") }, () => utc);
                 if (!due.SkipRest() || due.Due) throw new Exception("Skip reminder before starting rest");
                 Equal(due.Remaining, 1800, "skipping due reminder starts next session");
@@ -660,7 +696,7 @@ namespace Mingle.ActivityReminder
                 if (Native.Idle() < 0) throw new Exception("native idle"); Native.Locked();
                 QuotaTests.Run();
                 UsageUpdateTests.Run();
-                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test-result.txt"), "PASS: timer rules, confirmation-gated study sessions, skip-break waiting, confirmation persistence and quota completion monitoring.");
+                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test-result.txt"), "PASS: timer rules, click-start waiting sessions, manual pause and break protection, setting migration/persistence and quota completion monitoring.");
                 return 0;
             }
             catch (Exception ex)
