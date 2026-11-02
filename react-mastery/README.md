@@ -158,3 +158,8 @@ Azure 路线涵盖资源与身份、网络、计算与存储、Key Vault、Azure
 ### Docker、Kubernetes 与 Git 学习路线
 
 新增工程工具分类及 Docker、Kubernetes、Git 三条路线，各 24 个中英双语主题，均含基础、实践、进阶阶段与阶段项目、学习目标、自测和官方资料。Docker 覆盖镜像、容器、Dockerfile、Compose、网络存储、构建缓存、安全与恢复；Kubernetes 覆盖 Pod、Deployment、Service、配置、探针、资源、RBAC、扩缩容、发布与恢复；Git 覆盖工作区与暂存区、提交、分支、远端协作、冲突、变基、撤销恢复和发布。练习使用具有明确初始状态与版本假设的配置或命令方案，由 AI 评审，不执行容器、集群或 Git 操作。目录现共 22 条路线、522 个知识点、1044 项选择题/编程题完成检查。官方资料：[Docker](https://docs.docker.com/get-started/)、[Kubernetes](https://kubernetes.io/docs/concepts/)、[Git](https://git-scm.com/docs)。
+
+
+### 代码与翻译边界
+
+说明文字可以翻译，反引号内的标识符、代码围栏内的 SQL/代码以及独立完整 SQL 语句保持原文，不发送给展示翻译。SQL 结构或查询修复选择题应提供完整 SQL 选项，中文仅用于补充说明；选项中的代码按代码样式展示。历史题目和作答记录保留原样，旧题若已生成中文操作描述，可创建新变式使用新的出题规则。

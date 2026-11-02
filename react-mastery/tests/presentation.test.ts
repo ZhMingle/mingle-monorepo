@@ -23,6 +23,21 @@ test('translation covers question prose, options, feedback and revealed explanat
   assert.equal(original.session.lesson.choice.question,'Question');
 });
 
+test('SQL choices and inline code remain unchanged while surrounding prose is translated',()=>{
+  const sql='CREATE TABLE user_roles (user_id INT UNSIGNED, role_id INT UNSIGNED, PRIMARY KEY (user_id, role_id));';
+  const option='Create the join table:\n```sql\n'+sql+'\n```\nKeep `user_id` unchanged.';
+  const payload={choice:{options:[option,sql,'Use `PRIMARY KEY (user_id)` here.']}};
+  const strings=presentationStrings(payload);
+  assert.deepEqual(strings,['Create the join table:','Keep','unchanged.','Use','here.']);
+  const translations=Object.fromEntries(strings.map(s=>[s,'译:'+s]));
+  translations[sql]='不应替换';translations.user_id='用户编号';
+  const view=present(payload,translations);
+  assert.equal(view.choice.options[0],'译:Create the join table:\n```sql\n'+sql+'\n```\n译:Keep `user_id` 译:unchanged.');
+  assert.equal(view.choice.options[1],sql);
+  assert.equal(view.choice.options[2],'译:Use `PRIMARY KEY (user_id)` 译:here.');
+  assert.equal(payload.choice.options[0],option);
+});
+
 test('translations are validated, deduplicated during flight, and cached durably per target language',async()=>{
   let calls=0;
   const run=async<T>():Promise<T>=>{calls++;return {translations:['问题','选项']} as T;};
