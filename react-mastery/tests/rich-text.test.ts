@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { textBlocks,inlineParts } from '../shared/rich-text.ts';
+import { textBlocks,inlineParts,displayCode } from '../shared/rich-text.ts';
 import { choiceReference } from '../shared/study.ts';
 
 test('SQL explanation separates code, headings, lists and highlighted concepts without altering SQL',()=>{
@@ -13,6 +13,14 @@ test('SQL explanation separates code, headings, lists and highlighted concepts w
 test('HTML remains plain text and incomplete fences preserve the submitted code',()=>{
   assert.deepEqual(textBlocks('<script>alert(1)</script>'),[{kind:'paragraph',text:'<script>alert(1)</script>'}]);
   assert.deepEqual(textBlocks('```sql\nSELECT "<img>";'),[{kind:'code',language:'sql',text:'SELECT "<img>";'}]);
+});
+
+test('saved fenced JSX code displays as source, without changing raw code or its literals',()=>{
+  const code="export default function EmailInput() {\r\n  return <input value={'a@b.cn'} />;\r\n}";
+  assert.deepEqual(displayCode('```jsx\r\n'+code+'\r\n```'),{code,language:'jsx'});
+  const raw='const template = "```jsx";\nconst value = `email`;';
+  assert.deepEqual(displayCode(raw),{code:raw,language:''});
+  assert.deepEqual(displayCode('```jsx\nconst unfinished = 1;'),{code:'```jsx\nconst unfinished = 1;',language:''});
 });
 
 test('reference does not prepend a SQL option already repeated in its explanation',()=>{

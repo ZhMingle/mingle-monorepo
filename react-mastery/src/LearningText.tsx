@@ -2,7 +2,7 @@ import CodeBlock from './CodeBlock.tsx';
 import { inlineParts,textBlocks } from '../shared/rich-text.ts';
 import './learning-text.css';
 
-function Inline({text}:{text:string}){
+export function Inline({text}:{text:string}){
   return <>{inlineParts(text).map((part,i)=>part.kind==='code'?<code key={i}>{part.text}</code>:part.kind==='strong'?<strong key={i}><Inline text={part.text}/></strong>:part.text)}</>;
 }
 // Deliberately supports only teaching text, with no HTML injection or active links.

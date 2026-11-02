@@ -1,4 +1,10 @@
 export type TextBlock={kind:'code';text:string;language:string}|{kind:'paragraph'|'heading';text:string}|{kind:'list';items:string[];ordered:boolean};
+// Some saved code-only fields contain one Markdown wrapper. Remove only that
+// wrapper for display, keeping raw source and learner drafts untouched.
+export function displayCode(source:string):{code:string;language:string}{
+  const fence=/^\s*```([^`\r\n]*)\r?\n([\s\S]*?)\r?\n```\s*$/.exec(source);
+  return fence?{code:fence[2],language:fence[1].trim()}:{code:source,language:''};
+}
 export function textBlocks(text:string):TextBlock[]{
   const lines=text.replace(/\r\n/g,'\n').split('\n');const blocks:TextBlock[]=[];
   for(let i=0;i<lines.length;){
