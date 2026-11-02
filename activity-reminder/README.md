@@ -31,7 +31,7 @@ Open this folder in File Explorer and double-click **ActivityReminder.exe**. No 
 
 The dashboard shows a countdown, time spent in the current session, active time today, and completed breaks. A draggable floating timer stays above other applications so you can see the countdown while working.
 
-The Windows floating timer follows the macOS compact layout: a 220 × 76 content area at 100% scaling (previously 300 × 244), with remaining Codex quota on the left, countdown on the right, and **Open app** plus **Pause / Resume / Start / Skip break** below. Hover over the countdown for tracking status or over quota for its full details and update time; click quota to open the usage window. Windows display scaling still applies, and the title bar remains available for dragging and closing.
+The Windows floating timer follows the macOS compact layout: a 220 × 96 borderless window at 100% scaling, including its compact header (previously a 300 × 244 content area plus system title bar), with remaining Codex quota on the left, countdown on the right, and **Open app** plus **Pause / Resume / Start / Skip break** below. Hover over the countdown for tracking status or over quota for its full details and update time; click quota to open the usage window. Windows display scaling still applies. Both columns use equal 94-unit widths, an 8-unit gap, and 12-unit outer margins. The custom header uses the same dark background, supports dragging, and has a muted close button; it replaces the contrasting system title bar.
 
 - Select **Use floating timer**, or close the main window, to keep tracking in the floating window.
 - Select **Open app** in the floating window to return to the dashboard.

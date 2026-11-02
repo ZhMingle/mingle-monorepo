@@ -220,26 +220,50 @@ namespace Mingle.ActivityReminder
         private readonly Label countdown, quota;
         private readonly Button pause;
         private readonly ToolTip details = new ToolTip();
+        [DllImport("user32.dll")] private static extern bool ReleaseCapture();
+        [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
         internal MiniWindow(MainWindow main)
         {
             this.main = main;
-            Text = "Rise"; ClientSize = new Size(220, 76);
-            FormBorderStyle = FormBorderStyle.FixedToolWindow; StartPosition = FormStartPosition.Manual;
+            Text = "Rise"; ClientSize = new Size(220, 96);
+            FormBorderStyle = FormBorderStyle.None; StartPosition = FormStartPosition.Manual;
+            MaximizeBox = false; MinimizeBox = false;
             AutoScaleMode = AutoScaleMode.Dpi; BackColor = Theme.Card; ForeColor = Theme.White;
+            DoubleBuffered = true;
             TopMost = true; ShowInTaskbar = false; Icon = main.Icon;
-            countdown = Theme.Label(this, "30:00", 108, 3, 104, 38, 26, Theme.Mint);
-            countdown.Font = new Font("Segoe UI Light", 26);
-            countdown.TextAlign = ContentAlignment.MiddleRight;
-            quota = Theme.Label(this, "Codex:\nConnecting...", 12, 5, 92, 36, 8, Theme.Muted);
+            var header = Theme.Label(this, "Rise", 12, 3, 172, 18, 8, Theme.Muted);
+            header.Cursor = Cursors.SizeAll;
+            MouseEventHandler drag = delegate(object sender, MouseEventArgs e) {
+                if (e.Button != MouseButtons.Left) return;
+                ReleaseCapture(); SendMessage(Handle, 0xA1, new IntPtr(2), IntPtr.Zero);
+            };
+            header.MouseDown += drag; MouseDown += drag;
+            var close = Theme.Button(this, "×", 188, 3, 20, false, Close);
+            close.Height = 18; close.Font = Theme.Font(10, FontStyle.Regular);
+            close.BackColor = Theme.Card; close.ForeColor = Theme.Muted;
+            close.FlatAppearance.MouseOverBackColor = Color.FromArgb(48, 62, 72);
+            close.AccessibleName = "Hide floating timer";
+            details.SetToolTip(close, "Hide floating timer and open Rise");
+            countdown = Theme.Label(this, "30:00", 114, 23, 94, 38, 24, Theme.Mint);
+            countdown.Font = new Font("Segoe UI Light", 24);
+            countdown.TextAlign = ContentAlignment.MiddleCenter;
+            quota = Theme.Label(this, "Codex:\nConnecting...", 12, 23, 94, 38, 8, Theme.Muted);
+            quota.TextAlign = ContentAlignment.MiddleLeft;
             quota.AutoEllipsis = true; quota.Cursor = Cursors.Hand; quota.Click += delegate { main.ShowQuota(); };
-            var open = Theme.Button(this, "Open app", 12, 46, 92, false, main.ShowMain);
-            pause = Theme.Button(this, "Pause", 112, 46, 96, false, main.TogglePause);
+            var open = Theme.Button(this, "Open app", 12, 66, 94, false, main.ShowMain);
+            pause = Theme.Button(this, "Pause", 114, 66, 94, false, main.TogglePause);
             open.Height = pause.Height = 24;
             open.Font = Theme.Font(9, FontStyle.Regular); pause.Font = Theme.Font(9, FontStyle.Regular);
             FormClosing += delegate(object sender, FormClosingEventArgs e) { if (!main.Exiting) { e.Cancel = true; main.SetFloating(false); main.ShowMain(); } };
             Move += delegate { if (Visible) { main.Clock.State.miniX = Left; main.Clock.State.miniY = Top; } };
         }
         protected override bool ShowWithoutActivation { get { return true; } }
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            using (var border = new Pen(Color.FromArgb(48, 62, 72)))
+                e.Graphics.DrawRectangle(border, 0, 0, ClientSize.Width - 1, ClientSize.Height - 1);
+        }
         internal void RefreshClock(string text)
         {
             countdown.Text = UsageClock.Format(main.Clock.Remaining);
