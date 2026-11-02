@@ -14,6 +14,7 @@ import { topicAction, topicProgress } from './topic-practice.ts';
 import { studyAction, studyProgress, studyOverview } from './study.ts';
 import { translatePresentation } from './presentation.ts';
 import { runtimeVersion } from '../shared/runtime-version.ts';
+import { pathsVersion } from '../shared/paths.ts';
 import { tutorReply } from './tutor.ts';
 import type { LearningSession, RunReport, SessionMode, Stage } from '../shared/types.ts';
 
@@ -46,7 +47,7 @@ const server = createServer(async (req, res) => {
   try {
     if (url.pathname.startsWith('/api/')) {
       if (req.method === 'GET') {
-        if (url.pathname === '/api/runtime') { send(res, 200, { version: runtimeVersion, pid: process.pid, root: resolve('.') }); return; }
+        if (url.pathname === '/api/runtime') { send(res, 200, { version: runtimeVersion, pathsVersion, pid: process.pid, root: resolve('.') }); return; }
         if (url.pathname === '/api/understanding') { send(res, 200, understandingPayload(understandingSessions()[0] ?? null)); return; }
         if (url.pathname === '/api/bootstrap') {
           send(res, 200, { lessons: lessons.map(({ prediction: _, ...lesson }) => lesson), progress: progressList(), sessions: sessionList(), connection: { available: !!findCodex(), provider: 'Codex local sign-in', message: findCodex() ? 'CLI detected · connection verified on first assessment' : 'Codex CLI not found. Sign in locally or set CODEX_BIN.' }, now: new Date().toISOString() }); return;

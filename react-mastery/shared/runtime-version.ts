@@ -1,2 +1,2 @@
-// Bump when the browser requires a newly added or changed server API.
-export const runtimeVersion = '2026.11.02.nextjs.1';
+// Bump for server API changes. Catalog changes are checked separately via pathsVersion.
+export const runtimeVersion = '2026.11.02.catalog-sync.1';

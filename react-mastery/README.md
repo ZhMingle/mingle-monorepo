@@ -1,5 +1,7 @@
 # Clarity — Developer Learning Lab
 
+新增路线后重新运行 `Start.ps1`。启动器会同时检查服务版本与路线目录版本；发现旧服务时，只重启经端口、进程和项目目录核验的本项目服务，保留 `data/` 下的学习记录。页面出现 `Unknown topic.` 或知识点总数仍为旧值时，也可用此方式更新服务后刷新页面。
+
 A local-first AI learning platform for React, TypeScript, HTML/CSS, C#/.NET, Node.js, Java, Python, Go, MySQL, SQL Server, and PostgreSQL. A topic is assessed through independent prediction, real React code checks, explanation, transfer, and delayed recall. Watching a lesson or asking the AI to mark a checkbox never awards mastery.
 
 ## Current learning experience

@@ -8,9 +8,11 @@ $running = $false
 try { $response = Invoke-RestMethod "$url/api/bootstrap" -TimeoutSec 2; $running = $null -ne $response.lessons } catch { }
 if ($running) {
     $expectedVersion = [regex]::Match((Get-Content -LiteralPath 'shared/runtime-version.ts' -Raw), "runtimeVersion = '([^']+)'").Groups[1].Value
+    $expectedPathsVersion = [regex]::Match((Get-Content -LiteralPath 'shared/paths.ts' -Raw), "pathsVersion = '([^']+)'").Groups[1].Value
+    if (!$expectedVersion -or !$expectedPathsVersion) { throw 'Cannot read the expected server or catalog version.' }
     $runtime = $null
     try { $runtime = Invoke-RestMethod "$url/api/runtime" -TimeoutSec 2 } catch { }
-    if (!$runtime -or $runtime.version -ne $expectedVersion) {
+    if (!$runtime -or $runtime.version -ne $expectedVersion -or $runtime.pathsVersion -ne $expectedPathsVersion) {
         $listener = Get-NetTCPConnection -LocalPort 4317 -State Listen -ErrorAction Stop | Where-Object LocalAddress -eq '127.0.0.1' | Select-Object -First 1
         $service = Get-CimInstance Win32_Process -Filter "ProcessId=$($listener.OwningProcess)"
         $knownRoot = $runtime -and $runtime.root -eq $PSScriptRoot -and $runtime.pid -eq $listener.OwningProcess
