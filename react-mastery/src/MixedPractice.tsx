@@ -14,10 +14,8 @@ import type { StudyDraft,StudyKind,StudyPayload } from '../shared/study.ts';
 import './topic-practice.css';
 import { findLearningPath } from '../shared/paths.ts';
 import { topicNeighbors } from '../shared/learning-progress.ts';
-import type { LearningOverview } from '../shared/learning-progress.ts';
-import { LearningProgress } from './LearningProgress.tsx';
 
-export default function MixedPractice({topic,pathId,overview,progressError,reloadProgress}:{topic:PathTopic;pathId:string;overview:LearningOverview|null;progressError?:string;reloadProgress:()=>void}){
+export default function MixedPractice({topic,pathId,reloadProgress}:{topic:PathTopic;pathId:string;reloadProgress:()=>void}){
   const {language,t}=useLanguage();const say=(en:string,zh:string)=>language==='zh'?zh:en;
   const [rawPayload,setPayload]=useState<StudyPayload|null>(null);const [loading,setLoading]=useState(true);
   const [current,setCurrent]=useState<StudyKind>('choice');const [draft,setDraft]=useState<StudyDraft>({keywords:{},choice:-1,code:''});
@@ -90,7 +88,6 @@ export default function MixedPractice({topic,pathId,overview,progressError,reloa
   return <div className="practice-workspace"><section className="topic-practice mixed-practice">
     <a href={`#roadmap/${pathId}`}>← {say('Back to path','返回路线')}</a>
     <header><span className="eyebrow">{say('PRACTICE IN CONTEXT','在场景中练习')}</span><h1>{topic.title[language]}</h1><p>{topic.goal[language]}</p></header>
-    <LearningProgress overview={overview} pathId={pathId} error={progressError} onRetry={reloadProgress}/>
     <nav className="topic-journey" aria-label={say('Topic navigation','知识点导航')}>
       <button disabled={!!busy||!journey.previous} onClick={()=>void openTopic(journey.previous!.id)}>← {say('Previous topic','上一知识点')}</button>
       <label><span>{journey.index+1}/{journey.topics.length}</span><select aria-label={say('Current topic','当前知识点')} value={topic.id} disabled={!!busy} onChange={e=>void openTopic(e.target.value)}>{journey.topics.map(item=><option key={item.id} value={item.id}>{item.title[language]}</option>)}</select></label>

@@ -1,7 +1,7 @@
 import { TopicCard } from './TopicCard.tsx';
 import TopicPractice from './TopicPractice.tsx';
 import MixedPractice from './MixedPractice.tsx';
-import { LearningProgress, ProgressMeter, useLearningOverview } from './LearningProgress.tsx';
+import { ProgressMeter, useLearningOverview } from './LearningProgress.tsx';
 import { ReactCoverage } from './ReactCoverage.tsx';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -17,15 +17,14 @@ export function LearningPaths({reactRoadmap}:{reactRoadmap:ReactNode}) {
   const [route,setRoute]=useState(()=>location.hash);
   const [query,setQuery]=useState('');
   const [category,setCategory]=useState('all');
-  const {overview,error:progressError,reload:reloadProgress}=useLearningOverview(route);
+  const {overview,reload:reloadProgress}=useLearningOverview(route);
   useEffect(()=>{const sync=()=>{setRoute(location.hash);setSelected(location.hash.split('/')[1]??'');setTopicId(location.hash.split('/')[2]??'');};window.addEventListener('hashchange',sync);return()=>window.removeEventListener('hashchange',sync);},[]);
   const path=findLearningPath(selected);
   const progress=path?overview?.paths[path.id]?.topics??{}:{};
   const topic=path?.stages.flatMap(s=>s.topics).find(t=>t.id===topicId);
-  if(path && topic)return route.split('/')[3]==='previous'?<TopicPractice key={topic.id} topic={topic} pathId={path.id}/>:<MixedPractice key={topic.id} topic={topic} pathId={path.id} overview={overview} progressError={progressError} reloadProgress={reloadProgress}/>;
+  if(path && topic)return route.split('/')[3]==='previous'?<TopicPractice key={topic.id} topic={topic} pathId={path.id}/>:<MixedPractice key={topic.id} topic={topic} pathId={path.id} reloadProgress={reloadProgress}/>;
   const stages={foundation:say('Foundations','基础'),practice:say('Practice','实践'),advanced:say('Advanced','进阶')};
   return <div className="learning-paths">
-    <LearningProgress overview={overview} pathId={path?.id} error={progressError} onRetry={reloadProgress}/>
     {path ? <>
       <a className="path-back" href="#roadmap">← {say('All learning paths','全部学习路线')}</a>
       {path.id==='react'&&<ReactCoverage/>}
