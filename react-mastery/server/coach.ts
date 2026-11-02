@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { getLesson, challengeFor } from '../shared/curriculum.ts';
 import type { LearningSession } from '../shared/types.ts';
 import { validateAssessment } from '../shared/mastery.ts';
+import { AiQueue } from './ai-queue.ts';
 
 export function findCodex(): string | null {
   if (process.env.CODEX_BIN && existsSync(process.env.CODEX_BIN)) return process.env.CODEX_BIN;
@@ -27,27 +28,28 @@ const schema = {
     ...Object.fromEntries(['summary', 'followUp', 'nextStep'].map(k => [k, { type: 'string' }]))
   }, required: ['scores', 'evidence', 'misconceptions', 'summary', 'followUp', 'nextStep']
 };
-let active = false;
-export async function runStructured<T>(prompt: string, outputSchema: unknown): Promise<T> {
+const queue = new AiQueue();
+export async function runStructured<T>(prompt: string, outputSchema: unknown, priority:'interactive'|'translation'='interactive'): Promise<T> {
+  return queue.run(async()=>{
   const executable = findCodex();
   if (!executable) throw Object.assign(new Error('Codex was not found. Install it and sign in, or set CODEX_BIN. No AI score was generated.'), { status: 503 });
-  if (active) throw Object.assign(new Error('AI is assessing another answer. Please try again shortly.'), { status: 409 });
-  active = true;
   const work = resolve(process.env.DATA_DIR ?? 'data', 'coach');
-  const id = randomUUID(); const output = join(work, `${id}.json`); const schemaFile = join(work, 'rubric.schema.json');
+  const id = randomUUID(); const output = join(work, `${id}.json`); const schemaFile = join(work, `${id}.schema.json`);
   try {
     await mkdir(work, { recursive: true }); await writeFile(schemaFile, JSON.stringify(outputSchema));
     await new Promise<void>((resolveRun, reject) => {
       const child = spawn(executable, ['exec', '--ephemeral', '--ignore-user-config', '--skip-git-repo-check', '--sandbox', 'read-only', '--disable', 'shell_tool', '-c', 'mcp_servers={}', '-c', 'web_search="disabled"', '--output-schema', schemaFile, '--output-last-message', output, '--color', 'never', '-'], { cwd: work, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
-      const timeout = setTimeout(() => { child.kill(); reject(Object.assign(new Error('AI assessment timed out. Your answer is saved; you can retry later.'), { status: 504 })); }, 150000);
+      let timedOut=false;
+      const timeout = setTimeout(() => { timedOut=true;child.kill(); }, 150000);
       child.stdout.resume(); child.stderr.resume();
       child.on('error', () => { clearTimeout(timeout); reject(new Error('Could not start Codex. Check your local sign-in.')); });
-      child.on('close', code => { clearTimeout(timeout); code === 0 ? resolveRun() : reject(Object.assign(new Error('Codex could not assess this answer. Check your sign-in, allowance, or network. Your answer is saved.'), { status: 503 })); });
+      child.on('close', code => { clearTimeout(timeout); if(timedOut)reject(Object.assign(new Error('AI assessment timed out. Your answer is saved; you can retry later.'), { status: 504 }));else code === 0 ? resolveRun() : reject(Object.assign(new Error('Codex could not assess this answer. Check your sign-in, allowance, or network. Your answer is saved.'), { status: 503 })); });
       child.stdin.on('error', () => {}); child.stdin.end(prompt);
     });
     const raw = JSON.parse(await readFile(output, 'utf8'));
     return raw as T;
-  } finally { active = false; await rm(output, { force: true }); }
+  } finally { await Promise.all([rm(output, { force: true }),rm(schemaFile,{force:true})]); }
+  },priority);
 }
 
 export async function assess(session: LearningSession, answer: string, transfer: boolean, language: 'en' | 'zh' = 'en') {
