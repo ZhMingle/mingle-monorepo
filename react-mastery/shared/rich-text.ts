@@ -1,0 +1,31 @@
+export type TextBlock={kind:'code';text:string;language:string}|{kind:'paragraph'|'heading';text:string}|{kind:'list';items:string[];ordered:boolean};
+export function textBlocks(text:string):TextBlock[]{
+  const lines=text.replace(/\r\n/g,'\n').split('\n');const blocks:TextBlock[]=[];
+  for(let i=0;i<lines.length;){
+    const line=lines[i];
+    if(!line.trim()){i++;continue;}
+    const fence=/^\s*```([^`]*)$/.exec(line);
+    if(fence){
+      const code:string[]=[];i++;
+      while(i<lines.length&&!/^\s*```\s*$/.test(lines[i]))code.push(lines[i++]);
+      if(i<lines.length)i++;
+      blocks.push({kind:'code',text:code.join('\n'),language:fence[1].trim()});continue;
+    }
+    const heading=/^\s*#{1,6}\s+(.+)$/.exec(line);
+    if(heading){blocks.push({kind:'heading',text:heading[1]});i++;continue;}
+    const item=/^\s*(?:([-*])|\d+[.)])\s+(.+)$/.exec(line);
+    if(item){
+      const items:string[]=[];const ordered=!item[1];
+      while(i<lines.length){const next=/^\s*(?:([-*])|\d+[.)])\s+(.+)$/.exec(lines[i]);if(!next||!next[1]!==ordered)break;items.push(next[2]);i++;}
+      blocks.push({kind:'list',items,ordered});continue;
+    }
+    const paragraph=[line];i++;
+    while(i<lines.length&&lines[i].trim()&&!/^\s*(?:```|#{1,6}\s|[-*]\s|\d+[.)]\s)/.test(lines[i]))paragraph.push(lines[i++]);
+    blocks.push({kind:'paragraph',text:paragraph.join('\n')});
+  }
+  return blocks;
+}
+export function inlineParts(text:string):{kind:'text'|'code'|'strong';text:string}[]{
+  return text.split(/(`[^`\n]+`|\*\*[^*]+\*\*)/g).filter(Boolean).map(part=>
+    part.startsWith('`')?{kind:'code',text:part.slice(1,-1)}:part.startsWith('**')?{kind:'strong',text:part.slice(2,-2)}:{kind:'text',text:part});
+}

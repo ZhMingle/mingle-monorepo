@@ -3,6 +3,7 @@ import { request } from './api.ts';
 import { useLanguage } from './language.tsx';
 import { usePresentation } from './usePresentation.ts';
 import './exercise-tutor.css';
+import LearningText from './LearningText.tsx';
 type Message={role:'user'|'assistant';content:string;language?:'en'|'zh'};
 export default function ExerciseTutor({id,mode,step,onHelp}:{id:string;mode:'study'|'topic';step:string;onHelp:()=>void}){
   const {language}=useLanguage();const say=(en:string,zh:string)=>language==='zh'?zh:en;
@@ -27,7 +28,7 @@ export default function ExerciseTutor({id,mode,step,onHelp}:{id:string;mode:'stu
       <header><h2 id={`tutor-title-${id}`}>{say('Ask about this exercise','追问这道题')}</h2><p>{say('Ask while reading. Get explanations for the current exercise.','边看题边提问，我会结合当前题目给你讲解。')}</p></header>
       <div ref={transcript} className="tutor-messages" role="log" aria-label={say('Conversation','讲解对话')}>
         {!messages.length&&<p>{say('Tell me which part is confusing, or choose a question below.','告诉我哪里没懂，或点击下面的问题开始。')}</p>}
-        {messages.map((message,index)=><article className={`tutor-message ${message.role}`} key={index}><strong>{message.role==='user'?say('You','你'):say('Tutor','讲解助手')}</strong><p>{message.role==='assistant'?view?.replies[index]?.feedback||message.content:message.content}</p></article>)}
+        {messages.map((message,index)=><article className={`tutor-message ${message.role}`} key={index}><strong>{message.role==='user'?say('You','你'):say('Tutor','讲解助手')}</strong>{message.role==='assistant'?<LearningText text={view?.replies[index]?.feedback||message.content}/>:<p>{message.content}</p>}</article>)}
         {busy&&<p role="status">{say('Preparing an explanation…','正在结合题目讲解…')}</p>}
         {translating&&<p role="status">{say('Translating explanations…','正在切换讲解语言…')}</p>}
       </div>

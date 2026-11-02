@@ -1,0 +1,10 @@
+.learning-text { min-width:0; line-height:1.75; overflow-wrap:anywhere; }
+.learning-text > :first-child { margin-top:0; }
+.learning-text > :last-child { margin-bottom:0; }
+.learning-text p { margin:.65rem 0; white-space:pre-wrap; }
+.learning-text h4 { margin:1.2rem 0 .4rem; color:#365c2d; font-size:1.03em; font-weight:750; }
+.learning-text strong { font-weight:750; color:#365c2d; }
+.learning-text :not(pre) > code { padding:.1em .32em; border:1px solid #d6dfd2; border-radius:4px; background:#e8efe3; color:#284e3c; font: .92em/1.6 ui-monospace,Consolas,monospace; box-decoration-break:clone; }
+.learning-text ul,.learning-text ol { margin:.55rem 0; padding-left:1.5rem; }
+.learning-text li { margin:.25rem 0; }
+.learning-text .reference-code-block { margin:.85rem 0; }

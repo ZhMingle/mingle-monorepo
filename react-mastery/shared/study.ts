@@ -65,11 +65,16 @@ export function completedKinds(s:StudySession){return studyKinds.filter(kind=>s.
 export function canContinueStudy(session:Pick<StudySession,'attempts'>|null|undefined){
   return !!session&&studyKinds.every(kind=>session.attempts.some(a=>a.kind===kind&&a.accepted&&!a.error));
 }
+export function choiceReference(choice:StudyLesson['choice']):string {
+  const option=choice.options[choice.correct];
+  const normalize=(text:string)=>text.replace(/\s+/g,' ').trim();
+  return normalize(choice.explanation).includes(normalize(option))?choice.explanation:`${option}\n\n${choice.explanation}`;
+}
 export function publicStudy(s:StudySession):StudyPayload {
   const {overview,example,pitfall}=s.lesson;
   const {correct:_correct,explanation:_explanation,...choice}=s.lesson.choice;
   const {reference:_reference,rubric:_rubric,fixtures:_fixtures,...coding}=s.lesson.coding;
-  return {session:{...s,current:s.current==='keywords'?'choice':s.current,lesson:{overview,example,pitfall,keywords:[],choice,coding}},references:Object.fromEntries(s.helped.filter(kind=>studyKinds.includes(kind)).map(kind=>[kind,kind==='keywords'?s.lesson.keywords.map(b=>`${b.prompt}\n${b.answer}\n${b.explanation}`).join('\n\n'):kind==='choice'?`${s.lesson.choice.options[s.lesson.choice.correct]}\n\n${s.lesson.choice.explanation}`:s.lesson.coding.reference])),completed:completedKinds(s),supported:s.helped.some(k=>studyKinds.includes(k))||s.attempts.some(a=>studyKinds.includes(a.kind)&&a.supported)};
+  return {session:{...s,current:s.current==='keywords'?'choice':s.current,lesson:{overview,example,pitfall,keywords:[],choice,coding}},references:Object.fromEntries(s.helped.filter(kind=>studyKinds.includes(kind)).map(kind=>[kind,kind==='keywords'?s.lesson.keywords.map(b=>`${b.prompt}\n${b.answer}\n${b.explanation}`).join('\n\n'):kind==='choice'?choiceReference(s.lesson.choice):s.lesson.coding.reference])),completed:completedKinds(s),supported:s.helped.some(k=>studyKinds.includes(k))||s.attempts.some(a=>studyKinds.includes(a.kind)&&a.supported)};
 }
 
 export function validateExecution(raw:unknown,code:string,challenge:Challenge):RunReport {
