@@ -112,8 +112,11 @@ namespace Mingle.ActivityReminder
         }
         internal bool AutoStartOnClick(bool locked)
         {
-            if (!State.autoStartOnClick || locked || Resting || Paused || !AwaitingStart) return false;
-            return ConfirmStudy();
+            if (!State.autoStartOnClick || locked || Resting) return false;
+            if (AwaitingStart) return ConfirmStudy();
+            if (!Paused) return false;
+            // Resume the existing cycle; never reset accumulated work or snooze.
+            Paused = false; studyStartedUtc = utcNow(); return true;
         }
         internal bool SkipRest()
         {
@@ -448,7 +451,7 @@ namespace Mingle.ActivityReminder
         private void RefreshDisplay(double idle, bool locked)
         {
             idle = Clock.EffectiveIdle(idle);
-            string text = Clock.Resting ? "On a break - time to move" : Clock.AwaitingStart ? "Ready - start when you are" : Clock.Paused ? "Paused - resume when ready" : locked ? "Screen locked - auto-paused" : idle >= Clock.State.idle ? "Away - auto-paused" : "Tracking active time";
+            string text = Clock.Resting ? "On a break - time to move" : Clock.AwaitingStart ? "Ready - start when you are" : Clock.Paused ? (Clock.State.autoStartOnClick && clicks != null && clicks.Available ? "Paused - click anywhere to resume" : "Paused - resume when ready") : locked ? "Screen locked - auto-paused" : idle >= Clock.State.idle ? "Away - auto-paused" : "Tracking active time";
             if (!Clock.Resting && Clock.SnoozeRemaining > 0) text += " · Snoozed";
             status.Text = "●  " + text;
             status.ForeColor = !Clock.Resting && (Clock.Paused || locked || idle >= Clock.State.idle) ? Theme.Muted : Theme.Mint;
@@ -584,7 +587,7 @@ namespace Mingle.ActivityReminder
                 FormBorderStyle = FormBorderStyle.FixedDialog, TopMost = true, MaximizeBox = false, MinimizeBox = false };
             studyReadyWindow = ready;
             Theme.Label(ready, "Ready when you are.", 28, 24, 444, 48, 24, Theme.Mint);
-            Theme.Label(ready, Clock.State.autoStartOnClick && clicks != null && clicks.Available ? "Click anywhere to start your next session.\nManual pause and the five-minute break stay protected." : "Your next session is waiting.\nThe timer stays paused until you choose Start.", 30, 90, 440, 60, 11, Theme.Muted);
+            Theme.Label(ready, Clock.State.autoStartOnClick && clicks != null && clicks.Available ? "Click anywhere to start your next session.\nThe five-minute break is never interrupted." : "Your next session is waiting.\nThe timer stays paused until you choose Start.", 30, 90, 440, 60, 11, Theme.Muted);
             Theme.Button(ready, "Start next session", 30, 173, 214, true, ConfirmStudy);
             Theme.Button(ready, "Later", 258, 173, 212, false, delegate { ready.Close(); });
             ready.FormClosed += delegate { studyReadyWindow = null; };
@@ -672,13 +675,23 @@ namespace Mingle.ActivityReminder
                 if (clickClock.AutoStartOnClick(true)) throw new Exception("Locked clicks must not start");
                 clickClock.State.autoStartOnClick = false;
                 if (clickClock.AutoStartOnClick(false)) throw new Exception("Disabled auto-start must wait");
-                clickClock.State.autoStartOnClick = true; clickClock.Paused = true;
-                if (clickClock.AutoStartOnClick(false)) throw new Exception("Manual pause must be respected");
-                clickClock.Paused = false;
+                clickClock.State.autoStartOnClick = true;
                 if (!clickClock.AutoStartOnClick(false) || clickClock.AutoStartOnClick(false)) throw new Exception("Click starts waiting session exactly once");
                 Equal(clickClock.State.total, 73, "click does not backfill waiting time");
                 utc = utc.AddSeconds(1); clickClock.Step(1, 0, false, today);
                 Equal(clickClock.State.cycle, 1, "click-started session counts new active time");
+                clickClock.Paused = true; clickClock.SnoozeRemaining = 123;
+                utc = utc.AddSeconds(600);
+                if (clickClock.AutoStartOnClick(true) || !clickClock.Paused) throw new Exception("Locked click must not resume manual pause");
+                clickClock.State.autoStartOnClick = false;
+                if (clickClock.AutoStartOnClick(false)) throw new Exception("Disabled click-start preserves manual pause");
+                clickClock.State.autoStartOnClick = true;
+                if (!clickClock.AutoStartOnClick(false) || clickClock.Paused) throw new Exception("Click resumes a manually paused session");
+                Equal(clickClock.State.cycle, 1, "resume preserves current cycle");
+                Equal(clickClock.State.total, 74, "resume excludes paused time");
+                Equal(clickClock.SnoozeRemaining, 123, "resume preserves snooze");
+                utc = utc.AddSeconds(1); clickClock.Step(1, 601, false, today);
+                Equal(clickClock.State.cycle, 2, "resume starts a fresh idle window");
                 clickClock.StartRest();
                 if (clickClock.AutoStartOnClick(false)) throw new Exception("Click must not interrupt a break");
                 var legacyState = new JavaScriptSerializer().Deserialize<SavedState>("{\"awaitingStart\":true}");
@@ -696,7 +709,7 @@ namespace Mingle.ActivityReminder
                 if (Native.Idle() < 0) throw new Exception("native idle"); Native.Locked();
                 QuotaTests.Run();
                 UsageUpdateTests.Run();
-                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test-result.txt"), "PASS: timer rules, click-start waiting sessions, manual pause and break protection, setting migration/persistence and quota completion monitoring.");
+                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test-result.txt"), "PASS: timer rules, click-start waiting/paused sessions, retained cycle/snooze, lock/break protection, setting migration/persistence and quota completion monitoring.");
                 return 0;
             }
             catch (Exception ex)
