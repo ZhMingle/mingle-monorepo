@@ -28,3 +28,6 @@
 .mixed-practice .topic-journey>h1{flex:1;min-width:0;margin:0;font-size:24px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mixed-practice .topic-journey>button{flex-shrink:0;white-space:nowrap}
 @media(max-width:900px){.mixed-practice .topic-journey{flex-wrap:wrap;gap:10px}.mixed-practice .topic-journey>h1{font-size:21px;min-width:160px}.mixed-practice .topic-journey>.topic-directory{margin-left:auto}}
+.tp-tabs>button{display:inline-flex;align-items:center;gap:9px}
+.tp-tab-complete{display:inline-block;padding:2px 7px;border:1px solid #cbd8c4;border-radius:5px;background:#eaf0e5;color:#4c6542;font-size:12px;font-weight:500;line-height:1.5;white-space:nowrap}
+.tp-tabs>button[aria-pressed=true] .tp-tab-complete{background:#f4f8ee;border-color:#b7cba6}
