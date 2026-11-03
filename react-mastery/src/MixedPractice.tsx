@@ -88,7 +88,7 @@ export default function MixedPractice({topic,pathId,reloadProgress}:{topic:PathT
   const canSubmit=current==='choice'?draft.choice>=0:draft.code.trim().length>=4;
   return <div className="practice-workspace"><section className="topic-practice mixed-practice">
     <a href={`#roadmap/${pathId}`}>← {say('Back to path','返回路线')}</a>
-    <header><span className="eyebrow">{say('PRACTICE IN CONTEXT','在场景中练习')}</span><h1>{topic.title[language]}</h1><p>{topic.goal[language]}</p></header>
+    <header><h1>{topic.title[language]}</h1></header>
     <nav className="topic-journey" aria-label={say('Topic navigation','知识点导航')}>
       <button disabled={!!busy||!journey.previous} onClick={()=>void openTopic(journey.previous!.id)}>← {say('Previous topic','上一知识点')}</button>
       <label><span>{journey.index+1}/{journey.topics.length}</span><select aria-label={say('Current topic','当前知识点')} value={topic.id} disabled={!!busy} onChange={e=>void openTopic(e.target.value)}>{journey.topics.map(item=><option key={item.id} value={item.id}>{item.title[language]}</option>)}</select></label>
