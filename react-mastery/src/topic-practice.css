@@ -22,3 +22,9 @@
 .mixed-practice .tp-practice-controls button{padding:8px 12px}
 .mixed-practice .tp-card:not(.tp-lesson){padding:20px}
 @media(max-width:650px){.mixed-practice .topic-journey label{flex:1 1 100%;min-width:0}.tp-practice-controls{align-items:stretch}.tp-practice-controls .tp-toolbar{flex:1;gap:8px}.mixed-practice .tp-card:not(.tp-lesson){padding:16px}}
+
+.mixed-practice .topic-journey{flex-wrap:nowrap;margin-top:0;gap:14px}
+.mixed-practice .topic-journey>a{flex-shrink:0;white-space:nowrap}
+.mixed-practice .topic-journey>h1{flex:1;min-width:0;margin:0;font-size:24px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mixed-practice .topic-journey>button{flex-shrink:0;white-space:nowrap}
+@media(max-width:900px){.mixed-practice .topic-journey{flex-wrap:wrap;gap:10px}.mixed-practice .topic-journey>h1{font-size:21px;min-width:160px}.mixed-practice .topic-journey>.topic-directory{margin-left:auto}}

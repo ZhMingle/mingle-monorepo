@@ -89,9 +89,9 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
   const attempts=session?.attempts.filter(a=>a.kind===current)??[];const latest=attempts.at(-1);
   const canSubmit=current==='choice'?draft.choice>=0:draft.code.trim().length>=4;
   return <div className="practice-workspace"><TopicDirectory docked path={path} current={topic.id} progress={progress} disabled={!!busy} onNavigate={id=>void openTopic(id)}/><section className="topic-practice mixed-practice">
-    <a href={`#roadmap/${pathId}`}>← {say('Back to path','返回路线')}</a>
-    <header><h1>{topic.title[language]}</h1></header>
     <nav className="topic-journey" aria-label={say('Topic navigation','知识点导航')}>
+      <a href={`#roadmap/${pathId}`}>← {say('Back to path','返回路线')}</a>
+      <h1 title={topic.title[language]}>{topic.title[language]}</h1>
       <button disabled={!!busy||!journey.previous} onClick={()=>void openTopic(journey.previous!.id)}>← {say('Previous topic','上一知识点')}</button>
       <span>{journey.index+1}/{journey.topics.length}</span><TopicDirectory path={path} current={topic.id} progress={progress} disabled={!!busy} onNavigate={id=>void openTopic(id)}/>
       {canContinue&&journey.next&&<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next topic','下一知识点')} →</button>}
