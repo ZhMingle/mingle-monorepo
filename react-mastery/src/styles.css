@@ -36,3 +36,7 @@
 .topbar{position:sticky;top:0;z-index:25}
 html{scroll-padding-top:calc(var(--topbar-height,76px) + 24px)}
 @media(max-width:700px){.sidebar{position:static}}
+
+.export-evidence-button{position:relative}
+.export-evidence-button::after{content:attr(data-tooltip);position:absolute;top:calc(100% + 22px);right:0;z-index:1;width:max-content;max-width:calc(100vw - 40px);padding:8px 12px;border:1px solid #47583f;border-radius:7px;background:#30442c;color:#fff;font-size:13px;line-height:1.5;white-space:nowrap;box-shadow:0 4px 14px #20301c24;pointer-events:none;visibility:hidden;opacity:0;transition:opacity .12s}
+.export-evidence-button:hover::after,.export-evidence-button:focus-visible::after{visibility:visible;opacity:1}
