@@ -2,7 +2,7 @@
 
 AI requests share a serial local queue instead of rejecting overlapping actions as “AI is assessing another answer.” Queued generation, assessment and tutor actions run before queued presentation translations; a translation already running is allowed to finish. Failed jobs release the queue, each request uses its own schema file, and a timed-out CLI process is stopped before the next job starts. Presentation translation is requested only for the currently selected language, without automatically warming the other language.
 
-新增路线后重新运行 `Start.ps1`。启动器会同时检查服务版本与路线目录版本；发现旧服务时，只重启经端口、进程和项目目录核验的本项目服务，保留 `data/` 下的学习记录。页面出现 `Unknown topic.` 或知识点总数仍为旧值时，也可用此方式更新服务后刷新页面。
+源码更新后重新运行 `Start.bat` 或 `Start.ps1`；启动器会在构建缺失或源码比构建更新时自动执行类型检查和构建。新增路线后也请重新运行启动器。启动器会同时检查服务版本与路线目录版本；发现旧服务时，只重启经端口、进程和项目目录核验的本项目服务，保留 `data/` 下的学习记录。页面出现 `Unknown topic.` 或知识点总数仍为旧值时，也可用此方式更新服务后刷新页面。
 
 A local-first AI learning platform for React, TypeScript, HTML/CSS, C#/.NET, Node.js, Java, Python, Go, MySQL, SQL Server, and PostgreSQL. A topic is assessed through independent prediction, real React code checks, explanation, transfer, and delayed recall. Watching a lesson or asking the AI to mark a checkbox never awards mastery.
 

@@ -2,7 +2,18 @@ $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 $bundledNode = Join-Path $env:USERPROFILE '.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe'
 $nodePath = if (Test-Path -LiteralPath $bundledNode) { $bundledNode } else { (Get-Command node.exe -ErrorAction Stop).Source }
-if (!(Test-Path -LiteralPath 'dist/index.html')) { throw 'Run pnpm install and pnpm build first. See README.md.' }
+$buildInputs = @('src', 'shared', 'scripts/build-sandbox.mjs', 'index.html', 'package.json', 'pnpm-lock.yaml', 'tsconfig.json', 'vite.config.ts')
+$newestInput = Get-ChildItem -LiteralPath $buildInputs -Recurse -File | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+$entry = Get-Item -LiteralPath 'dist/index.html' -ErrorAction SilentlyContinue
+if (!$entry -or $newestInput.LastWriteTimeUtc -gt $entry.LastWriteTimeUtc) {
+    Write-Host 'Source changed; building the latest local app...'
+    & $nodePath 'node_modules/typescript/bin/tsc' --noEmit
+    if ($LASTEXITCODE -ne 0) { throw 'Type check failed. The app was not launched.' }
+    & $nodePath 'scripts/build-sandbox.mjs'
+    if ($LASTEXITCODE -ne 0) { throw 'Sandbox build failed. The app was not launched.' }
+    & $nodePath 'node_modules/vite/bin/vite.js' build
+    if ($LASTEXITCODE -ne 0) { throw 'App build failed. The app was not launched.' }
+}
 $url = 'http://127.0.0.1:4317'
 $running = $false
 try { $response = Invoke-RestMethod "$url/api/bootstrap" -TimeoutSec 2; $running = $null -ne $response.lessons } catch { }
