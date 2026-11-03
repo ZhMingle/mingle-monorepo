@@ -22,7 +22,7 @@ export function LearningPaths({reactRoadmap}:{reactRoadmap:ReactNode}) {
   const path=findLearningPath(selected);
   const progress=path?overview?.paths[path.id]?.topics??{}:{};
   const topic=path?.stages.flatMap(s=>s.topics).find(t=>t.id===topicId);
-  if(path && topic)return route.split('/')[3]==='previous'?<TopicPractice key={topic.id} topic={topic} pathId={path.id}/>:<MixedPractice key={topic.id} topic={topic} pathId={path.id} reloadProgress={reloadProgress}/>;
+  if(path && topic)return route.split('/')[3]==='previous'?<TopicPractice key={topic.id} topic={topic} pathId={path.id}/>:<MixedPractice key={topic.id} topic={topic} pathId={path.id} reloadProgress={reloadProgress} progress={progress}/>;
   const stages={foundation:say('Foundations','基础'),practice:say('Practice','实践'),advanced:say('Advanced','进阶')};
   return <div className="learning-paths">
     {path ? <>

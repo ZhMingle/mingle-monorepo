@@ -1,4 +1,6 @@
 import CodeBlock from './CodeBlock.tsx';
+import TopicDirectory from './TopicDirectory.tsx';
+import type {TopicProgress} from '../shared/learning-progress.ts';
 import { displayCode } from '../shared/rich-text.ts';
 import LearningText, { Inline } from './LearningText.tsx';
 import OptionContent from './OptionContent.tsx';
@@ -16,7 +18,7 @@ import './topic-practice.css';
 import { findLearningPath } from '../shared/paths.ts';
 import { topicNeighbors } from '../shared/learning-progress.ts';
 
-export default function MixedPractice({topic,pathId,reloadProgress}:{topic:PathTopic;pathId:string;reloadProgress:()=>void}){
+export default function MixedPractice({topic,pathId,reloadProgress,progress}:{topic:PathTopic;pathId:string;reloadProgress:()=>void;progress:Record<string,TopicProgress>}){
   const {language,t}=useLanguage();const say=(en:string,zh:string)=>language==='zh'?zh:en;
   const [rawPayload,setPayload]=useState<StudyPayload|null>(null);const [loading,setLoading]=useState(true);
   const [current,setCurrent]=useState<StudyKind>('choice');const [draft,setDraft]=useState<StudyDraft>({keywords:{},choice:-1,code:''});
@@ -86,12 +88,12 @@ export default function MixedPractice({topic,pathId,reloadProgress}:{topic:PathT
   }
   const attempts=session?.attempts.filter(a=>a.kind===current)??[];const latest=attempts.at(-1);
   const canSubmit=current==='choice'?draft.choice>=0:draft.code.trim().length>=4;
-  return <div className="practice-workspace"><section className="topic-practice mixed-practice">
+  return <div className="practice-workspace"><TopicDirectory docked path={path} current={topic.id} progress={progress} disabled={!!busy} onNavigate={id=>void openTopic(id)}/><section className="topic-practice mixed-practice">
     <a href={`#roadmap/${pathId}`}>← {say('Back to path','返回路线')}</a>
     <header><h1>{topic.title[language]}</h1></header>
     <nav className="topic-journey" aria-label={say('Topic navigation','知识点导航')}>
       <button disabled={!!busy||!journey.previous} onClick={()=>void openTopic(journey.previous!.id)}>← {say('Previous topic','上一知识点')}</button>
-      <label><span>{journey.index+1}/{journey.topics.length}</span><select aria-label={say('Current topic','当前知识点')} value={topic.id} disabled={!!busy} onChange={e=>void openTopic(e.target.value)}>{journey.topics.map(item=><option key={item.id} value={item.id}>{item.title[language]}</option>)}</select></label>
+      <span>{journey.index+1}/{journey.topics.length}</span><TopicDirectory path={path} current={topic.id} progress={progress} disabled={!!busy} onNavigate={id=>void openTopic(id)}/>
       {canContinue&&journey.next&&<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next topic','下一知识点')} →</button>}
     </nav>
     {error&&<div role="alert" className="tp-error">{error}<button disabled={!!busy} onClick={()=>session?void action('load'):location.reload()}>{say('Reload saved practice','重新读取练习')}</button></div>}

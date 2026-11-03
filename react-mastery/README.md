@@ -12,6 +12,8 @@ All eleven paths (126 topics) now use **multiple choice + coding validation**. T
 
 Choice and code results count independently toward a two-part practice result. Old keyword records remain in SQLite/export but do not count toward completion or assistance. Existing drafts, earlier reviews, and original React labs remain intact. Older saved React tasks without a runner descriptor retain their original AI review behavior; generate a new variation to get browser execution.
 
+Practice navigation stays below the workspace toolbar while scrolling. Wide screens show a persistent module directory to the left of the exercise; smaller screens use **Contents** to open it. The directory supports search, stage groups, the current topic and per-topic practice progress. The workspace breadcrumb names and links to the active learning path. Topic changes save the current draft first. Newly generated exercises use short task statements and concise requirements, omitting repeated environment and review boilerplate while keeping conditions needed to determine the answer. Existing saved questions keep their wording.
+
 ### Code editor
 
 Current coding tasks and original React labs use CodeMirror with syntax colors, line numbers, bracket matching, completion, auto indentation, and Tab/Shift+Tab indentation. Use **Format** or **Shift+Alt+F**; automatic formatting on blur is enabled by default and can be disabled in the toolbar. JavaScript/JSX, TypeScript/TSX, HTML/CSS use local Prettier parsers. SQL uses the path-specific MySQL, PostgreSQL, or SQL Server formatter. C# provides syntax colors and indentation cleanup, not a full C# formatter.
