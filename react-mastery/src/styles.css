@@ -31,3 +31,8 @@
 
 .language-toggle { min-width: 82px; cursor: pointer; }
 .language-toggle:hover { background: #edf5e2; border-color: #8ca96c; }
+
+/* Keep workspace controls visible while the page scrolls. */
+.topbar{position:sticky;top:0;z-index:25}
+html{scroll-padding-top:calc(var(--topbar-height,76px) + 24px)}
+@media(max-width:700px){.sidebar{position:static}}
