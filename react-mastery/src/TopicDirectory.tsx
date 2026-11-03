@@ -29,7 +29,7 @@ export default function TopicDirectory({path,current,progress,disabled,onNavigat
         {path.stages.map(stage=>{const items=stage.topics.filter(item=>matches(item.title));return items.length>0&&<section key={stage.id}><h2>{stages[stage.id]}</h2><ol>{items.map(item=>{
           const value=progress[item.id];
           const status=value?`${value.completed}/${value.total}`:'—';
-          return <li key={item.id}><button type="button" disabled={disabled} aria-current={item.id===current?'page':undefined} onClick={()=>{if(item.id!==current)onNavigate(item.id);setOpen(false);trigger.current?.focus();}}><span className="topic-directory-number">{topics.findIndex(topic=>topic.id===item.id)+1}</span><span>{item.title[language]}</span><small>{item.id===current?say('Current','当前'):status}</small></button></li>;
+          return <li key={item.id}><button type="button" disabled={disabled} aria-current={item.id===current?'page':undefined} onClick={()=>{if(item.id!==current)onNavigate(item.id);setOpen(false);trigger.current?.focus();}}><span className="topic-directory-number">{topics.findIndex(topic=>topic.id===item.id)+1}</span><span>{item.title[language]}</span><small>{status}</small></button></li>;
         })}</ol></section>;})}
         {!topics.some(item=>matches(item.title))&&<p role="status">{say('No matching topics','没有匹配的知识点')}</p>}
       </div>
