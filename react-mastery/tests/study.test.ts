@@ -108,3 +108,16 @@ test('starting a fresh variation keeps earlier route progress and drafts can be 
   await studyAction('draft',{id,...draft,code:'// my unsent draft'},'en');
   assert.equal(getStudy(id).draft.code,'// my unsent draft');
 });
+
+test('generated starter strips only a complete Markdown wrapper before initializing a draft',async()=>{
+  const fenced=structuredClone(lesson);
+  fenced.coding.starter='```jsx\n'+lesson.coding.starter+'\n```';
+  const normalized=validateStudyLesson(fenced);
+  assert.equal(normalized.coding.starter,lesson.coding.starter);
+  assert.ok(fenced.coding.starter.startsWith('```jsx'));
+  const id=(await studyAction('new',{topicId:'typescript.inference'},'en',async<T>()=>structuredClone(fenced) as T) as StudyPayload).session.id;
+  assert.equal(getStudy(id).draft.code,lesson.coding.starter);
+  const edited=structuredClone(lesson);
+  edited.coding.starter='const template = `hello`;\n// ```jsx';
+  assert.equal(validateStudyLesson(edited).coding.starter,edited.coding.starter);
+});

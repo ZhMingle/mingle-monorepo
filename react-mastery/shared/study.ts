@@ -1,4 +1,5 @@
 import type { Challenge, RunReport } from './types.ts';
+import { displayCode } from './rich-text.ts';
 import { testNames } from './test-spec.ts';
 export const studyVersion='choice-code-v2';
 export type StudyKind='keywords'|'choice'|'code';
@@ -49,7 +50,7 @@ export function validateStudyLesson(raw:unknown):StudyLesson {
   if(!c||![c.scenario,c.question,c.explanation].every(x=>nonempty(x))||typeof c.code!=='string'||c.code.length>6000||!Array.isArray(c.options)||c.options.length!==3||!c.options.every(x=>nonempty(x,2000))||new Set(c.options).size!==3||!Number.isInteger(c.correct)||c.correct<0||c.correct>2)throw new Error('Invalid choice exercise. Please try again.');
   const p=l.coding;
   if(!p||![p.scenario,p.language,p.starter,p.reference,p.fixtures?.correct,p.fixtures?.incorrect].every(x=>nonempty(x,12000))||!Array.isArray(p.requirements)||p.requirements.length<2||p.requirements.length>4||!p.requirements.every(x=>nonempty(x,1500))||!Array.isArray(p.rubric)||p.rubric.length<2||p.rubric.length>4||!p.rubric.every(x=>nonempty(x,1500))||!Array.isArray(p.cases)||p.cases.length!==2||new Set(p.cases.map(c=>c.id)).size!==2||p.cases.some(c=>![c.id,c.input,c.expected].every(x=>nonempty(x,2000)))||p.fixtures.correct===p.fixtures.incorrect)throw new Error('Invalid coding exercise. Please try again.');
-  return l;
+  return {...l,coding:{...p,starter:displayCode(p.starter).code}};
 }
 export function validateBlankResults(raw:unknown,ids:string[]):BlankResult[]{
   const list=(raw as {results?:BlankResult[]})?.results;
