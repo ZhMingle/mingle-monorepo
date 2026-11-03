@@ -31,3 +31,12 @@ export function topicNeighbors(path:LearningPath,topicId:string){
   const topics=path.stages.flatMap(s=>s.topics);const index=topics.findIndex(t=>t.id===topicId);
   return {topics,index,previous:index>0?topics[index-1]:null,next:index>=0?topics[index+1]??null:null};
 }
+export function resumePath(path:LearningPath,progress:PathProgress):string {
+  const topic=path.stages.flatMap(stage=>stage.topics).find(item=>{
+    const value=progress.topics[item.id];
+    return !value||value.completed<value.total;
+  });
+  if(!topic)return `#roadmap/${path.id}`;
+  const kinds=progress.topics[topic.id]?.kinds??[];
+  return `#roadmap/${path.id}/${topic.id}/${kinds.includes('choice')?'code':'choice'}`;
+}

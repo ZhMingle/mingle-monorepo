@@ -40,7 +40,14 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
   }
   useEffect(()=>{
     live.current=true;
-    request<StudyPayload|{session:null}>('study/latest',{topicId:topic.id}).then(next=>{if(live.current&&next.session)apply(next as StudyPayload,true);}).catch(e=>{if(live.current)setError(e.message);}).finally(()=>{if(live.current)setLoading(false);});
+    request<StudyPayload|{session:null}>('study/latest',{topicId:topic.id}).then(async next=>{
+      if(!live.current||!next.session)return;
+      const requested=location.hash.split('/')[3];
+      if((requested==='choice'||requested==='code')&&next.session.current!==requested){
+        next=await request<StudyPayload>('study/step',{id:next.session.id,kind:requested});
+      }
+      if(live.current)apply(next as StudyPayload,true);
+    }).catch(e=>{if(live.current)setError(e.message);}).finally(()=>{if(live.current)setLoading(false);});
     return()=>{live.current=false;};
   },[topic.id]);
   useEffect(()=>{

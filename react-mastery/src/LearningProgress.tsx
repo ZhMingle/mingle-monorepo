@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LearningOverview,ProgressSummary } from '../shared/learning-progress.ts';
+import {resumePath} from '../shared/learning-progress.ts';
 import { findLearningPath } from '../shared/paths.ts';
 import { request } from './api.ts';
 import { useLanguage } from './language.tsx';
@@ -24,7 +25,7 @@ export function LearningProgress({overview,pathId,error,onRetry}:{overview:Learn
   const path=pathId?findLearningPath(pathId):null;
   return <section className="learning-progress" aria-label={say('Learning progress','学习进度')}>
     {error?<p role="alert">{say('Progress could not update.','进度暂时无法更新。')} <button onClick={onRetry}>{say('Retry','重试')}</button></p>:!overview?<p role="status">{say('Loading progress…','正在读取进度…')}</p>:<>
-      {path&&overview.paths[path.id]&&<ProgressMeter value={overview.paths[path.id]} label={`${path.name[language]} · ${say('path progress','路线进度')}`}/>}
+      {path&&overview.paths[path.id]&&<a className="learning-resume" href={resumePath(path,overview.paths[path.id])} aria-label={say(`Continue ${path.name.en} learning`,`继续学习 ${path.name.zh}`)} title={say('Continue where you left off','继续当前学习进度')}><ProgressMeter value={overview.paths[path.id]} label={`${path.name[language]} · ${say('path progress','路线进度')}`}/></a>}
       <ProgressMeter value={overview.overall} label={say('All available paths','全部已上线路线')}/>
       <p>{say('Practice completion: choice + code. Includes earlier successful attempts; not a mastery or curriculum coverage score.','练习完成度：选择题 + 代码题，保留历次通过结果；不代表掌握程度或全部知识覆盖率。')}</p>
     </>}

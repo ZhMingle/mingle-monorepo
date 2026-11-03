@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { learningOverview,topicNeighbors } from '../shared/learning-progress.ts';
+import { learningOverview,topicNeighbors,resumePath } from '../shared/learning-progress.ts';
 import { learningPaths,findLearningPath } from '../shared/paths.ts';
 import type { StudySession,StudyAttempt } from '../shared/study.ts';
 import type { LearningSession } from '../shared/types.ts';
@@ -35,4 +35,14 @@ test('topic navigation follows the curriculum across phase boundaries and handle
   assert.equal(topicNeighbors(react,'missing').next,null);
   assert.equal(topicNeighbors(findLearningPath('typescript')!,'typescript.generics').previous?.id,'typescript.delivery-contract');
   assert.equal(topicNeighbors(findLearningPath('nodejs')!,'nodejs.file-data').next?.id,'nodejs.blocking-work');
+});
+
+test('progress shortcut resumes the first unfinished topic and remaining question type',()=>{
+  const path=findLearningPath('react')!;
+  const records=[session('react.props',[attempt('choice'),attempt('code')]),session('react.snapshot',[attempt('choice')])];
+  assert.equal(resumePath(path,learningOverview([path],records).paths.react),'#roadmap/react/react.snapshot/code');
+  assert.equal(resumePath(path,learningOverview([path],[]).paths.react),'#roadmap/react/react.props/choice');
+  assert.equal(resumePath(path,learningOverview([path],[session('react.props',[attempt('code')])]).paths.react),'#roadmap/react/react.props/choice');
+  const complete=path.stages.flatMap(stage=>stage.topics).map(topic=>session(topic.id,[attempt('choice'),attempt('code')]));
+  assert.equal(resumePath(path,learningOverview([path],complete).paths.react),'#roadmap/react');
 });
