@@ -121,3 +121,44 @@ test('generated starter strips only a complete Markdown wrapper before initializ
   edited.coding.starter='const template = `hello`;\n// ```jsx';
   assert.equal(validateStudyLesson(edited).coding.starter,edited.coding.starter);
 });
+test('prefetch persists the next exercise without learner progress and concurrent opens reuse one generation',async()=>{
+  const path=learningPaths.find(path=>path.id==='typescript')!;
+  const topics=path.stages.flatMap(stage=>stage.topics);const current=topics[0].id;const next=topics[1].id;
+  db.prepare('DELETE FROM study_sessions WHERE topic_id=?').run(next);
+  db.prepare('DELETE FROM prepared_studies WHERE topic_id=?').run(next);
+  let calls=0;let priority='';let release!:()=>void;
+  const gate=new Promise<void>(resolve=>{release=resolve;});
+  const delayed:typeof generate=async<T>():Promise<T>=>{calls++;await gate;return structuredClone(lesson) as T;};
+  const run:typeof import('../server/coach.ts').runStructured=(prompt,schema,kind)=>{priority=kind??'interactive';return delayed();};
+  const preparing=studyAction('prefetch',{topicId:current},'en',run);
+  const duplicate=studyAction('prefetch',{topicId:current},'en',run);
+  assert.equal(studyProgress(path.id).topics[next].started,false);
+  release();await Promise.all([preparing,duplicate]);
+  assert.equal(calls,1);assert.equal(priority,'background');
+  assert.equal(studyProgress(path.id).topics[next].started,false);
+  assert.ok(db.prepare('SELECT payload FROM prepared_studies WHERE topic_id=?').get(next));
+  const opened=await Promise.all([studyAction('open',{topicId:next},'en',run),studyAction('open',{topicId:next},'en',run)]) as StudyPayload[];
+  assert.equal(calls,1);assert.equal(opened[0].session.id,opened[1].session.id);
+  assert.equal(studyProgress(path.id).topics[next].started,true);
+  const edited={...opened[0].session.draft,code:'// keep this learner draft'};
+  await studyAction('draft',{id:opened[0].session.id,...edited},'en',generate);
+  await studyAction('prefetch',{topicId:current},'en',run);
+  assert.equal((await studyAction('open',{topicId:next},'en',run) as StudyPayload).session.draft.code,edited.code);
+  assert.equal(calls,1);
+});
+
+test('opening during prefetch joins the same job and failed preparation can retry',async()=>{
+  const path=learningPaths.find(path=>path.id==='go')!;const topics=path.stages.flatMap(stage=>stage.topics);
+  const next=topics[1].id;
+  db.prepare('DELETE FROM study_sessions WHERE topic_id=?').run(next);
+  db.prepare('DELETE FROM prepared_studies WHERE topic_id=?').run(next);
+  await assert.rejects(studyAction('prefetch',{topicId:topics[0].id},'en',async()=>{throw Error('offline');}),/offline/);
+  let calls=0;let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  const run=async<T>():Promise<T>=>{calls++;await gate;return structuredClone(lesson) as T;};
+  const preparing=studyAction('prefetch',{topicId:topics[0].id},'en',run);
+  const opening=studyAction('open',{topicId:next},'en',run);
+  release();await preparing;
+  assert.equal((await opening as StudyPayload).session.topicId,next);assert.equal(calls,1);
+  await studyAction('prefetch',{topicId:topics.at(-1)!.id},'en',run);
+  assert.equal(calls,1);
+});

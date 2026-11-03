@@ -34,3 +34,13 @@ test('failed or synchronously throwing jobs do not strand later requests',async(
   await assert.rejects(queue.run(()=>{throw new Error('spawn failed');}),/spawn failed/);
   assert.equal(await queue.run(async()=>43),43);
 });
+
+test('queued prefetch waits behind learner actions and visible translations',async()=>{
+  const queue=new AiQueue();const first=gate();const started=gate();const order:string[]=[];
+  const active=queue.run(async()=>{started.release();await first.promise;});await started.promise;
+  const background=queue.run(async()=>{order.push('prefetch');},'background');
+  const translation=queue.run(async()=>{order.push('translation');},'translation');
+  const learner=queue.run(async()=>{order.push('learner');});
+  first.release();await Promise.all([active,background,translation,learner]);
+  assert.deepEqual(order,['learner','translation','prefetch']);
+});

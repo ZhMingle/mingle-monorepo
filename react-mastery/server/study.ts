@@ -21,6 +21,12 @@ export const studyLessonSchema=object({overview:str,example:str,pitfall:str,
 const semanticSchema=object({results:{type:'array',items:object({id:str,accepted:{type:'boolean'},feedback:str})}});
 const codeSchema=object({quote:str,feedback:str,issues:strings,cases:{type:'array',items:object({id:str,passed:{type:'boolean'},reason:str})}});
 const active=new Set<string>();
+const preparing=new Map<string,Promise<void>>();
+function preparedStudy(topicId:string):StudySession|null {
+  const row=db.prepare('SELECT payload FROM prepared_studies WHERE topic_id=?').get(topicId) as {payload:string}|undefined;
+  const session=row?JSON.parse(row.payload) as StudySession:null;
+  return session?.version===studyVersion?session:null;
+}
 function text(v:unknown,max=12000){if(typeof v!=='string'||v.length>max)throw new Error('Invalid study input.');return v;}
 function kind(v:unknown):StudyKind {if(!studyKinds.includes(v as StudyKind))throw new Error('Unknown exercise type.');return v as StudyKind;}
 export function getStudy(id:string):StudySession {
@@ -46,7 +52,36 @@ function draftFor(s:StudySession,input:Record<string,unknown>):StudyDraft {
   if(!Number.isInteger(input.choice)||Number(input.choice)<-1||Number(input.choice)>2)throw new Error('Invalid choice draft.');
   return {keywords,choice:Number(input.choice),code:text(input.code)};
 }
-export async function studyAction(action:string,input:Record<string,unknown>,language:'en'|'zh',run:typeof runStructured=runStructured):Promise<StudyPayload|{session:null}> {
+export async function studyAction(action:string,input:Record<string,unknown>,language:'en'|'zh',run:typeof runStructured=runStructured,cacheOnly=false):Promise<StudyPayload|{session:null}> {
+  if(action==='open'||action==='prefetch') {
+    let topicId=text(input.topicId,100);const context=topicContext(topicId);
+    if(action==='prefetch') {
+      const topics=context.path.stages.flatMap(stage=>stage.topics);
+      const next=topics[topics.findIndex(topic=>topic.id===topicId)+1];
+      if(!next)return {session:null};
+      topicId=next.id;
+    }
+    const existing=latestStudy(topicId);
+    if(existing)return action==='open'?publicStudy(existing):{session:null};
+    if(!preparedStudy(topicId)) {
+      let work=preparing.get(topicId);
+      if(!work){
+        const backgroundRun:typeof runStructured=(prompt,schema)=>run(prompt,schema,'background');
+        work=studyAction('new',{topicId},language,action==='prefetch'?backgroundRun:run,true).then(()=>{});
+        preparing.set(topicId,work);
+        void work.finally(()=>{if(preparing.get(topicId)===work)preparing.delete(topicId);}).catch(()=>{});
+      }
+      await work;
+    }
+    if(action==='prefetch')return {session:null};
+    // Another tab may have opened or generated this topic while we waited.
+    const latest=latestStudy(topicId);if(latest)return publicStudy(latest);
+    const prepared=preparedStudy(topicId);
+    if(!prepared)throw new Error('The prepared exercise is unavailable. Please retry.');
+    prepared.createdAt=new Date().toISOString();saveStudy(prepared);
+    db.prepare('DELETE FROM prepared_studies WHERE topic_id=?').run(topicId);
+    return publicStudy(prepared);
+  }
   if(action==='latest') {const id=text(input.topicId,100);topicContext(id);const s=latestStudy(id);return s?publicStudy(s):{session:null};}
   if(action==='new') {
     const topicId=text(input.topicId,100);const context=topicContext(topicId);const key=`new:${topicId}`;
@@ -60,7 +95,9 @@ export async function studyAction(action:string,input:Record<string,unknown>,lan
         lesson.coding.cases=[];
       }
       const s:StudySession={id:randomUUID(),topicId,language,version:studyVersion,createdAt:new Date().toISOString(),current:'choice',lesson,draft:{keywords:Object.fromEntries(lesson.keywords.map(b=>[b.id,''])),choice:-1,code:lesson.coding.starter},helped:[],attempts:[]};
-      saveStudy(s);return publicStudy(s);
+      if(cacheOnly)db.prepare('INSERT INTO prepared_studies VALUES(?,?) ON CONFLICT(topic_id) DO UPDATE SET payload=excluded.payload').run(topicId,JSON.stringify(s));
+      else saveStudy(s);
+      return publicStudy(s);
     }finally{active.delete(key);}
   }
   const s=getStudy(text(input.id,80));if(action==='load')return publicStudy(s);

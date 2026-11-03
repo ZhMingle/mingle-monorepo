@@ -29,7 +29,7 @@ const schema = {
   }, required: ['scores', 'evidence', 'misconceptions', 'summary', 'followUp', 'nextStep']
 };
 const queue = new AiQueue();
-export async function runStructured<T>(prompt: string, outputSchema: unknown, priority:'interactive'|'translation'='interactive'): Promise<T> {
+export async function runStructured<T>(prompt: string, outputSchema: unknown, priority:'interactive'|'translation'|'background'='interactive'): Promise<T> {
   return queue.run(async()=>{
   const executable = findCodex();
   if (!executable) throw Object.assign(new Error('Codex was not found. Install it and sign in, or set CODEX_BIN. No AI score was generated.'), { status: 503 });

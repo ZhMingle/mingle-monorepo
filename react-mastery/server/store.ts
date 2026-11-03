@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS topic_sessions (id TEXT PRIMARY KEY, topic_id TEXT NO
 CREATE INDEX IF NOT EXISTS topic_sessions_topic ON topic_sessions(topic_id, created_at);
 CREATE TABLE IF NOT EXISTS study_sessions (id TEXT PRIMARY KEY, topic_id TEXT NOT NULL, created_at TEXT NOT NULL, payload TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS study_sessions_topic ON study_sessions(topic_id, created_at);
+CREATE TABLE IF NOT EXISTS prepared_studies (topic_id TEXT PRIMARY KEY, payload TEXT NOT NULL);
 PRAGMA user_version=4;`);
 
 export function progressList(): Progress[] {

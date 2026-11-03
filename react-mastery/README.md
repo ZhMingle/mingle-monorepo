@@ -8,6 +8,9 @@ A local-first AI learning platform for React, TypeScript, HTML/CSS, C#/.NET, Nod
 
 ## Current learning experience
 
+Opening a topic restores its saved session or starts preparing it automatically. Once it is open, the app prepares only the next topic in the background using Codex allowance. Prepared exercises are stored separately from learner sessions, survive restarts, and do not mark a topic started or alter existing drafts. Opening a prepared topic consumes that cache; opening while preparation is running joins the same job. Failed preparation can retry on open. Queued preparation has lower priority than answers, tutor requests and visible translations; an already running CLI job finishes before the next job starts. Instant opening depends on preparation having completed.
+
+
 All eleven paths (126 topics) now use **multiple choice + coding validation**. There are no keyword blanks or required long written explanations. New React coding tasks use the existing isolated browser runner and authored behavioral checks. Other languages use clearly labeled AI code review, not compiler or database execution.
 
 Choice and code results count independently toward a two-part practice result. Old keyword records remain in SQLite/export but do not count toward completion or assistance. Existing drafts, earlier reviews, and original React labs remain intact. Older saved React tasks without a runner descriptor retain their original AI review behavior; generate a new variation to get browser execution.
