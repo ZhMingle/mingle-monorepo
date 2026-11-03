@@ -7,6 +7,7 @@ import { getLesson, challengeFor } from '../shared/curriculum.ts';
 import type { LearningSession } from '../shared/types.ts';
 import { validateAssessment } from '../shared/mastery.ts';
 import { AiQueue } from './ai-queue.ts';
+import { writingStyle } from './writing-style.ts';
 
 export function findCodex(): string | null {
   if (process.env.CODEX_BIN && existsSync(process.env.CODEX_BIN)) return process.env.CODEX_BIN;
@@ -44,7 +45,7 @@ export async function runStructured<T>(prompt: string, outputSchema: unknown, pr
       child.stdout.resume(); child.stderr.resume();
       child.on('error', () => { clearTimeout(timeout); reject(new Error('Could not start Codex. Check your local sign-in.')); });
       child.on('close', code => { clearTimeout(timeout); if(timedOut)reject(Object.assign(new Error('AI assessment timed out. Your answer is saved; you can retry later.'), { status: 504 }));else code === 0 ? resolveRun() : reject(Object.assign(new Error('Codex could not assess this answer. Check your sign-in, allowance, or network. Your answer is saved.'), { status: 503 })); });
-      child.stdin.on('error', () => {}); child.stdin.end(prompt);
+      child.stdin.on('error', () => {}); child.stdin.end(`${writingStyle}\n\n${prompt}`);
     });
     const raw = JSON.parse(await readFile(output, 'utf8'));
     return raw as T;

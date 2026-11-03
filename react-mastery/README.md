@@ -8,6 +8,9 @@ A local-first AI learning platform for React, TypeScript, HTML/CSS, C#/.NET, Nod
 
 ## Current learning experience
 
+All AI requests share the bilingual writing standard in server/writing-style.ts: plain English, natural Chinese, short sentences and concrete actions. It applies to generated questions, assessment feedback, tutoring and translations, including polishing awkward existing target-language prose. It preserves technical conditions, code, learner quotations and scoring rules. The writing-standard version is part of the translation cache key, so older wording is refreshed when a page is visited instead of translating the entire catalog in advance.
+
+
 Opening a topic restores its saved session or starts preparing it automatically. Once it is open, the app prepares only the next topic in the background using Codex allowance. Prepared exercises are stored separately from learner sessions, survive restarts, and do not mark a topic started or alter existing drafts. Opening a prepared topic consumes that cache; opening while preparation is running joins the same job. Failed preparation can retry on open. Queued preparation has lower priority than answers, tutor requests and visible translations; an already running CLI job finishes before the next job starts. Instant opening depends on preparation having completed.
 
 
