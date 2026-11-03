@@ -16,7 +16,7 @@ Practice navigation stays below the workspace toolbar while scrolling. Wide scre
 
 ### Code editor
 
-Current coding tasks and original React labs use CodeMirror with syntax colors, line numbers, bracket matching, completion, auto indentation, and Tab/Shift+Tab indentation. Use **Format** or **Shift+Alt+F**; automatic formatting on blur is enabled by default and can be disabled in the toolbar. JavaScript/JSX, TypeScript/TSX, HTML/CSS use local Prettier parsers. SQL uses the path-specific MySQL, PostgreSQL, or SQL Server formatter. C# provides syntax colors and indentation cleanup, not a full C# formatter.
+Current coding tasks and original React labs use CodeMirror with syntax colors, line numbers, bracket matching, completion, auto indentation, and Tab/Shift+Tab indentation. Use **Format** or **Shift+Alt+F**; automatic formatting on blur is enabled by default and can be disabled in the toolbar. Moving directly to a button or another input skips automatic formatting so layout changes cannot intercept the click; ordinary blur and explicit formatting still work. JavaScript/JSX, TypeScript/TSX, HTML/CSS use local Prettier parsers. SQL uses the path-specific MySQL, PostgreSQL, or SQL Server formatter. C# provides syntax colors and indentation cleanup, not a full C# formatter.
 
 **Restore initial code** restores the exercise starter, never the reference solution. Reset and formatting are isolated undo steps; use Undo or Ctrl+Z to restore the previous code. Invalid syntax produces a formatting error and leaves the draft intact. An asynchronous formatter cannot overwrite newer typing, a reset, or a submitted/read-only editor. Formatting is local and does not execute code, send it to AI, or consume Codex allowance.
 

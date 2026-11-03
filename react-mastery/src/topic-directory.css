@@ -33,3 +33,6 @@
   .topic-directory-docked .topic-directory-list h2{margin:10px 6px 7px}
   .topic-directory-floating{display:none}
 }
+.topic-directory-list .topic-directory-status{padding:3px 6px;border-radius:5px;font-size:12px;font-weight:600;line-height:1.4;white-space:nowrap}
+.topic-directory-list .topic-directory-status.is-complete{background:#deedcf;color:#365f28;border:1px solid #bed4ad}
+.topic-directory-list .topic-directory-status.is-started{background:#f6edda;color:#785b25;border:1px solid #e4d2ad}

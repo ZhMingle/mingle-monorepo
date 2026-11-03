@@ -1,4 +1,6 @@
 import { build } from 'esbuild';
 import { writeFile } from 'node:fs/promises';
+await build({entryPoints:['scripts/qa-editor-click.tsx'],bundle:true,format:'iife',outfile:'dist/qa-editor-click.js',define:{'process.env.NODE_ENV':'"production"'},logLevel:'warning'});
+await writeFile('dist/editor-click-qa.html','<!doctype html><html><meta charset="utf-8"><title>Editor click regression</title><link rel="stylesheet" href="/qa-editor-click.css"><style>body{margin:24px;font:16px system-ui;background:#f7f7f3}main{max-width:850px;margin:auto}button{padding:10px 18px}</style><div id="root"></div><script src="/qa-editor-click.js"></script></html>');
 await build({ entryPoints: ['scripts/qa-browser.ts'], bundle: true, format: 'iife', outfile: 'dist/qa-browser.js', logLevel: 'warning' });
 await writeFile('dist/sandbox-qa.html', '<!doctype html><html><meta charset="utf-8"><title>Clarity sandbox verification</title><style>body{font:16px system-ui;padding:30px;background:#f6f8ef;color:#354b28}button{padding:14px 25px;cursor:pointer}pre{font:14px/1.9 Consolas;white-space:pre-wrap}</style><h1>Sandbox regression verification</h1><p>Synthetic code only. No learner records or AI calls are created.</p><button id="run">Run all sandbox checks</button><pre id="results">Ready</pre><script src="/qa-browser.js"></script></html>');

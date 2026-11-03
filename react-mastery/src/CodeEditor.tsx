@@ -73,6 +73,14 @@ export default function CodeEditor(props:Props){
     view.focus();setFailed(false);setMessage(say('Initial code restored. Ctrl+Z to undo.','已恢复初始代码，可用 Ctrl+Z 撤销。'));
   }
   useEffect(()=>{
+    // A pointer-triggered blur precedes click. Formatting here can resize the
+    // editor and move the clicked button before pointerup, swallowing the click.
+    let pointerTarget:EventTarget|null=null;
+    const rememberPointer=(event:PointerEvent)=>{pointerTarget=event.target;};
+    const clearPointer=()=>{pointerTarget=null;};
+    document.addEventListener('pointerdown',rememberPointer,true);
+    document.addEventListener('pointerup',clearPointer,true);
+    document.addEventListener('pointercancel',clearPointer,true);
     const view=new EditorView({parent:host.current!,doc:latest.current.value,extensions:[basicSetup,oneDark,EditorView.lineWrapping,
       mode.current.of(languageConfiguration(codeFlavor(latest.current.language,latest.current.pathId))),
       configuration.current.of([EditorState.readOnly.of(!!latest.current.disabled),EditorView.editable.of(!latest.current.disabled)]),
@@ -81,11 +89,18 @@ export default function CodeEditor(props:Props){
       EditorState.changeFilter.of(tr=>!tr.docChanged||tr.newDoc.length<=(latest.current.maxLength??12000)),
       EditorView.updateListener.of(update=>{if(update.docChanged){revision.current++;latest.current.onChange(update.state.doc.toString());}setCanUndo(undoDepth(update.state)>0);}),
       EditorView.domEventHandlers({blur:(event)=>{
-        if(auto.current&&!latest.current.disabled&&!host.current?.parentElement?.contains(event.relatedTarget as Node|null))formatter.current();
+        const target=event.relatedTarget??pointerTarget;
+        const action=target instanceof Element&&target.closest('button,a[href],input,select,textarea,[role="button"]');
+        if(auto.current&&!latest.current.disabled&&!action&&!host.current?.parentElement?.contains(target as Node|null))formatter.current();
         return false;
       }})
     ]});editor.current=view;
-    return()=>{generation.current++;editor.current=null;view.destroy();};
+    return()=>{
+      document.removeEventListener('pointerdown',rememberPointer,true);
+      document.removeEventListener('pointerup',clearPointer,true);
+      document.removeEventListener('pointercancel',clearPointer,true);
+      generation.current++;editor.current=null;view.destroy();
+    };
   },[]);
   useEffect(()=>{const view=editor.current;if(view&&view.state.doc.toString()!==props.value)view.dispatch({changes:{from:0,to:view.state.doc.length,insert:props.value}});},[props.value]);
   useEffect(()=>{generation.current++;editor.current?.dispatch({effects:mode.current.reconfigure(languageConfiguration(flavor))});},[flavor]);
