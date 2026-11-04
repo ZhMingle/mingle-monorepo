@@ -1,7 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { textBlocks,inlineParts,displayCode } from '../shared/rich-text.ts';
+import { textBlocks,inlineParts,displayCode,isSourceExample } from '../shared/rich-text.ts';
 import { choiceReference } from '../shared/study.ts';
+test('worked prose examples render inline code instead of being mistaken for executable source',()=>{
+  const prose='例如，`visibleItems` 可以由 `items` 和 `query` 计算得出。';
+  assert.equal(isSourceExample(prose),false);
+  assert.equal(isSourceExample('For example, `visibleItems` follows the current `items`.'),false);
+  assert.equal(isSourceExample('```jsx\nconst items = [];\n```'),false);
+  for(const code of ['const items = [];','// Example\nfunction Search() {}','SELECT id FROM items;','def search(items):\n  return items','<p>Hello</p>'])assert.equal(isSourceExample(code),true,code);
+  assert.equal(inlineParts(prose).filter(part=>part.kind==='code').length,3);
+});
 
 test('SQL explanation separates code, headings, lists and highlighted concepts without altering SQL',()=>{
   const sql='SELECT id FROM contacts WHERE email IS NULL ORDER BY id;';

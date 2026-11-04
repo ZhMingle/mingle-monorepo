@@ -1,7 +1,7 @@
 import CodeBlock from './CodeBlock.tsx';
 import TopicDirectory from './TopicDirectory.tsx';
 import type {TopicProgress} from '../shared/learning-progress.ts';
-import { displayCode } from '../shared/rich-text.ts';
+import { displayCode,isSourceExample } from '../shared/rich-text.ts';
 import LearningText, { Inline } from './LearningText.tsx';
 import OptionContent from './OptionContent.tsx';
 import { usePresentation } from './usePresentation.ts';
@@ -113,7 +113,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
     {translationError&&<div role="alert" className="tp-error">{say('Translation failed: ','翻译未完成：')}{translationError}<button onClick={retryTranslation}>{say('Retry translation','重试翻译')}</button></div>}
     {loading?<p role="status">{say('Preparing exercises…','正在准备题目…')}</p>:!session?<div className="tp-card"><h2>{say('Choose, then build.','先选择，再写代码。')}</h2><button className="tp-primary" disabled={!!busy} onClick={()=>void action('new')}>{busy?say('Preparing exercises…','正在准备题目…'):say('Start practice','开始练习')}</button></div>:lesson&&<>
 
-      <details className="tp-card tp-lesson"><summary>{say('Quick explanation & example','简短讲解与示例')}</summary><LearningText text={lesson.overview} pathId={pathId}/>{/(?:^|\n)\s*```/.test(lesson.example)?<LearningText text={lesson.example} language={lesson.coding.language} pathId={pathId}/>:<CodeBlock code={lesson.example} language={lesson.coding.language} pathId={pathId} label={say('Worked example','讲解示例')}/>}<aside><strong>{say('Common pitfall','常见坑')}</strong><LearningText text={lesson.pitfall} pathId={pathId}/></aside></details>
+      <details className="tp-card tp-lesson"><summary>{say('Quick explanation & example','简短讲解与示例')}</summary><LearningText text={lesson.overview} pathId={pathId}/>{isSourceExample(lesson.example)?<CodeBlock code={lesson.example} language={lesson.coding.language} pathId={pathId} label={say('Worked example','讲解示例')}/>:<LearningText text={lesson.example} language={lesson.coding.language} pathId={pathId}/>}<aside><strong>{say('Common pitfall','常见坑')}</strong><LearningText text={lesson.pitfall} pathId={pathId}/></aside></details>
       <div className="tp-practice-controls"><nav className="tp-tabs" aria-label={say('Question types','题型')}>{studyKinds.map(k=><button key={k} aria-pressed={current===k} disabled={!!busy} onClick={()=>void navigate(k)}>{labels[k]}{payload.completed.includes(k)&&<span className="tp-tab-complete">{say('Done','已完成')}</span>}</button>)}</nav><div className="tp-toolbar"><span role="status">{payload.completed.length}/2 {say('completed','已完成')}{payload.supported?` · ${say('with support','含辅助练习')}`:''}</span><button disabled={!!busy} onClick={()=>void action('new')}>{say('New variation · Codex','换一组题 · 使用额度')}</button></div></div>
 
 

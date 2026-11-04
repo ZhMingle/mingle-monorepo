@@ -1,5 +1,6 @@
 // Only authored prose is translated. Code, learner evidence, identifiers and scores
 // remain byte-for-byte identical; option positions are never changed.
+import {isSourceExample} from './rich-text.ts';
 const prose=new Set(['overview','pitfall','exampleExplanation','scenario','question','options','choices','requirements','expected','feedback','issues','reason','misconception','misconceptions','summary','nextStep','followUp','detail','name','brief','criteria','explanation','prompt']);
 export function codeTokens(text:string):string[]{return (text.match(/⟦CLARITY_CODE_+\d+⟧/g)??[]).sort();}
 // Send the whole sentence, masking executable snippets rather than breaking its
@@ -30,7 +31,8 @@ function visit(value:unknown,path:string[],map:(text:string)=>string):unknown {
     const inDraft=path.includes('draft')||path.includes('drafts');
     const learnerReason=(key==='reason'&&!path.includes('cases'))||(key==='explanation'&&path.includes('attempts'));
     const reference=path.includes('references')&&key!=='code';
-    return !inDraft&&!learnerReason&&(prose.has(key)||reference)?mapProse(value,map):value;
+    const explanatoryExample=key==='example'&&!isSourceExample(value);
+    return !inDraft&&!learnerReason&&(prose.has(key)||reference||explanatoryExample)?mapProse(value,map):value;
   }
   if(Array.isArray(value))return value.map(item=>visit(item,path,map));
   if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,visit(item,[...path,key],map)]));

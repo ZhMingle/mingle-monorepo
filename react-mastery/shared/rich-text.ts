@@ -1,4 +1,11 @@
 export type TextBlock={kind:'code';text:string;language:string}|{kind:'paragraph'|'heading';text:string}|{kind:'list';items:string[];ordered:boolean};
+// Older lessons may store either raw source or explanatory prose in example.
+// Prefer normal text unless the first meaningful line clearly starts source.
+export function isSourceExample(text:string):boolean {
+  if(/(?:^|\n)\s*```/.test(text))return false;
+  const first=text.split(/\r?\n/).map(line=>line.trim()).find(line=>line&&!/^(?:\/\/|#\s|\/\*|\*)/.test(line))??'';
+  return /^(?:(?:import|export|const|let|var|function|async|class|interface|type|def|from|package|func|public|private|namespace|using|return)\b|(?:SELECT|WITH|CREATE|INSERT|UPDATE|DELETE|ALTER)\b|[{}\[]|<[A-Za-z/!]|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\s*\(|[.#][\w-]+\s*\{)/.test(first);
+}
 // Some saved code-only fields contain one Markdown wrapper. Remove only that
 // wrapper for display, keeping raw source and learner drafts untouched.
 export function displayCode(source:string):{code:string;language:string}{
