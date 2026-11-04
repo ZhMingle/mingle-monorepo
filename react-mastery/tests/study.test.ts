@@ -162,3 +162,10 @@ test('opening during prefetch joins the same job and failed preparation can retr
   await studyAction('prefetch',{topicId:topics.at(-1)!.id},'en',run);
   assert.equal(calls,1);
 });
+test('task rules can be split into up to eight separate requirements',()=>{
+  const expanded=structuredClone(lesson);
+  expanded.coding.requirements=Array.from({length:8},(_,i)=>`Separate rule ${i+1}`);
+  assert.equal(validateStudyLesson(expanded).coding.requirements.length,8);
+  expanded.coding.requirements.push('Too many rules');
+  assert.throws(()=>validateStudyLesson(expanded),/Invalid coding exercise/);
+});
