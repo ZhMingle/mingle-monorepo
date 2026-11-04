@@ -1,1 +1,8 @@
 .reference-code-block{margin:18px 0;border-radius:9px;overflow:hidden;min-width:0;max-width:100%;background:#252e27}.reference-code-block .cm-editor{border-radius:9px}.reference-code-block .cm-content{white-space:pre;caret-color:transparent}.reference-code-block .cm-editor.cm-focused{outline:2px solid #8ca96e;outline-offset:-2px}.reference-code-block .cm-scroller{max-height:650px}.reference-code-block .cm-selectionBackground{background:#486044!important}
+
+.reference-code-block .cm-line.code-diff-add{background:#28462f}
+.reference-code-block .cm-line.code-diff-remove{background:#502c30}
+.reference-code-block .code-diff-gutter{background:#252e27;color:#c7d2c5;border-right:1px solid #465248;min-width:26px}
+.reference-code-block .code-diff-gutter .cm-gutterElement{padding:0 7px;text-align:center}
+.submission-diff section+section{margin-top:16px}
+.submission-diff .reference-code-block{margin:7px 0 14px}

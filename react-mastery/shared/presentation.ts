@@ -1,13 +1,23 @@
 // Only authored prose is translated. Code, learner evidence, identifiers and scores
 // remain byte-for-byte identical; option positions are never changed.
 const prose=new Set(['overview','pitfall','exampleExplanation','scenario','question','options','choices','requirements','expected','feedback','issues','reason','misconception','misconceptions','summary','nextStep','followUp','detail','name','brief','criteria','explanation','prompt']);
-// Translate surrounding prose independently; never send marked code to translation.
+export function codeTokens(text:string):string[]{return (text.match(/⟦CLARITY_CODE_+\d+⟧/g)??[]).sort();}
+// Send the whole sentence, masking executable snippets rather than breaking its
+// grammar into unrelated fragments around each inline code span.
 export function mapProse(text:string,map:(text:string)=>string):string {
   if (/^\s*(?:SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|WITH|GRANT|REVOKE|TRUNCATE)\b[\s\S]*;\s*$/i.test(text)) return text;
-  return text.split(/(```[\s\S]*?```|`[^`\n]+`)/g).map((part,index)=>{
-    if(index%2===1||!part.trim())return part;
-    return part.replace(/^(\s*)([\s\S]*?)(\s*)$/,(_,before,prose,after)=>before+map(prose)+after);
-  }).join('');
+  let prefix='CLARITY_CODE_';while(text.includes(prefix))prefix+='_';
+  const protectedCode:{token:string;source:string}[]=[];
+  const masked=text.replace(/```[\s\S]*?```|`[^`\n]+`/g,source=>{
+    const token=`⟦${prefix}${protectedCode.length}⟧`;protectedCode.push({token,source});return token;
+  });
+  if(!masked.replace(/⟦CLARITY_CODE_+\d+⟧/g,'').trim())return text;
+  let translated=masked.replace(/^(\s*)([\s\S]*?)(\s*)$/,(_,before,prose,after)=>before+map(prose)+after);
+  // An invalid response must never corrupt or remove code, including when
+  // presented from a stale in-memory cache before the server validation runs.
+  if(JSON.stringify(codeTokens(translated))!==JSON.stringify(codeTokens(masked)))return text;
+  for(const {token,source} of protectedCode)translated=translated.replace(token,()=>source);
+  return translated;
 }
 export function presentationStrings(value:unknown):string[]{
   const result=new Set<string>();

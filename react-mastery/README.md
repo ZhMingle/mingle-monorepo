@@ -20,6 +20,10 @@ Choice and code results count independently toward a two-part practice result. O
 
 Practice navigation stays below the workspace toolbar while scrolling. Wide screens show a persistent module directory to the left of the exercise; smaller screens use **Contents** to open it. The directory supports search, stage groups, the current topic and per-topic practice progress. The workspace breadcrumb names and links to the active learning path. Topic changes save the current draft first. Newly generated exercises use short task statements and concise requirements, omitting repeated environment and review boilerplate while keeping conditions needed to determine the answer. Existing saved questions keep their wording.
 
+Submission history shows syntax-highlighted changes: the first code submission is compared with the starter, later submissions with the preceding code submission. Unchanged sections are omitted, retaining one nearby line for context. Removed lines are red and added lines green; saved submission code is retained in full.
+
+Translation keeps complete sentences together and replaces inline/fenced code with protected tokens while translating. Tokens are checked before restoring the original code, preventing fragmented wording or accidental code changes. Older fragmented translations are bypassed by the new cache version.
+
 ### Code editor
 
 Current coding tasks and original React labs use CodeMirror with syntax colors, line numbers, bracket matching, completion, auto indentation, and Tab/Shift+Tab indentation. Use **Format** or **Shift+Alt+F**; automatic formatting on blur is enabled by default and can be disabled in the toolbar. Moving directly to a button or another input skips automatic formatting so layout changes cannot intercept the click; ordinary blur and explicit formatting still work. JavaScript/JSX, TypeScript/TSX, HTML/CSS use local Prettier parsers. SQL uses the path-specific MySQL, PostgreSQL, or SQL Server formatter. C# provides syntax colors and indentation cleanup, not a full C# formatter.

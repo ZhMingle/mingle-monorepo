@@ -28,14 +28,26 @@ test('SQL choices and inline code remain unchanged while surrounding prose is tr
   const option='Create the join table:\n```sql\n'+sql+'\n```\nKeep `user_id` unchanged.';
   const payload={choice:{options:[option,sql,'Use `PRIMARY KEY (user_id)` here.']}};
   const strings=presentationStrings(payload);
-  assert.deepEqual(strings,['Create the join table:','Keep','unchanged.','Use','here.']);
+  assert.deepEqual(strings,['Create the join table:\n⟦CLARITY_CODE_0⟧\nKeep ⟦CLARITY_CODE_1⟧ unchanged.','Use ⟦CLARITY_CODE_0⟧ here.']);
   const translations=Object.fromEntries(strings.map(s=>[s,'译:'+s]));
   translations[sql]='不应替换';translations.user_id='用户编号';
   const view=present(payload,translations);
-  assert.equal(view.choice.options[0],'译:Create the join table:\n```sql\n'+sql+'\n```\n译:Keep `user_id` 译:unchanged.');
+  assert.equal(view.choice.options[0],'译:Create the join table:\n```sql\n'+sql+'\n```\nKeep `user_id` unchanged.');
   assert.equal(view.choice.options[1],sql);
-  assert.equal(view.choice.options[2],'译:Use `PRIMARY KEY (user_id)` 译:here.');
+  assert.equal(view.choice.options[2],'译:Use `PRIMARY KEY (user_id)` here.');
   assert.equal(payload.choice.options[0],option);
+});
+
+test('complete UI test actions are translated together while code remains exact',async()=>{
+  const option='Render with `initialName="Ada"`, change the input to `Lin`, and assert the preview reads `Lin`.';
+  const original={choice:{options:[option]}};const texts=presentationStrings(original);
+  assert.deepEqual(texts,['Render with ⟦CLARITY_CODE_0⟧, change the input to ⟦CLARITY_CODE_1⟧, and assert the preview reads ⟦CLARITY_CODE_2⟧.']);
+  const result=await translatePresentation({texts,language:'zh'},async<T>()=>({translations:['以 ⟦CLARITY_CODE_0⟧ 渲染组件，将输入框内容改为 ⟦CLARITY_CODE_1⟧，检查预览是否显示 ⟦CLARITY_CODE_2⟧。']}) as T);
+  assert.equal(present(original,result).choice.options[0],'以 `initialName="Ada"` 渲染组件，将输入框内容改为 `Lin`，检查预览是否显示 `Lin`。');
+  assert.equal(original.choice.options[0],option);
+  const bad={...original,choice:{options:[option+' Another case.']}};const badTexts=presentationStrings(bad);
+  await assert.rejects(translatePresentation({texts:badTexts,language:'zh'},async<T>()=>({translations:['丢失代码的翻译']}) as T),/protected code reference/);
+  assert.deepEqual(present(bad,{[badTexts[0]]:'丢失代码的翻译'}),bad);
 });
 
 test('translations are validated, deduplicated during flight, and cached durably per target language',async()=>{
