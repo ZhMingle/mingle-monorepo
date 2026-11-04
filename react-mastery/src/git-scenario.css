@@ -1,0 +1,12 @@
+.git-scenario{margin:20px 0;line-height:1.65}
+.git-scenario h3{font-size:1em;margin:0 0 12px}
+.git-initial{padding:18px 20px;background:#f3f6ed;border:1px solid #d8e1cf;border-radius:10px;margin-bottom:16px}
+.git-initial ul{padding-left:22px;margin:0}
+.git-initial .learning-text p{margin:0}
+.git-timeline{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.git-timeline>li{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border:1px solid #d8dfd1;border-radius:9px;background:#fff}
+.git-step-number{display:grid;place-items:center;flex-shrink:0;width:28px;height:28px;background:#e8f0dd;border-radius:50%;color:#466235;font-weight:600}
+.git-timeline>li>div{min-width:0;flex:1}
+.git-timeline .learning-text p{margin:0}
+.topic-practice .git-timeline pre{margin:6px 0 0;padding:12px 16px;background:#edf2e7;color:#263c24;border:1px solid #c7d5bc;border-radius:7px}
+.git-timeline small{color:#596750}

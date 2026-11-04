@@ -8,6 +8,9 @@ A local-first AI learning platform for React, TypeScript, HTML/CSS, C#/.NET, Nod
 
 ## Current learning experience
 
+The main navigation contains Learning desk and Learning paths. The retired Understanding lab, Review queue and Evidence journal routes return to the desk; their saved data remains available to the existing storage and export mechanisms. Git choice exercises display starting facts and numbered actions separately, with command text preserved exactly. Complex shell blocks retain the original code display.
+
+
 All AI requests share the bilingual writing standard in server/writing-style.ts: plain English, natural Chinese, short sentences and concrete actions. It applies to generated questions, assessment feedback, tutoring and translations, including polishing awkward existing target-language prose. Prose uses a direct spoken teaching tone and refers to actual code identifiers instead of inventing translated component names. Translation receives a small list of names extracted from authored starter code; it does not inspect learner drafts or submitted code. Task rules follow the user action order and can use up to eight separate requirements instead of squeezing several rules into one bullet. Existing multi-rule text can use line breaks, which the practice page renders directly. It preserves technical conditions, code, learner quotations and scoring rules. The writing-standard version is part of the translation cache key, so older wording is refreshed when a page is visited instead of translating the entire catalog in advance.
 
 

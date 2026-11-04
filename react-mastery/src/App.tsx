@@ -16,6 +16,7 @@ import UnderstandingLab from './UnderstandingLab.tsx';
 import {findLearningPath} from '../shared/paths.ts';
 import { usePresentation } from './usePresentation.ts';
 
+const retiredPages=new Set(['lab','review','evidence']);
 type Page = 'home' | 'roadmap' | 'review' | 'evidence' | 'settings' | 'lesson' | 'lab';
 const stageInfo: { id: Stage; title: string; label: string }[] = [
   { id: 'learn', title: 'Understand', label: 'Mental model' }, { id: 'predict', title: 'Predict', label: 'Recall' },
@@ -76,7 +77,7 @@ export default function App() {
     try{const stored=localStorage.getItem('clarity.lastLearningPath');if(stored&&findLearningPath(stored))return stored;}catch{/* Use the default path when storage is unavailable. */}
     return 'react';
   });
-  const [page, setPage] = useState<Page>((location.hash.slice(1).split('/')[0] || 'home') as Page);
+  const [page, setPage] = useState<Page>(()=>{const name=location.hash.slice(1).split('/')[0]||'home';return (retiredPages.has(name)?'home':name) as Page;});
   const {overview,error:progressError,reload:reloadProgress}=useLearningOverview(page);
   const [payload, setPayload] = useState<SessionPayload | null>(null);
   const [stage, setStage] = useState<Stage>('learn');
@@ -95,7 +96,7 @@ export default function App() {
   const proved = data?.progress.filter(p => ['provisional', 'retained'].includes(p.status)).length ?? 0;
   const due = data?.progress.filter(p => p.status === 'review_due') ?? [];
 
-  function go(next: Page, id?: string) { setPage(next); location.hash = next === 'lesson' ? `lesson/${id ?? activeSessionId.current ?? ''}` : next === 'roadmap' && id ? `roadmap/${id}` : next; setError(''); }
+  function go(next: Page, id?: string) { if(retiredPages.has(next))next='home'; setPage(next); location.hash = next === 'lesson' ? `lesson/${id ?? activeSessionId.current ?? ''}` : next === 'roadmap' && id ? `roadmap/${id}` : next; setError(''); }
   function apply(next: SessionPayload, replaceDraft = false) {
     activeSessionId.current = next.session.id;
     setPayload(next);
@@ -113,7 +114,9 @@ export default function App() {
   useEffect(() => {
     let live = true;
     const route = () => {
-      const [name, id] = location.hash.slice(1).split('/');
+      const [requested, id] = location.hash.slice(1).split('/');
+      const name=retiredPages.has(requested)?'home':requested;
+      if(name!==requested)location.replace('#home');
       setPage((name || 'home') as Page);
       setPathId(name==='roadmap'?id??'':'');
       if(name==='roadmap'&&findLearningPath(id)){
@@ -203,7 +206,7 @@ export default function App() {
   const gates = session ? evidenceGates(session) : null;
   const allContentPassed = session && session.build?.passed && session.explanation?.passed && session.transfer?.passed && session.transferExplanation?.passed;
   return <div className={`app-shell ${page === 'lab' ? 'lab-mode' : ''} ${page === 'roadmap' ? 'paths-mode' : ''}`} style={{ '--small-text-increase': `${textIncrease}px` } as CSSProperties}>
-    <aside className="sidebar"><button className="brand" onClick={() => go('home')}><span className="brand-mark">c<span/></span><span>clarity<small>{t("DEVELOPER LEARNING LAB")}</small></span></button><div className="workspace-label">{t("PERSONAL WORKSPACE")}</div><nav>{[{ id: 'home', icon: Compass, name: t("Learning desk") }, { id: 'lab', icon: MessageCircle, name: t("Understanding lab") }, { id: 'roadmap', icon: Map, name: t("Learning paths") }, { id: 'review', icon: RefreshCw, name: t("Review queue") }, { id: 'evidence', icon: FileCheck2, name: t("Evidence journal") }].map(({ id, icon: Icon, name }) => <button key={id} className={page === id ? 'active' : ''} onClick={() => go(id as Page)}><Icon size={19}/>{t(name)}{id === 'review' && due.length > 0 && <span className="nav-count">{due.length}</span>}{id === 'home' && page === 'home' && <i/>}</button>)}</nav><div className="sidebar-path"><div className="sidebar-path-icon"><Braces size={22}/></div><strong>{t("React Developer")}</strong><span>{t("From foundations to fluency")}</span><div className="path-track"><i style={{ width: `${proved / data.lessons.length * 100}%` }}/></div><div className="path-small"><span>{proved} {" " + t("of") + " "}{data.lessons.length} {" " + t("topics proved")}</span><span>{Math.round(proved / data.lessons.length * 100)}%</span></div><button onClick={() => go('roadmap')}>{t("Explore your path") + " "}<ArrowUpRight size={14}/></button></div><div className="sidebar-bottom"><button className="connection" onClick={() => go('settings')}><span className={`connection-dot ${data.connection.available ? '' : 'offline'}`}/><span>{t("Codex local connection")}<small>{data.connection.available ? t("CLI detected · ready to connect") : t("Setup needed")}</small></span><Settings2 size={16}/></button><div className="local-person"><span>{t("ME")}</span><div><strong>{t("Your learning space")}</strong><small>{t("Private · stored on this computer")}</small></div></div></div></aside>
+    <aside className="sidebar"><button className="brand" onClick={() => go('home')}><span className="brand-mark">c<span/></span><span>clarity<small>{t("DEVELOPER LEARNING LAB")}</small></span></button><div className="workspace-label">{t("PERSONAL WORKSPACE")}</div><nav>{[{ id: 'home', icon: Compass, name: t("Learning desk") },  { id: 'roadmap', icon: Map, name: t("Learning paths") }].map(({ id, icon: Icon, name }) => <button key={id} className={page === id ? 'active' : ''} onClick={() => go(id as Page)}><Icon size={19}/>{t(name)}{id === 'review' && due.length > 0 && <span className="nav-count">{due.length}</span>}{id === 'home' && page === 'home' && <i/>}</button>)}</nav><div className="sidebar-path"><div className="sidebar-path-icon"><Braces size={22}/></div><strong>{t("React Developer")}</strong><span>{t("From foundations to fluency")}</span><div className="path-track"><i style={{ width: `${proved / data.lessons.length * 100}%` }}/></div><div className="path-small"><span>{proved} {" " + t("of") + " "}{data.lessons.length} {" " + t("topics proved")}</span><span>{Math.round(proved / data.lessons.length * 100)}%</span></div><button onClick={() => go('roadmap')}>{t("Explore your path") + " "}<ArrowUpRight size={14}/></button></div><div className="sidebar-bottom"><button className="connection" onClick={() => go('settings')}><span className={`connection-dot ${data.connection.available ? '' : 'offline'}`}/><span>{t("Codex local connection")}<small>{data.connection.available ? t("CLI detected · ready to connect") : t("Setup needed")}</small></span><Settings2 size={16}/></button><div className="local-person"><span>{t("ME")}</span><div><strong>{t("Your learning space")}</strong><small>{t("Private · stored on this computer")}</small></div></div></div></aside>
     <main className="main"><header className="topbar" ref={topbarRef}><span>{t("My workspace") + " "}<ChevronRight size={14}/><strong>{page === 'lesson' ? t(lesson?.english ?? "Lesson") : { home: t("Learning desk"), lab: t("Understanding lab"), roadmap: t("Learning paths"), review: t("Review queue"), evidence: t("Evidence journal"), settings: t("Connection & data") }[page] ?? t("Learning desk")}</strong>{page==='roadmap'&&activePath&&<><ChevronRight size={14}/><a href={`#roadmap/${activePath.id}`}>{activePath.name[language]}</a></>}</span><div><div className="language-control"><span>{t("Language")}</span><button type="button" className="language-toggle" lang={language === "en" ? "zh-CN" : "en"} aria-label={language === "en" ? "Switch to Chinese" : "切换到英文"} title={language === "en" ? "Switch to Chinese" : "切换到英文"} onClick={() => setLanguage(language === "en" ? "zh" : "en")}>{language === "en" ? "中文" : "English"}<span aria-hidden="true"> ⇄</span></button></div><label className="text-size-control"><span>{t("Small text")}</span><input type="range" min="0" max="8" step="1" value={textIncrease} aria-label={t("Small text size increase")} aria-valuetext={`+${textIncrease} pixels from default`} onChange={event => setTextIncrease(Number(event.target.value))}/><output>+{textIncrease}px</output><button type="button" onClick={() => setTextIncrease(0)} disabled={textIncrease === 0}>{t("Reset")}</button></label><span className="local-badge"><span/> {" " + t("LOCAL FIRST")}</span><button className="icon-button export-evidence-button" data-tooltip={t("Export learning evidence")} aria-label={t("Export learning evidence")} onClick={() => { location.href = '/api/export'; }}><ArrowDownToLine size={18}/></button></div></header>
       <div className={`page-content ${page === 'lesson' ? 'lesson-page' : ''}`}>
       {error && <div className="error-banner" role="alert"><span>{t(error)}</span><button aria-label={t("Dismiss error")} onClick={() => setError('')}><X size={16}/></button></div>}
