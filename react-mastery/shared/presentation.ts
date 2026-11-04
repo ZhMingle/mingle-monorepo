@@ -25,6 +25,16 @@ export function presentationStrings(value:unknown):string[]{
   visit(value,[],(text)=>{if(text.trim())result.add(text);return text;});
   return [...result];
 }
+// Supply names from authored task code, never learner drafts or submissions.
+export function presentationIdentifiers(value:unknown):string[]{
+  if(!value||typeof value!=='object')return [];
+  const root=value as {session?:{lesson?:{coding?:{starter?:unknown};starter?:unknown}};lesson?:{coding?:{starter?:unknown};starter?:unknown}};
+  const lesson=root.session?.lesson??root.lesson;
+  const source=lesson?.coding?.starter??lesson?.starter;
+  if(typeof source!=='string')return [];
+  const names=[...source.matchAll(/(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(|(?:export\s+)?(?:const|class)\s+([A-Z][\w$]*)\b/g)].map(match=>match[1]??match[2]);
+  return [...new Set(names)].filter(name=>name.length<=100).slice(0,20);
+}
 function visit(value:unknown,path:string[],map:(text:string)=>string):unknown {
   if(typeof value==='string'){
     const key=path.at(-1)!;

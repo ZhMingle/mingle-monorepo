@@ -3,11 +3,24 @@ import assert from 'node:assert/strict';
 import { mkdtempSync,rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { present,presentationStrings } from '../shared/presentation.ts';
+import { present,presentationStrings,presentationIdentifiers } from '../shared/presentation.ts';
 const scratch=mkdtempSync(join(tmpdir(),'clarity-translation-'));process.env.DATA_DIR=scratch;
 const {translatePresentation}=await import('../server/presentation.ts');
 const {db}=await import('../server/store.ts');
 after(()=>{db.close();rmSync(scratch,{recursive:true,force:true});});
+test('translation uses authored component names without reading learner code',()=>{
+  const payload={session:{lesson:{coding:{starter:'export default function NameEditor() {}\nfunction save() {}'}},draft:{code:'function LearnerSecret() {}'},attempts:[{input:'function PrivateSubmission() {}'}]}};
+  assert.deepEqual(presentationIdentifiers(payload),['NameEditor','save']);
+  assert.deepEqual(presentationIdentifiers({session:{draft:{code:'function LearnerSecret() {}'}}}),[]);
+});
+
+test('translation caches distinguish the code names supplied for otherwise identical prose',async()=>{
+  let calls=0;const run=async<T>():Promise<T>=>{calls++;return {translations:['修改组件。']} as T;};
+  const input={texts:['修复编辑器。'],language:'zh',identifiers:['NameEditor']};
+  await translatePresentation(input,run);await translatePresentation(input,run);assert.equal(calls,1);
+  await translatePresentation({...input,identifiers:['CustomerEditor']},run);assert.equal(calls,2);
+  await assert.rejects(translatePresentation({...input,identifiers:['not a code name']},run),/Invalid code identifiers/);
+});
 
 test('translation covers question prose, options, feedback and revealed explanations while preserving evidence and executable code',()=>{
   const original={session:{id:'s1',language:'en',draft:{code:'const x = 1;',choice:1,reason:'my words'},lesson:{overview:'Overview',example:'const x = 1;',choice:{question:'Question',options:['Yes','No','Maybe'],code:'x++'},coding:{starter:'TODO',requirements:['Return a copy'],cases:[{id:'c1',input:'{x:1}',expected:'A copy'}]}},attempts:[{input:'my code',reason:'my reasoning',explanation:'my explanation',accepted:true,review:{quote:'my code',feedback:'Good',issues:['Missing copy'],cases:[{id:'c1',passed:false,reason:'Mutates input'}]}}]},references:{choice:'Because it changes',code:'const x = 1;',try:'Reasoning reference'}};
