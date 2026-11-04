@@ -1,4 +1,5 @@
 export const uiZh: Record<string, string> = {
+  'One topic at a time': '每次学一个知识点',
   'Reference code': '参考代码',
   'Learning paths':'学习路线','DEVELOPER LEARNING LAB':'技术学习实验室','DEVELOPER LEARNING PATHS':'技术学习路线',
   'Browse learning paths':'选择学习路线','2 question types':'两种题型',

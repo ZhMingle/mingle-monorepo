@@ -78,6 +78,23 @@ export default function App() {
     return 'react';
   });
   const [page, setPage] = useState<Page>(()=>{const name=location.hash.slice(1).split('/')[0]||'home';return (retiredPages.has(name)?'home':name) as Page;});
+  useEffect(()=>{
+    const syncRecentPath=()=>{
+      // Keep the current route authoritative while learning; a desk tab follows
+      // the newest stored route, including visits made in another tab.
+      const routeId=location.hash.startsWith('#roadmap/')?location.hash.split('/')[1]:'';
+      if(findLearningPath(routeId))return;
+      try{const stored=localStorage.getItem('clarity.lastLearningPath');if(stored&&findLearningPath(stored))setRecentPathId(stored);}catch{/* Keep the current in-memory selection. */}
+    };
+    const storage=(event:StorageEvent)=>{if(event.key==='clarity.lastLearningPath')syncRecentPath();};
+    const visible=()=>{if(document.visibilityState==='visible')syncRecentPath();};
+    syncRecentPath();
+    window.addEventListener('storage',storage);
+    window.addEventListener('focus',syncRecentPath);
+    window.addEventListener('hashchange',syncRecentPath);
+    document.addEventListener('visibilitychange',visible);
+    return()=>{window.removeEventListener('storage',storage);window.removeEventListener('focus',syncRecentPath);window.removeEventListener('hashchange',syncRecentPath);document.removeEventListener('visibilitychange',visible);};
+  },[]);
   const {overview,error:progressError,reload:reloadProgress}=useLearningOverview(page);
   const [payload, setPayload] = useState<SessionPayload | null>(null);
   const [stage, setStage] = useState<Stage>('learn');
@@ -211,7 +228,7 @@ export default function App() {
       <div className={`page-content ${page === 'lesson' ? 'lesson-page' : ''}`}>
       {error && <div className="error-banner" role="alert"><span>{t(error)}</span><button aria-label={t("Dismiss error")} onClick={() => setError('')}><X size={16}/></button></div>}
       {page === 'lab' && <UnderstandingLab/>}
-      {page === 'home' && <><div className="page-heading"><div><span className="eyebrow">{t("A LITTLE DEEPER, EVERY DAY")}</span><h1>{t("Your learning desk")}<span className="heading-dot">.</span></h1><p>{t("Make each concept something you can use and explain with confidence.")}</p></div><div className="date-chip"><span className="tiny-label">{t("YOUR FOCUS")}</span><strong>{t("React, one concept at a time")}</strong></div></div>
+      {page === 'home' && <><div className="page-heading"><div><span className="eyebrow">{t("A LITTLE DEEPER, EVERY DAY")}</span><h1>{t("Your learning desk")}<span className="heading-dot">.</span></h1><p>{t("Make each concept something you can use and explain with confidence.")}</p></div><div className="date-chip"><span className="tiny-label">{t("YOUR FOCUS")}</span><strong>{findLearningPath(recentPathId)?.name[language]} · {t("One topic at a time")}</strong></div></div>
         <section className="hero"><div className="hero-content"><span className="hero-tag"><Sparkles size={13}/> {" " + t("LEARN FOR UNDERSTANDING")}</span><h2>{t("Understand it.")}<br/>{t("Build it.") + " "}<em>{t("Explain it.")}</em></h2><p>{t("Build the confidence to solve it independently and explain why.")}<br/>{t("Prove your understanding through practice, AI questions, and new contexts.")}</p><button className="dark-button" onClick={() => go('roadmap')} disabled={!!working}>{t("Browse learning paths") + " "}<ArrowRight size={18}/></button><div className="hero-caption"><ShieldCheck size={14}/> {" " + t("Progress backed by evidence, not watch time.")}</div></div><div className="hero-art" aria-label={t("Understand, build, explain: three connected proofs of learning")}><div className="art-grid"/><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="art-card art-understand"><span className="art-icon purple"><Lightbulb size={21}/></span><div><small>{t("01 / MAKE SENSE OF IT")}</small><strong>{t("I understand why.")}</strong></div><CheckCircle2 size={17}/></div><div className="art-card art-build"><span className="art-icon lime"><Code2 size={21}/></span><div><small>{t("02 / MAKE IT WORK")}</small><strong>{t("I can build it.")}</strong></div><CheckCircle2 size={17}/></div><div className="art-card art-explain"><span className="art-icon peach"><MessageCircle size={21}/></span><div><small>{t("03 / MAKE IT CLEAR")}</small><strong>{t("I can teach it.")}</strong></div><CheckCircle2 size={17}/></div><span className="art-spark star-one">✦</span><span className="art-spark star-two">✧</span><span className="art-bottom">{t("ONE CONCEPT. THREE KINDS OF PROOF.")}</span></div></section>
         <LearningProgress overview={overview} pathId={recentPathId} error={progressError} onRetry={reloadProgress}/>
         <div className="home-stats"><div><span className="stat-icon"><Target size={20}/></span><div><strong>{proved}<small> / {data.lessons.length}</small></strong><span>{t("Topics with independent proof")}</span></div></div><div><span className="stat-icon lavender"><CheckCheck size={20}/></span><div><strong>{data.progress.filter(p => p.status === 'retained').length}</strong><span>{t("Passed a delayed recall check")}</span></div></div><div><span className="stat-icon sand"><RefreshCw size={20}/></span><div><strong>{due.length}</strong><span>{t("Topics ready for review")}</span></div></div></div>
