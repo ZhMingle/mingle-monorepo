@@ -20,7 +20,7 @@ Choice and code results count independently toward a two-part practice result. O
 
 Practice navigation stays below the workspace toolbar while scrolling. Wide screens show a persistent module directory to the left of the exercise; smaller screens use **Contents** to open it. The directory supports search, stage groups, the current topic and per-topic practice progress. The workspace breadcrumb names and links to the active learning path. Topic changes save the current draft first. Newly generated exercises use short task statements and concise requirements, omitting repeated environment and review boilerplate while keeping conditions needed to determine the answer. Existing saved questions keep their wording.
 
-Submission history shows syntax-highlighted changes: the first code submission is compared with the starter, later submissions with the preceding code submission. Unchanged sections are omitted, retaining one nearby line for context. Removed lines are red and added lines green; saved submission code is retained in full.
+Practice pages show only the latest check result, explanation and requested reference answer. Earlier submissions are retained for progress and assessment rules but are not listed in the practice interface.
 
 Translation keeps complete sentences together and replaces inline/fenced code with protected tokens while translating. Tokens are checked before restoring the original code, preventing fragmented wording or accidental code changes. Older fragmented translations are bypassed by the new cache version.
 
