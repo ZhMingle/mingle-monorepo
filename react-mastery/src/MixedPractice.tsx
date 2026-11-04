@@ -125,7 +125,6 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
         {latest?.error&&<p role="alert">{say('The check failed. Your answers are saved; retry when ready.','检查未完成，答案已保存，可以重试。')}</p>}
         {payload.references[current]&&<aside className="tp-reference"><h3>{say('Reference answer','参考答案')}</h3>{current==='code'?<CodeBlock code={payload.references[current]!} language={lesson.coding.language} pathId={pathId} label={say('Reference code','参考代码')}/>:<LearningText text={payload.references[current]!} language={lesson.coding.language} pathId={pathId}/>}<small>{say('Recorded as supported practice. Your draft is unchanged.','已记录为辅助练习，保留你的原草稿。')}</small></aside>}
       </div>
-      {payload.completed.length===2&&<p className="tp-completion">{say('Choice and code practice complete. This is practice evidence, not proof of long-term retention.','选择题和代码练习已完成。这是本次练习证据，不代表长期掌握。')}</p>}
     </>}
     <nav className="topic-continuation" aria-label={say('Continue learning','继续学习')}>
       {session&&current==='choice'?<button className="tp-primary" disabled={!!busy} onClick={()=>void navigate('code')}>{say('Continue to code →','继续编程题 →')}</button>:<span/>}
