@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {basicSetup} from 'codemirror';
-import {EditorView,keymap} from '@codemirror/view';
+import {EditorView,keymap,drawSelection} from '@codemirror/view';
 import {Compartment,EditorState,Transaction} from '@codemirror/state';
 import {indentUnit,indentRange,StreamLanguage} from '@codemirror/language';
 import {indentWithTab,undo,undoDepth,isolateHistory} from '@codemirror/commands';
@@ -81,7 +81,7 @@ export default function CodeEditor(props:Props){
     document.addEventListener('pointerdown',rememberPointer,true);
     document.addEventListener('pointerup',clearPointer,true);
     document.addEventListener('pointercancel',clearPointer,true);
-    const view=new EditorView({parent:host.current!,doc:latest.current.value,extensions:[basicSetup,oneDark,EditorView.lineWrapping,
+    const view=new EditorView({parent:host.current!,doc:latest.current.value,extensions:[basicSetup,oneDark,drawSelection({cursorBlinkRate:0}),EditorView.lineWrapping,
       mode.current.of(languageConfiguration(codeFlavor(latest.current.language,latest.current.pathId))),
       configuration.current.of([EditorState.readOnly.of(!!latest.current.disabled),EditorView.editable.of(!latest.current.disabled)]),
       accessible.current.of(EditorView.contentAttributes.of({'aria-label':latest.current.label,spellcheck:'false',autocapitalize:'off',autocorrect:'off'})),
