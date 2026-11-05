@@ -3,3 +3,7 @@
 .code-editor .cm-editor .cm-cursor{border-left:2px solid #ffe082;transform:translateX(-1px)}
 .code-editor .cm-editor.cm-focused .cm-activeLine{background:#364250}
 .code-editor .cm-editor.cm-focused .cm-activeLineGutter{background:#465364;color:#ffe082;font-weight:700}
+.code-editor .cm-editor .cm-tooltip-autocomplete{background:#252d38;color:#edf2fa;border:1px solid #71849b;box-shadow:0 4px 14px #0006}
+.code-editor .cm-editor .cm-tooltip-autocomplete>ul>li[aria-selected="true"]{background:#205b91;color:#fff;box-shadow:inset 3px 0 #8dd5ff}
+.code-editor .cm-editor .cm-tooltip-autocomplete>ul>li[aria-selected="true"] .cm-completionIcon{opacity:1}
+.code-editor .cm-editor .cm-tooltip-autocomplete>ul>li[aria-selected="true"] .cm-completionDetail{color:#e0efff;opacity:1}
