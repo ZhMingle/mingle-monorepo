@@ -13,7 +13,7 @@ export default function UnderstandingLab() {
   const say=(en:string,zh:string)=>language==='zh'?zh:en;
   const text=(value:Bilingual)=>value[language];
   const [rawPayload,setPayload]=useState<UnderstandingPayload|null>(null);
-  const {view:payload,translating,translationError,retryTranslation}=usePresentation(rawPayload,language);
+  const {view:payload,switchingLanguage,translationError,retryTranslation}=usePresentation(rawPayload,language);
   const [outcomes,setOutcomes]=useState<string[]>([]);
   const [choice,setChoice]=useState('');
   const [answer,setAnswer]=useState('');
@@ -103,7 +103,7 @@ export default function UnderstandingLab() {
   const supported=typeof window!=='undefined' && !!recognitionConstructor();
   if(!payload) return <div className="understanding-loading"><LoaderCircle className="spin"/>{error||say('Opening the lab…','正在打开实验室……')}</div>;
   return <section className="understanding-lab">
-    {translating&&<p role="status">{say('Translating feedback…','正在切换反馈语言…')}</p>}
+    {switchingLanguage&&<p role="status">{say('Translating feedback…','正在切换反馈语言…')}</p>}
     {translationError&&<p role="alert">{translationError} <button onClick={retryTranslation}>{say('Retry translation','重试翻译')}</button></p>}
     <div className="page-heading"><div><span className="eyebrow">{say('UNDERSTANDING LAB · FIRST EXPERIMENT','理解验证实验室 · 首个实验')}</span><h1>{say('Can your explanation survive a change?','换个条件，你还能解释吗？')}</h1><p>{say('State snapshots & queues. Three short probes, one at a time.','状态快照与更新队列。三个短问题，每次只问一个。')}</p></div></div>
     {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={()=>setError('')}>{say('Dismiss','关闭')}</button></div>}

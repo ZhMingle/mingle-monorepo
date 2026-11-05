@@ -12,7 +12,7 @@ export default function ExerciseTutor({id,mode,step,onHelp}:{id:string;mode:'stu
   });
   const [question,setQuestion]=useState('');const [busy,setBusy]=useState(false);const [error,setError]=useState('');
   const transcript=useRef<HTMLDivElement>(null);const live=useRef(true);const sending=useRef(false);
-  const {view,translating,translationError,retryTranslation}=usePresentation(messages.length?{replies:messages.map(m=>({feedback:m.role==='assistant'&&m.language!==language?m.content:''}))}:null,language);
+  const {view,switchingLanguage,translationError,retryTranslation}=usePresentation(messages.length?{replies:messages.map(m=>({feedback:m.role==='assistant'&&m.language!==language?m.content:''}))}:null,language);
   useEffect(()=>{live.current=true;return()=>{live.current=false;};},[]);
   useEffect(()=>{try{localStorage.setItem(`clarity.tutor:${mode}:${id}`,JSON.stringify(messages));}catch{/* Current conversation remains visible. */}if(transcript.current)transcript.current.scrollTop=transcript.current.scrollHeight;},[messages,busy]);
   async function send(){
@@ -30,7 +30,7 @@ export default function ExerciseTutor({id,mode,step,onHelp}:{id:string;mode:'stu
         {!messages.length&&<p>{say('Tell me which part is confusing, or choose a question below.','告诉我哪里没懂，或点击下面的问题开始。')}</p>}
         {messages.map((message,index)=><article className={`tutor-message ${message.role}`} key={index}><strong>{message.role==='user'?say('You','你'):say('Tutor','讲解助手')}</strong>{message.role==='assistant'?<LearningText text={view?.replies[index]?.feedback||message.content}/>:<p>{message.content}</p>}</article>)}
         {busy&&<p role="status">{say('Preparing an explanation…','正在结合题目讲解…')}</p>}
-        {translating&&<p role="status">{say('Translating explanations…','正在切换讲解语言…')}</p>}
+        {switchingLanguage&&<p role="status">{say('Translating explanations…','正在切换讲解语言…')}</p>}
       </div>
       {error&&<p className="tutor-error" role="alert">{error}</p>}
       {translationError&&<p role="alert">{translationError} <button onClick={retryTranslation}>{say('Retry translation','重试翻译')}</button></p>}

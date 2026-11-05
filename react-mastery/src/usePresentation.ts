@@ -14,6 +14,9 @@ export function usePresentation<T>(payload:T|null,language:'en'|'zh'){
   const texts=presentationStrings(payload);
   const identifiers=presentationIdentifiers(payload);
   const key=JSON.stringify([language,texts,identifiers]);
+  const [languageChange,setLanguageChange]=useState({language,key:''});
+  // Tie the switch notice to this request, not later background wording updates.
+  if(languageChange.language!==language)setLanguageChange({language,key});
   const [,refresh]=useState(0);const [failure,setFailure]=useState<{key:string;message:string}|null>(null);
   const [retry,setRetry]=useState(0);
   useEffect(()=>{
@@ -25,5 +28,7 @@ export function usePresentation<T>(payload:T|null,language:'en'|'zh'){
     return()=>{current=false;};
   },[key,retry]);
   const translations=cache.get(key);
-  return {view:payload&&translations?present(payload,translations):payload,translating:!!payload&&texts.length>0&&!translations&&failure?.key!==key,translationError:failure?.key===key?failure.message:'',retryTranslation:()=>{setFailure(null);setRetry(v=>v+1);}};
+  const translating=!!payload&&texts.length>0&&!translations&&failure?.key!==key;
+  const switchingLanguage=translating&&(languageChange.language!==language||languageChange.key===key);
+  return {view:payload&&translations?present(payload,translations):payload,translating,switchingLanguage,translationError:failure?.key===key?failure.message:'',retryTranslation:()=>{setFailure(null);setRetry(v=>v+1);}};
 }

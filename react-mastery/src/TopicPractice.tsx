@@ -17,7 +17,7 @@ export default function TopicPractice({topic,pathId}:{topic:PathTopic;pathId:str
   const [step,setStep]=useState<'learn'|PracticeStep>('learn');
   const [choice,setChoice]=useState(-1);const [reason,setReason]=useState('');const [saveState,setSaveState]=useState('');
   const live=useRef(true);const draftRequest=useRef<Promise<unknown>>(Promise.resolve());
-  const {view:payload,translating,translationError,retryTranslation}=usePresentation(rawPayload,language);
+  const {view:payload,switchingLanguage,translationError,retryTranslation}=usePresentation(rawPayload,language);
   const session=payload?.session;const task=step==='learn'?null:session?.lesson.tasks[step];
   const attempts=step==='learn'?[]:session?.attempts[step]??[];const last=attempts.at(-1);
   const evaluated=attempts.filter(a=>a.review);const latestReview=evaluated.at(-1);
@@ -70,7 +70,7 @@ export default function TopicPractice({topic,pathId}:{topic:PathTopic;pathId:str
     <a href={`#roadmap/${pathId}`}>← {say('Back to path','返回路线')}</a>
     <header><span className="eyebrow">{say('INTERACTIVE TOPIC','交互学习')}</span><h1>{topic.title[language]}</h1><p>{topic.goal[language]}</p></header>
     {error&&<div role="alert" className="tp-error">{error}<button disabled={!!busy} onClick={()=>{if(session)void request<TopicPayload>('topic/load',{id:session.id}).then(next=>restore(next)).catch(e=>setError(e.message));else location.reload();}}>{say('Reload saved progress','重新读取进度')}</button></div>}
-    {translating&&<p role="status">{say('Translating this exercise…','正在切换题目语言…')}</p>}
+    {switchingLanguage&&<p role="status">{say('Translating this exercise…','正在切换题目语言…')}</p>}
     {translationError&&<div role="alert" className="tp-error">{say('Translation failed: ','翻译未完成：')}{translationError}<button onClick={retryTranslation}>{say('Retry translation','重试翻译')}</button></div>}
     {loading?<p role="status">{say('Loading saved practice…','正在读取练习…')}</p>:!session?<div className="tp-card"><h2>{say('Learn it. Use it. Change the conditions.','学一个例子，用一次，再换个条件。')}</h2><p>{say('A short lesson, two concrete reasoning tasks, and feedback on your explanation. You can answer in either language.','一个短讲解、两道具体推理题，以及针对你解释的反馈。中英文均可作答。')}</p><p>{say('Generation and submission use your Codex allowance. Reading, drafts, and references do not. AI-generated exercises can contain mistakes; check the official reference if something looks wrong. Code is shown for reasoning and is not executed.','生成与提交会使用 Codex 额度；阅读、草稿和查看答案不消耗。AI 题目可能出错，存疑时对照官方资料。代码用于推理，不会执行。')}</p><button className="tp-primary" disabled={!!busy} onClick={()=>void action('new')}>{busy?say('Preparing your lesson…','正在准备课程…'):say('Start interactive practice','开始交互练习')}</button></div>:<>
       <div className="tp-toolbar"><span role="status">{status}</span><button disabled={!!busy} onClick={()=>void action('new')}>{say('New variation · uses Codex','换一道题 · 使用额度')}</button></div>

@@ -27,11 +27,11 @@ const statusLabel: Record<string, string> = { learning: 'Learning', provisional:
 
 function Rubric({ value: original }: { value: Assessment }) {
   const { t,language } = useLanguage();
-  const {view,translating,translationError,retryTranslation}=usePresentation(original,language);
+  const {view,switchingLanguage,translationError,retryTranslation}=usePresentation(original,language);
   const value=view!;
   const labels = { correctness: t("Correctness"), causality: t("Causality"), clarity: t("Clarity"), transfer: t("Transfer") };
   return <section className={`rubric ${value.passed ? 'passed' : ''}`}>
-    {translating&&<p role="status">{language==='zh'?'正在切换反馈语言…':'Translating feedback…'}</p>}
+    {switchingLanguage&&<p role="status">{language==='zh'?'正在切换反馈语言…':'Translating feedback…'}</p>}
     {translationError&&<p role="alert">{translationError} <button onClick={retryTranslation}>{language==='zh'?'重试翻译':'Retry translation'}</button></p>}
     <div className="rubric-title"><ShieldCheck size={18} /><strong>{value.passed ? t("Explanation verified") : t("Let’s make this clearer")}</strong><span>{t("AI rubric · v1")}</span></div>
     <p>{value.summary}</p>

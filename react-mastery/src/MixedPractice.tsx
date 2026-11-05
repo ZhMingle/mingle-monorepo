@@ -26,7 +26,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
   const [busy,setBusy]=useState('');const [error,setError]=useState('');const [savedCode,setSavedCode]=useState<{id:string;code:string}|null>(null);
   const live=useRef(true);const saving=useRef<Promise<unknown>>(Promise.resolve());
   const questionCard=useRef<HTMLDivElement|null>(null);
-  const {view:payload,translating,translationError,retryTranslation}=usePresentation(rawPayload,language);
+  const {view:payload,switchingLanguage,translationError,retryTranslation}=usePresentation(rawPayload,language);
   const session=payload?.session;const lesson=session?.lesson;
   const codeChanged=!!lesson&&displayCode(draft.code).code!==displayCode(lesson.coding.starter).code;
   const saved=savedCode?.id===session?.id&&savedCode?.code===draft.code;
@@ -112,7 +112,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
       {canContinue&&journey.next&&<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next topic','下一知识点')} →</button>}
     </nav>
     {error&&<div role="alert" className="tp-error">{error}<button disabled={!!busy} onClick={()=>session?void action('load'):location.reload()}>{say('Reload saved practice','重新读取练习')}</button></div>}
-    {translating&&<p role="status">{say('Translating this exercise…','正在切换题目语言…')}</p>}
+    {switchingLanguage&&<p role="status">{say('Translating this exercise…','正在切换题目语言…')}</p>}
     {translationError&&<div role="alert" className="tp-error">{say('Translation failed: ','翻译未完成：')}{translationError}<button onClick={retryTranslation}>{say('Retry translation','重试翻译')}</button></div>}
     {loading?<p role="status">{say('Preparing exercises…','正在准备题目…')}</p>:!session?<div className="tp-card"><h2>{say('Choose, then build.','先选择，再写代码。')}</h2><button className="tp-primary" disabled={!!busy} onClick={()=>void action('new')}>{busy?say('Preparing exercises…','正在准备题目…'):say('Start practice','开始练习')}</button></div>:lesson&&<>
 
