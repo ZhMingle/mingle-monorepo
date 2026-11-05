@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { learningPaths, findLearningPath } from '../shared/paths.ts';
 
 test('catalog includes all requested paths with complete bilingual study guides',()=>{
-  assert.deepEqual(learningPaths.map(p=>p.id),['react','typescript','html-css','dotnet','nodejs','java','python','go','mysql','sqlserver','postgresql','shopify','wordpress','react-native','azure','aws-cicd','nextjs','django','angular','docker','kubernetes','git']);
+  assert.deepEqual(learningPaths.map(p=>p.id),['react','typescript','html-css','dotnet','nodejs','java','python','go','mysql','sqlserver','postgresql','shopify','wordpress','react-native','azure','aws-cicd','nextjs','django','angular','docker','kubernetes','git','aspnet-core','ef-core']);
   const ids=new Set<string>();
   for(const path of learningPaths){
     assert.ok(path.name.en && path.name.zh && path.prerequisite.en && path.prerequisite.zh);
@@ -18,7 +18,7 @@ test('catalog includes all requested paths with complete bilingual study guides'
       }
     }
   }
-  assert.equal(ids.size,522);
+  assert.equal(ids.size,570);
   assert.equal(findLearningPath('missing'),undefined);
   assert.equal(findLearningPath('postgresql')?.category,'database');
 });

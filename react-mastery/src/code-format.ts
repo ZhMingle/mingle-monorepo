@@ -9,7 +9,7 @@ export function codeFlavor(language:string,pathId=''):CodeFlavor {
   if(pathId==='mysql'||name.includes('mysql'))return 'mysql';
   if(pathId==='postgresql'||name.includes('postgres'))return 'postgresql';
   if(pathId==='sqlserver'||name.includes('sql server')||name.includes('tsql')||name.includes('t-sql'))return 'tsql';
-  if(pathId==='dotnet'||name.includes('c#')||name.includes('csharp'))return 'csharp';
+  if(['dotnet','aspnet-core','ef-core'].includes(pathId??'')||name.includes('c#')||name.includes('csharp'))return 'csharp';
   if(pathId==='java'||name==='java')return 'java';
   if(pathId==='django'||pathId==='python'||name.includes('python'))return 'python';
   if(pathId==='go'||name==='go'||name==='golang')return 'go';

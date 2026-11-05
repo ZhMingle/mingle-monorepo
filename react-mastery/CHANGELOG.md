@@ -106,3 +106,5 @@
 - Add TypeScript, HTML/CSS, C#/.NET, MySQL, SQL Server, and PostgreSQL guides: 72 bilingual topics, self-check questions, project milestones, and official references.
 - Add searchable, filterable learning paths with direct route links; retain existing React labs and progress.
 - Label study guides separately from assessed labs; reading does not change mastery.
+
+- Add independent ASP.NET Core and EF Core paths with 48 bilingual topics, staged projects, official references, C# editor support and explicit AI exercise assumptions. Preserve C#/.NET topic IDs and bump catalog version.

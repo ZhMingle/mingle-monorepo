@@ -15,7 +15,7 @@ test('progress counts distinct choice/code evidence across variations, not brows
   assert.equal(p.paths.react.topics['react.snapshot'].completed,0);
   assert.equal(p.paths.react.topics['react.snapshot'].started,true);
   assert.equal(p.paths.react.topics['react.keys'].started,false);
-  assert.equal(p.overall.completedChecks,2);assert.equal(p.overall.totalChecks,1044);assert.equal(p.overall.totalTopics,522);
+  assert.equal(p.overall.completedChecks,2);assert.equal(p.overall.totalChecks,1140);assert.equal(p.overall.totalTopics,570);
   assert.equal(p.overall.completedTopics,1);
   assert.equal(p.paths.nodejs.totalChecks,48);
   assert.equal(p.paths.nodejs.completedChecks,0);
