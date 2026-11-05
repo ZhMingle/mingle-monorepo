@@ -35,7 +35,7 @@ Current coding tasks and original React labs use CodeMirror with syntax colors, 
 
 ### Continuous learning and progress
 
-Every topic includes previous/next navigation, a topic picker, and a direct choice-to-code action. Moving to another topic saves the current draft first; navigating does not generate a lesson or award completion.
+Every topic includes previous/next navigation, a topic picker, and a direct choice-to-code action. Learners may freely choose any topic or question type; passing exercises is never required to access the next topic. Moving to another topic saves the current draft first; navigating does not generate a lesson or award completion.
 
 The catalog, path page, and practice page show overall/current-path progress. Each available topic contributes two checks (choice and code). Distinct successful results accumulate across all variations, including earlier original React prediction/build results. Repeated passes do not add extra credit, and starting a fresh variation cannot erase earlier completion. Historical keyword checks do not contribute. Topic rows show a green completed state, amber in-progress state, or gray not-started state, with distinct icons and text labels. A started topic stays in progress even at 0/2; opening the row shows which question type remains. Progress refreshes after submissions and navigation, without polling or AI calls.
 

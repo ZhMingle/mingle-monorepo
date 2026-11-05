@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { request } from './api.ts';
 import { useLanguage } from './language.tsx';
 import type { PathTopic } from '../shared/path-types.ts';
-import { canContinueStudy,studyKinds } from '../shared/study.ts';
+import { studyKinds } from '../shared/study.ts';
 import type { StudyDraft,StudyKind,StudyPayload } from '../shared/study.ts';
 import './topic-practice.css';
 import { findLearningPath } from '../shared/paths.ts';
@@ -32,7 +32,6 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
   const session=payload?.session;const lesson=session?.lesson;
   const codeChanged=!!lesson&&displayCode(draft.code).code!==displayCode(lesson.coding.starter).code;
   const saved=savedCode?.id===session?.id&&savedCode?.code===draft.code;
-  const canContinue=canContinueStudy(session);
   const path=findLearningPath(pathId)!;const journey=topicNeighbors(path,topic.id);
   const labels={keywords:say('English keywords','英文关键词填空'),choice:say('Choose an answer','选择题'),code:say('Write code','编程题')};
   function apply(next:StudyPayload,restore=false){
@@ -112,7 +111,6 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
     finally{if(live.current)setBusy('');}
   }
   async function continueTopic(){
-    if(!canContinue)return;
     await openTopic(journey.next?.id);
   }
   const attempts=session?.attempts.filter(a=>a.kind===current)??[];const latest=attempts.at(-1);
@@ -123,7 +121,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
       <h1 title={topic.title[language]}>{topic.title[language]}</h1>
       <button disabled={!!busy||!journey.previous} onClick={()=>void openTopic(journey.previous!.id)}>← {say('Previous topic','上一知识点')}</button>
       <span>{journey.index+1}/{journey.topics.length}</span><TopicDirectory path={path} current={topic.id} progress={progress} disabled={!!busy} onNavigate={id=>void openTopic(id)}/>
-      {canContinue&&journey.next&&<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next topic','下一知识点')} →</button>}
+      {journey.next&&<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next topic','下一知识点')} →</button>}
     </nav>
     {error&&<div role="alert" className="tp-error">{error}<button disabled={!!busy} onClick={()=>session?void action('load'):location.reload()}>{say('Reload saved practice','重新读取练习')}</button></div>}
     {switchingLanguage&&<p role="status">{say('Translating this exercise…','正在切换题目语言…')}</p>}
@@ -145,7 +143,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
     </>}
     <nav className="topic-continuation" aria-label={say('Continue learning','继续学习')}>
       {session&&current==='choice'?<button className="tp-primary" disabled={!!busy} onClick={()=>void navigate('code')}>{say('Continue to code →','继续编程题 →')}</button>:<span/>}
-      {canContinue?(journey.next?<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next: ','下一部分：')}{journey.next.title[language]} →</button>:<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('End of path · view progress','已到路线末尾 · 查看进度')} →</button>):session&&<p role="status">{payload.completed.includes('choice')?say('Pass the code task to unlock the next topic.','通过编程题后解锁下一部分。'):payload.completed.includes('code')?say('Pass the choice question to unlock the next topic.','通过选择题后解锁下一部分。'):say('Pass both tasks to unlock the next topic.','两项任务都通过后解锁下一部分。')}</p>}
+      {journey.next?<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next: ','下一部分：')}{journey.next.title[language]} →</button>:<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('End of path · view progress','已到路线末尾 · 查看进度')}</button>}
     </nav>
     <p className="tp-source"><a href={topic.source} target="_blank" rel="noreferrer">{say('Official reference ↗','官方资料 ↗')}</a></p>
   </section>

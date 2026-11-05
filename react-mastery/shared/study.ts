@@ -63,9 +63,6 @@ export function validateCodeReview(raw:unknown,code:string,ids:string[]):CodeRev
   return {...r,quote:r.quote.trim()};
 }
 export function completedKinds(s:StudySession){return studyKinds.filter(kind=>s.attempts.some(a=>a.kind===kind&&a.accepted&&!a.error));}
-export function canContinueStudy(session:Pick<StudySession,'attempts'>|null|undefined){
-  return !!session&&studyKinds.every(kind=>session.attempts.some(a=>a.kind===kind&&a.accepted&&!a.error));
-}
 export function choiceReference(choice:StudyLesson['choice']):string {
   const option=choice.options[choice.correct];
   const normalize=(text:string)=>text.replace(/\s+/g,' ').trim();
