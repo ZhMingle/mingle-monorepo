@@ -25,6 +25,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
   const [current,setCurrent]=useState<StudyKind>('choice');const [draft,setDraft]=useState<StudyDraft>({keywords:{},choice:-1,code:''});
   const [busy,setBusy]=useState('');const [error,setError]=useState('');const [savedCode,setSavedCode]=useState<{id:string;code:string}|null>(null);
   const live=useRef(true);const saving=useRef<Promise<unknown>>(Promise.resolve());
+  const savedDraft=useRef('');
   const questionCard=useRef<HTMLDivElement|null>(null);
   const {view:payload,switchingLanguage,translationError,retryTranslation}=usePresentation(rawPayload,language);
   const session=payload?.session;const lesson=session?.lesson;
@@ -53,13 +54,24 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
     }).catch(e=>{if(live.current)setError(e.message);}).finally(()=>{if(live.current)setLoading(false);});
     return()=>{live.current=false;};
   },[topic.id]);
+  function saveDraft(id:string,value:StudyDraft){
+    const snapshot=JSON.stringify({id,...value});
+    saving.current=saving.current.catch(()=>{}).then(async()=>{
+      if(savedDraft.current!==snapshot){
+        await request('study/draft',{id,...value});
+        savedDraft.current=snapshot;
+      }
+      if(live.current)setSavedCode({id,code:value.code});
+    });
+    return saving.current;
+  }
   useEffect(()=>{
     if(!session||busy)return;
     try{localStorage.setItem(`clarity.studyDraft:${session.id}`,JSON.stringify(draft));}catch{/* Server autosave remains usable. */}
+    if(savedDraft.current===JSON.stringify({id:session.id,...draft}))return;
     setSavedCode(null);
     const timer=setTimeout(()=>{
-      saving.current=saving.current.catch(()=>{}).then(()=>request('study/draft',{id:session.id,...draft}));
-      void saving.current.then(()=>{if(live.current)setSavedCode({id:session.id,code:draft.code});}).catch(()=>{if(live.current)setSavedCode(null);});
+      void saveDraft(session.id,draft).catch(()=>{if(live.current)setSavedCode(null);});
     },600);return()=>clearTimeout(timer);
   },[session?.id,draft,busy]);
   useEffect(()=>{
@@ -71,6 +83,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
     if(busy)return;setBusy(name);setError('');
     try{
       await saving.current.catch(()=>{});
+      if(name==='reference'&&session)await saveDraft(session.id,draft);
       if(name==='answer'&&current==='code'&&lesson?.coding.execution)await request('study/draft',{id:session?.id,...draft});
       const execution=name==='answer'&&current==='code'&&lesson?.coding.execution?await runCode(rawPayload!.session.lesson.coding.execution!,draft.code):undefined;
       const next=await request<StudyPayload>(`study/${name}`,name==='new'?{topicId:topic.id}:{id:session?.id,kind:current,...draft,execution});
@@ -122,8 +135,8 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
 
       <div className="tp-card" ref={questionCard}>
         {['react.props','react.snapshot','react.immutable','react.keys','react.derived','react.reducer'].includes(topic.id)&&!lesson.coding.execution&&current==='code'&&<p className="tp-meta">{say('This saved task uses AI review. Start a new variation for browser execution checks; your earlier work stays saved.','这道旧题使用 AI 评审。换一组题即可使用浏览器运行检查；原有作答仍会保留。')}</p>}
-        {current==='choice'?<><LearningText text={lesson.choice.scenario} pathId={pathId}/>{lesson.choice.code&&(pathId==='git'?<GitScenario source={lesson.choice.code}/>:<CodeBlock code={lesson.choice.code} language={lesson.coding.language} pathId={pathId} label={say('Question code','题目代码')}/>)}<h2 className="learning-text"><Inline text={lesson.choice.question}/></h2><fieldset disabled={!!busy}><legend>{say('Choose one answer','选择一个答案')}</legend>{lesson.choice.options.map((option,i)=><label className="tp-choice" key={i}><input type="radio" name={`choice-${session.id}`} checked={draft.choice===i} onChange={()=>setDraft({...draft,choice:i})}/><div className="tp-option-body"><span>{String.fromCharCode(65+i)}.</span><OptionContent text={option} pathId={pathId}/></div></label>)}</fieldset></>:<><LearningText text={t(lesson.coding.scenario)} language={lesson.coding.language} pathId={pathId}/><ul className="learning-text">{lesson.coding.requirements.map(r=><li key={r}><LearningText text={t(r)} language={lesson.coding.language} pathId={pathId}/></li>)}</ul>{lesson.coding.cases.length>0&&<details><summary>{say('Example cases','示例用例')}</summary>{lesson.coding.cases.map(c=><div key={c.id}><strong>{c.id}</strong><pre>{c.input}{'\n→ '}{c.expected}</pre></div>)}</details>}<CodeEditor key={session.id} language={lesson.coding.language} pathId={pathId} value={draft.code} starter={displayCode(lesson.coding.starter).code} label={say('Your code','你的代码')} disabled={!!busy} maxLength={12000} onChange={code=>setDraft(previous=>({...previous,code}))}/><p className="tp-meta">{lesson.coding.execution?say('Runs in an isolated browser and checks actual behavior.','在隔离浏览器运行，并检查实际行为。'):say('AI code review · this language is not executed here.','AI 代码评审 · 此处暂不执行该语言。')}</p></>}
-        <div className="tp-actions">{(current==='code'&&codeChanged||busy==='answer')&&<span role="status">{busy==='answer'?say('Checking…','正在检查…'):saved?say('Draft saved','草稿已保存'):say('Saving draft…','正在保存草稿…')}</span>}<button className="tp-primary" disabled={!!busy||!canSubmit} onClick={()=>void action('answer')}>{current==='code'?(lesson.coding.execution?say('Run checks','运行验证'):say('Review my code','评审代码')):say('Check answer','检查答案')}</button><button disabled={!!busy} onClick={()=>void action('reference')}>{say('View answer','查看答案')}</button></div>
+        {current==='choice'?<><LearningText text={lesson.choice.scenario} pathId={pathId}/>{lesson.choice.code&&(pathId==='git'?<GitScenario source={lesson.choice.code}/>:<CodeBlock code={lesson.choice.code} language={lesson.coding.language} pathId={pathId} label={say('Question code','题目代码')}/>)}<h2 className="learning-text"><Inline text={lesson.choice.question}/></h2><fieldset disabled={!!busy}><legend>{say('Choose one answer','选择一个答案')}</legend>{lesson.choice.options.map((option,i)=><label className="tp-choice" key={i}><input type="radio" name={`choice-${session.id}`} checked={draft.choice===i} onChange={()=>setDraft({...draft,choice:i})}/><div className="tp-option-body"><span>{String.fromCharCode(65+i)}.</span><OptionContent text={option} pathId={pathId}/></div></label>)}</fieldset></>:<><LearningText text={t(lesson.coding.scenario)} language={lesson.coding.language} pathId={pathId}/><ul className="learning-text">{lesson.coding.requirements.map(r=><li key={r}><LearningText text={t(r)} language={lesson.coding.language} pathId={pathId}/></li>)}</ul>{lesson.coding.cases.length>0&&<details><summary>{say('Example cases','示例用例')}</summary>{lesson.coding.cases.map(c=><div key={c.id}><strong>{c.id}</strong><pre>{c.input}{'\n→ '}{c.expected}</pre></div>)}</details>}<CodeEditor key={session.id} language={lesson.coding.language} pathId={pathId} value={draft.code} starter={displayCode(lesson.coding.starter).code} label={say('Your code','你的代码')} disabled={!!busy} maxLength={12000} onChange={code=>setDraft(previous=>previous.code===code?previous:{...previous,code})}/><p className="tp-meta">{lesson.coding.execution?say('Runs in an isolated browser and checks actual behavior.','在隔离浏览器运行，并检查实际行为。'):say('AI code review · this language is not executed here.','AI 代码评审 · 此处暂不执行该语言。')}</p></>}
+        <div className="tp-actions">{(current==='code'&&codeChanged||busy==='answer'||busy==='reference')&&<span role="status">{busy==='reference'?say('Opening answer…','正在打开答案…'):busy==='answer'?say('Checking…','正在检查…'):saved?say('Draft saved','草稿已保存'):say('Saving draft…','正在保存草稿…')}</span>}<button className="tp-primary" disabled={!!busy||!canSubmit} onClick={()=>void action('answer')}>{current==='code'?(lesson.coding.execution?say('Run checks','运行验证'):say('Review my code','评审代码')):say('Check answer','检查答案')}</button><button disabled={!!busy} onClick={()=>void action('reference')}>{busy==='reference'?say('Opening answer…','正在打开答案…'):say('View answer','查看答案')}</button></div>
         {latest&&!latest.error&&<div className="tp-feedback" role="status"><h3>{say('Last submission: ','上次提交：')}{latest.accepted?say('Correct','回答正确'):say('Try once more','再试一次')}</h3>{latest.blanks?.map((r,i)=><p key={r.id}>{i+1}. {r.accepted?'✓':'○'} {r.feedback}</p>)}{latest.feedback&&!(current==='choice'&&payload.references[current])&&<LearningText text={latest.feedback} language={lesson.coding.language} pathId={pathId}/>}{latest.execution&&<><small>{say('Actual browser execution','浏览器实际运行结果')}</small>{latest.execution.error&&<p>{latest.execution.error}</p>}{latest.execution.tests.map(test=><p key={test.name}>{test.passed?'✓':'○'} {t(test.name)}: {t(test.detail)}</p>)}</>}{latest.review&&<><small>{say('AI review of submitted code · no execution','上次提交代码的 AI 评审 · 未执行')}</small><blockquote>{latest.review.quote}</blockquote>{latest.review.issues.map(issue=><p key={issue}>{issue}</p>)}{latest.review.cases.map(c=><p key={c.id}>{c.passed?'✓':'○'} {c.id}: {c.reason}</p>)}</>}</div>}
         {latest?.error&&<p role="alert">{say('The check failed. Your answers are saved; retry when ready.','检查未完成，答案已保存，可以重试。')}</p>}
         {payload.references[current]&&<aside className="tp-reference"><h3>{say('Reference answer','参考答案')}</h3>{current==='code'?<CodeBlock code={payload.references[current]!} language={lesson.coding.language} pathId={pathId} label={say('Reference code','参考代码')}/>:<LearningText text={payload.references[current]!} language={lesson.coding.language} pathId={pathId}/>}<small>{say('Recorded as supported practice. Your draft is unchanged.','已记录为辅助练习，保留你的原草稿。')}</small></aside>}

@@ -81,6 +81,20 @@ test('model failures and concurrent submissions preserve drafts without inventin
   const pending=studyAction('answer',{id,kind:'code',...draft},'en',async<T>()=>{await wait;throw new Error('Connection failed again');});
   await assert.rejects(studyAction('reference',{id,kind:'code'},'en'),/being checked/);release();await assert.rejects(pending,/Connection failed again/);
 });
+test('opening a code reference preserves the saved draft and does not run another assessment',async()=>{
+  const id=await create('postgresql.model');
+  const value={...draft,keywords:{},code:'-- my unfinished SQL'};
+  await studyAction('draft',{id,...value},'en');
+  const noAI=async<T>():Promise<T>=>{throw Error('Opening an answer must not call AI');};
+  for(let i=0;i<2;i++){
+    const result=await studyAction('reference',{id,kind:'code'},'en',noAI) as StudyPayload;
+    assert.equal(result.references.code,lesson.coding.reference);
+    assert.deepEqual(result.session.draft,value);
+    assert.equal(result.session.attempts.length,0);
+    assert.deepEqual(result.session.helped,['code']);
+  }
+});
+
 test('reject malformed generated tasks, fabricated evidence and missing/duplicate feedback ids',()=>{
   assert.doesNotThrow(()=>validateStudyLesson(lesson));const bad=structuredClone(lesson);bad.keywords[0].answer='幂等';assert.throws(()=>validateStudyLesson(bad),/keyword exercise/);
   assert.throws(()=>validateBlankResults({results:[{id:'wrong',accepted:true,feedback:'yes'}]},['k1']),/Incomplete/);
