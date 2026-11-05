@@ -6,3 +6,6 @@
 .reference-code-block .code-diff-gutter .cm-gutterElement{padding:0 7px;text-align:center}
 .submission-diff section+section{margin-top:16px}
 .submission-diff .reference-code-block{margin:7px 0 14px}
+.reference-code-block .code-diff-char-remove{background:#a53c49;color:#fff;border-radius:2px;text-decoration:underline;text-decoration-color:#ffacb6}
+.reference-code-block .code-diff-char-add{background:#267347;color:#fff;border-radius:2px;text-decoration:underline;text-decoration-color:#a4efbd}
+.reference-code-block .code-diff-gutter{white-space:pre;font-variant-numeric:tabular-nums}

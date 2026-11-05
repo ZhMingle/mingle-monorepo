@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {codeChanges} from '../shared/code-diff.ts';
+import {codeChanges,characterChanges} from '../shared/code-diff.ts';
 
 test('one changed line retains syntax and accurate old/new positions, omitting unchanged code',()=>{
   const before='import React from "react";\n\nfunction record() {\n  pending.current += 1;\n}\n\nexport default record;';
@@ -34,4 +34,15 @@ test('bounded fallback retains every changed line for large replacements',()=>{
   const lines=codeChanges(before,after).flat();
   assert.equal(lines.filter(line=>line.kind==='remove').map(line=>line.text).join('\n'),before);
   assert.equal(lines.filter(line=>line.kind==='add').map(line=>line.text).join('\n'),after);
+});
+
+test('character changes isolate SQL letters and multiple separated edits',()=>{
+  const before='WHERE email = NULL ORDER BY id DESC;';
+  const after='WHERE email IS NULL ORDER BY id ASC;';
+  const diff=characterChanges(before,after);
+  assert.equal(diff.before.map(r=>before.slice(r.from,r.to)).join(''),'=DE');
+  assert.equal(diff.after.map(r=>after.slice(r.from,r.to)).join(''),'ISA');
+  assert.deepEqual(characterChanges('same','same'),{before:[],after:[]});
+  assert.deepEqual(characterChanges('','UNIQUE'),{before:[],after:[{from:0,to:6}]});
+  assert.deepEqual(characterChanges('x',''),{before:[{from:0,to:1}],after:[]});
 });
