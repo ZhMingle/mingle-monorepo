@@ -37,10 +37,19 @@ test('failed or synchronously throwing jobs do not strand later requests',async(
 
 test('queued prefetch waits behind learner actions and visible translations',async()=>{
   const queue=new AiQueue();const first=gate();const started=gate();const order:string[]=[];
-  const active=queue.run(async()=>{started.release();await first.promise;});await started.promise;
+  const active=queue.run(async()=>{started.release();await first.promise;},'background');await started.promise;
   const background=queue.run(async()=>{order.push('prefetch');},'background');
   const translation=queue.run(async()=>{order.push('translation');},'translation');
   const learner=queue.run(async()=>{order.push('learner');});
   first.release();await Promise.all([active,background,translation,learner]);
   assert.deepEqual(order,['learner','translation','prefetch']);
+});
+test('assessment completes while a background CLI job remains blocked',async()=>{
+  for(const priority of ['background','translation'] as const){
+    const queue=new AiQueue();const blocked=gate();const started=gate();
+    const background=queue.run(async()=>{started.release();await blocked.promise;},priority);
+    await started.promise;
+    try { assert.equal(await queue.run(async()=>42),42); }
+    finally { blocked.release();await background; }
+  }
 });
