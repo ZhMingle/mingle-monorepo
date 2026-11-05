@@ -26,7 +26,7 @@ export function LearningProgress({overview,pathId,error,onRetry}:{overview:Learn
   return <section className="learning-progress" aria-label={say('Learning progress','学习进度')}>
     {error?<p role="alert">{say('Progress could not update.','进度暂时无法更新。')} <button onClick={onRetry}>{say('Retry','重试')}</button></p>:!overview?<p role="status">{say('Loading progress…','正在读取进度…')}</p>:<>
       {path&&overview.paths[path.id]&&<a className="learning-resume" href={resumePath(path,overview.paths[path.id])} aria-label={say(`Continue ${path.name.en} learning`,`继续学习 ${path.name.zh}`)} title={say('Continue where you left off','继续当前学习进度')}><ProgressMeter value={overview.paths[path.id]} label={`${path.name[language]} · ${say('path progress','路线进度')}`}/></a>}
-      <ProgressMeter value={overview.overall} label={say('All available paths','全部已上线路线')}/>
+      <a className="learning-resume" href="#roadmap" aria-label={say('View all learning paths','查看全部路线')}><ProgressMeter value={overview.overall} label={say('All available paths','全部已上线路线')}/><span className="learning-all-paths">{say('View all paths →','查看全部路线 →')}</span></a>
       <p>{say('Practice completion: choice + code. Includes earlier successful attempts; not a mastery or curriculum coverage score.','练习完成度：选择题 + 代码题，保留历次通过结果；不代表掌握程度或全部知识覆盖率。')}</p>
     </>}
   </section>;

@@ -5,3 +5,4 @@
 .learning-resume{display:block;flex:1;min-width:220px;color:inherit;border-radius:7px;text-decoration:none;outline-offset:5px}
 .learning-resume:hover{background:#eaf1df;box-shadow:0 0 0 8px #eaf1df}
 .learning-resume:focus-visible{outline:2px solid #699c44}
+.learning-all-paths{display:inline-block;margin-top:8px;color:#466b2d;text-decoration:underline;text-underline-offset:3px;font-weight:600}
