@@ -22,6 +22,7 @@ const port = Number(process.env.PORT ?? 4317);
 const production = process.argv.includes('--production');
 const origins = new Set([`http://127.0.0.1:${port}`, `http://localhost:${port}`]);
 const busy = new Set<string>();
+const browserTabs = new Set<ServerResponse>();
 const payload = (session: LearningSession) => {
   const { answer: _a, explanation: _e, ...prediction } = getLesson(session.lessonId).prediction[session.variant];
   return { session, prediction, challenge: challengeFor(session.lessonId, session.variant), transferChallenge: challengeFor(session.lessonId, session.variant, true), progress: progressList(), referenceAnswers: Object.fromEntries((session.referenceViews ?? []).map(area => [area, area === 'build-code' || area === 'transfer-code' ? codeReferenceFor(session.lessonId, session.variant, area === 'transfer-code') : referenceAnswerFor(session.lessonId)])) };
@@ -58,6 +59,17 @@ const server = createServer(async (req, res) => {
       if (req.method !== 'POST') { send(res, 404, { error: 'Not found' }); return; }
       if (!origins.has(req.headers.origin ?? '') || req.headers['x-clarity-request'] !== '1' || !req.headers['content-type']?.startsWith('application/json')) { send(res, 403, { error: 'Only requests from the local application are accepted' }); return; }
       const input = await body(req);
+      if (url.pathname === '/api/browser/wait') {
+        browserTabs.add(res);
+        const timer = setTimeout(() => { browserTabs.delete(res); send(res, 200, {refresh:false}); }, 20000);
+        res.on('close', () => { clearTimeout(timer); browserTabs.delete(res); });
+        return;
+      }
+      if (url.pathname === '/api/browser/refresh') {
+        const reused = browserTabs.size > 0;
+        for (const tab of browserTabs) { browserTabs.delete(tab); send(tab, 200, {refresh:true}); }
+        send(res, 200, {reused}); return;
+      }
       if (url.pathname === '/api/tutor') { send(res, 200, await tutorReply(input, req.headers['x-clarity-language'] === 'zh' ? 'zh' : 'en')); return; }
       if (url.pathname === '/api/presentation') { send(res, 200, await translatePresentation(input)); return; }
       if (url.pathname === '/api/study/overview') { send(res, 200, studyOverview()); return; }

@@ -193,3 +193,5 @@ Azure 路线涵盖资源与身份、网络、计算与存储、Key Vault、Azure
 Reference answers show the complete task code with highlighted changes from the original starter, independent of the learner draft. Unchanged surrounding lines remain visible; the expandable clean final code uses the same complete answer. New generated references must retain the entire starter context. Both sides are formatted consistently when supported. Query-only SQL answers retain a leading CREATE TABLE setup from the task rather than presenting it as a deletion. Character highlights show precise edits; line numbers refer to the formatted comparison. The full reference remains expandable.
 
 Reference answers stay hidden when opening or reloading a practice and when switching question types, including previously assisted sessions. Only clicking View answer reveals the current answer and diff; historical assistance records remain saved independently.
+
+启动器会优先通知已经打开的页面刷新，保留当前路线和知识点；没有连接中的页面时才新建标签。旧版本标签首次需刷新一次以启用通知。

@@ -43,5 +43,11 @@ if (!$running) {
     }
 }
 if (!$running) { throw 'The local server did not start. Check data/server-error.log.' }
-# Bypass entry documents cached by older server versions.
-Start-Process "$url/?launch=$([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())"
+# Allow existing tabs to reconnect after a server restart, then refresh them in place.
+Start-Sleep -Seconds 2
+$browser = Invoke-RestMethod "$url/api/browser/refresh" -Method Post -ContentType 'application/json' -Body '{}' -Headers @{ Origin=$url; 'X-Clarity-Request'='1' } -TimeoutSec 5
+if ($browser.reused) {
+    Write-Host 'Refreshed the existing application tab.'
+} else {
+    Start-Process "$url/?launch=$([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())"
+}
