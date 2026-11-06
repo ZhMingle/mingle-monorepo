@@ -30,5 +30,5 @@ export default function CodeDiff({before,after,language,pathId}:{before:string;a
   return <div className="submission-diff"><p className="tp-meta">{say('− Original task code · + Reference change · Strong highlights mark the exact characters to change.','− 题目原代码 · + 参考修改 · 深色高亮标出要改的具体字符。')}</p>{comparison.formatted&&<p className="tp-meta">{say('Both sides use the same formatting; line numbers refer to this formatted comparison.','两侧已统一排版，行号对应此处排版后的代码。')}</p>}{comparison.preservedSetup&&<p className="tp-meta">{say('Keep the supplied table setup; only the query changes below.','题目提供的建表代码保留，只需修改下面的查询。')}</p>}{hunks.map((hunk,i)=><section key={i}>
     <strong>{say('Complete code with changes','完整代码与修改标记')}</strong>
     <CodeBlock code={hunk.code} language={language} pathId={pathId} label={say('Starter code and reference changes','题目原代码与参考修改')} diffKinds={hunk.kinds} diffRanges={hunk.ranges} lineLabels={hunk.labels}/>
-  </section>)}<details><summary>{say('View complete final code without diff markers','查看修改后的完整代码（无差异标记）')}</summary><CodeBlock code={comparison.after} language={language} pathId={pathId} label={say('Complete reference code','完整参考代码')}/></details></div>;
+  </section>)}</div>;
 }
