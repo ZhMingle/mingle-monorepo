@@ -8,3 +8,9 @@
 .learning-text ul,.learning-text ol { margin:.55rem 0; padding-left:1.5rem; }
 .learning-text li { margin:.25rem 0; }
 .learning-text .reference-code-block { margin:.85rem 0; }
+
+/* Keep lesson prose within a comfortable reading measure on wide screens. */
+.tp-lesson .learning-text { line-height:1.95; }
+.tp-lesson .learning-text p,.tp-lesson .learning-text ul,.tp-lesson .learning-text ol { max-width:42em; }
+.tp-lesson .learning-text p { margin:1rem 0; }
+.tp-lesson > .learning-text + .learning-text { margin-top:1rem; }

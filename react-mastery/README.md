@@ -188,6 +188,8 @@ Azure 路线涵盖资源与身份、网络、计算与存储、Key Vault、Azure
 
 讲解从具体例子要做的事说起，再逐步解释代码为什么这样写；术语随用随解释，不把多个概念压成一句话。已有讲解也会通过带版本缓存的呈现层重新润色，保留代码、技术条件和学习记录。
 
+讲解与示例都面向没有技术基础的读者：先说具体问题，再解释每一步；能用日常说法就不用术语，必要术语先说明意思。新示例一次只教一个主要知识点，已有复杂示例保留代码并逐步解释。正文限制阅读宽度，按意思分段。
+
 ### .NET 后端学习顺序
 
 保留 C# 与 .NET 综合路线及原有主题编号；新增 ASP.NET Core、EF Core 独立路线，各 24 个双语主题，包含基础、实践、进阶阶段项目、目标、自测与微软官方资料。建议按 **C# 与 .NET 基础 → ASP.NET Core → EF Core** 学习，同时补充 SQL 与 HTTP。ASP.NET Core 覆盖路由、校验、中间件、依赖注入、认证授权、测试与发布；EF Core 覆盖模型、查询、跟踪、关系、迁移、事务、并发与性能。练习为 AI 评审的 C# 小任务，不启动后端或执行数据库迁移。目录现共 24 条路线、570 个知识点、1140 项完成检查。官方资料：[.NET](https://learn.microsoft.com/en-us/dotnet/)、[ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/)、[EF Core](https://learn.microsoft.com/en-us/ef/core/)。
