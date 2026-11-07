@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { textBlocks,inlineParts,displayCode,isSourceExample } from '../shared/rich-text.ts';
+import { textBlocks,inlineParts,displayCode,displayCodeSections,isSourceExample } from '../shared/rich-text.ts';
 import { choiceReference } from '../shared/study.ts';
 test('worked prose examples render inline code instead of being mistaken for executable source',()=>{
   const prose='例如，`visibleItems` 可以由 `items` 和 `query` 计算得出。';
@@ -36,4 +36,15 @@ test('reference does not prepend a SQL option already repeated in its explanatio
   const choice={scenario:'',code:'',question:'',options:[code,'Other','Third'],correct:0,explanation:'The correct option is:\n'+code+'\nUse `IS NULL`.'};
   assert.equal(choiceReference(choice),choice.explanation);
   assert.equal(choiceReference({...choice,explanation:'Missing values require IS NULL.'}),code+'\n\nMissing values require IS NULL.');
+});
+
+test('saved HTML and CSS fences display as separate language snippets',()=>{
+  const html='<div class="card">内容</div>';
+  const css='.card {\n  width: 200px;\n  padding: 20px;\n  border: 2px solid;\n  box-sizing: content-box;\n}';
+  const source='```html\r\n'+html+'\r\n```\r\n\r\n```css\r\n'+css+'\r\n```';
+  assert.deepEqual(displayCodeSections(source),[{code:html,language:'html'},{code:css,language:'css'}]);
+  assert.deepEqual(displayCode(source),{code:source,language:''});
+  for(const raw of ['const template = "```html";','```css\n.card {','```html\n'+html+'\n```\nExplanation']){
+    assert.deepEqual(displayCodeSections(raw),[{code:raw,language:''}]);
+  }
 });

@@ -10,7 +10,20 @@ export function isSourceExample(text:string):boolean {
 // wrapper for display, keeping raw source and learner drafts untouched.
 export function displayCode(source:string):{code:string;language:string}{
   const fence=/^\s*```([^`\r\n]*)\r?\n([\s\S]*?)\r?\n```\s*$/.exec(source);
-  return fence?{code:fence[2],language:fence[1].trim()}:{code:source,language:''};
+  return fence&&!/^\s*```/m.test(fence[2])?{code:fence[2],language:fence[1].trim()}:{code:source,language:''};
+}
+// Code-only fields can contain several independently fenced language snippets.
+// Split only complete adjacent blocks; preserve mixed prose and raw source.
+export function displayCodeSections(source:string):{code:string;language:string}[]{
+  const sections:{code:string;language:string}[]=[];
+  let rest=source;
+  while(rest.trim()){
+    const match=/^\s*```([^`\r\n]*)\r?\n([\s\S]*?)\r?\n[ \t]*```(?=\s|$)/.exec(rest);
+    if(!match)return [displayCode(source)];
+    sections.push({code:match[2],language:match[1].trim()});
+    rest=rest.slice(match[0].length);
+  }
+  return sections.length?sections:[displayCode(source)];
 }
 export function textBlocks(text:string):TextBlock[]{
   const lines=text.replace(/\r\n/g,'\n').split('\n');const blocks:TextBlock[]=[];

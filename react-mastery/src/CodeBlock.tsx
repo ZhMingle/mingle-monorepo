@@ -5,11 +5,16 @@ import type {DiffKind,ChangedRange} from '../shared/code-diff.ts';
 import {oneDark} from '@codemirror/theme-one-dark';
 import {languageExtension} from './CodeEditor.tsx';
 import {codeFlavor} from './code-format.ts';
-import {displayCode} from '../shared/rich-text.ts';
+import {displayCode,displayCodeSections} from '../shared/rich-text.ts';
 import './code-block.css';
 
 // Read-only syntax rendering: no formatting, learner callbacks, or execution.
-export default function CodeBlock({code,language,pathId,label,diffKinds,diffRanges,lineLabels}:{code:string;language:string;pathId?:string;label:string;diffKinds?:DiffKind[];diffRanges?:ChangedRange[][];lineLabels?:string[]}){
+type CodeBlockProps={code:string;language:string;pathId?:string;label:string;diffKinds?:DiffKind[];diffRanges?:ChangedRange[][];lineLabels?:string[]};
+export default function CodeBlock(props:CodeBlockProps){
+  const sections=props.diffKinds?[{code:props.code,language:props.language}]:displayCodeSections(props.code);
+  return <>{sections.map((section,i)=><SourceCodeBlock key={i} {...props} code={section.code} language={section.language||props.language}/>)}</>;
+}
+function SourceCodeBlock({code,language,pathId,label,diffKinds,diffRanges,lineLabels}:CodeBlockProps){
   const host=useRef<HTMLDivElement>(null);
   const display=displayCode(code);
   const source=display.code;
