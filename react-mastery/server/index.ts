@@ -16,6 +16,7 @@ import { translatePresentation } from './presentation.ts';
 import { runtimeVersion } from '../shared/runtime-version.ts';
 import { pathsVersion } from '../shared/paths.ts';
 import { tutorReply } from './tutor.ts';
+import {topicImportance} from './topic-importance.ts';
 import type { LearningSession, RunReport, SessionMode, Stage } from '../shared/types.ts';
 
 const port = Number(process.env.PORT ?? 4317);
@@ -59,6 +60,7 @@ const server = createServer(async (req, res) => {
       if (req.method !== 'POST') { send(res, 404, { error: 'Not found' }); return; }
       if (!origins.has(req.headers.origin ?? '') || req.headers['x-clarity-request'] !== '1' || !req.headers['content-type']?.startsWith('application/json')) { send(res, 403, { error: 'Only requests from the local application are accepted' }); return; }
       const input = await body(req);
+      if (url.pathname === '/api/topic-importance') { send(res, 200, await topicImportance(input)); return; }
       if (url.pathname === '/api/browser/wait') {
         browserTabs.add(res);
         const timer = setTimeout(() => { browserTabs.delete(res); send(res, 200, {refresh:false}); }, 20000);
