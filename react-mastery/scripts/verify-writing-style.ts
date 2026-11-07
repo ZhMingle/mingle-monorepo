@@ -10,6 +10,13 @@ process.env.DATA_DIR=scratch;
 const {translatePresentation}=await import('../server/presentation.ts');
 const {db}=await import('../server/store.ts');
 try{
+  const question={question:'哪个索引把用于查找指定租户的字段放在第一列，并让后面的字段顺序直接符合查询要求的排序？'};
+  const rewritten=present(question,await translatePresentation({texts:presentationStrings(question),language:'zh'}));
+  assert.notEqual(rewritten.question,question.question);
+  assert.ok(rewritten.question.includes('第一列'));
+  assert.ok(!rewritten.question.includes('字段顺序直接符合'));
+  console.log(JSON.stringify(rewritten,null,2));
+  if(!process.argv.includes('--question-only')){
   const lesson={
     overview:'B-tree 按顺序组织索引键，能帮助查询找到相等值、范围内的值，并按所需顺序读取。部分索引只记录满足条件的行；表达式索引记录计算结果。相关数据写入时，也需要维护索引。',
     exampleExplanation:'查询明确要求 `done = false`，所以符合查询条件的行都在这个部分索引中。B-tree 可以从日期边界开始按时间读取；实际是否使用这个索引，还取决于数据量和成本估算。',
@@ -30,6 +37,7 @@ try{
   assert.notEqual(planResult.overview,planLesson.overview);
   assert.equal(planResult.example.match(/```sql[\s\S]*?```/)?.[0],planLesson.example.match(/```sql[\s\S]*?```/)?.[0]);
   console.log(JSON.stringify(planResult,null,2));
+  }
 }finally{
   db.close();rmSync(scratch,{recursive:true,force:true});
 }
