@@ -200,18 +200,19 @@ namespace Mingle.ActivityReminder
         {
             base.OnPaint(e);
             Graphics g = e.Graphics; g.SmoothingMode = SmoothingMode.AntiAlias;
-            int d = Math.Min(Width - 26, Height - 26);
+            float scale = g.DpiX / 96f;
+            int d = Math.Min(Width, Height) - (int)(26 * scale);
             var rect = new Rectangle((Width - d) / 2, (Height - d) / 2, d, d);
-            using (var track = new Pen(Color.FromArgb(43, 60, 69), 7)) g.DrawEllipse(track, rect);
-            using (var pen = new Pen(Theme.Mint, 7))
+            using (var track = new Pen(Color.FromArgb(43, 60, 69), 7 * scale)) g.DrawEllipse(track, rect);
+            using (var pen = new Pen(Theme.Mint, 7 * scale))
             {
                 pen.StartCap = LineCap.Round; pen.EndCap = LineCap.Round;
                 g.DrawArc(pen, rect, -90, (float)Math.Max(0.01, Math.Min(1, Progress) * 360));
             }
             using (var font = new Font("Segoe UI", 43, FontStyle.Regular))
-                TextRenderer.DrawText(g, Time, font, new Rectangle(0, Height / 2 - 50, Width, 82), Theme.White, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+                TextRenderer.DrawText(g, Time, font, new Rectangle(0, Height / 2 - (int)(50 * scale), Width, (int)(82 * scale)), Theme.White, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
             using (var font = Theme.Font(10, FontStyle.Regular))
-                TextRenderer.DrawText(g, Caption, font, new Rectangle(0, Height / 2 + 38, Width, 30), Theme.Muted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                TextRenderer.DrawText(g, Caption, font, new Rectangle(0, Height / 2 + (int)(38 * scale), Width, (int)(30 * scale)), Theme.Muted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
         }
     }
 
@@ -375,7 +376,7 @@ namespace Mingle.ActivityReminder
             dataFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MingleActivityReminder", "desktop-v2.json");
             Clock = new UsageClock(LoadState());
             Text = "Rise - Activity Reminder"; ClientSize = new Size(860, 654);
-            AutoScaleMode = AutoScaleMode.Dpi; StartPosition = FormStartPosition.CenterScreen;
+            AutoScaleMode = AutoScaleMode.None; StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedSingle; MaximizeBox = false;
             BackColor = Theme.Bg; ForeColor = Theme.White; Font = Theme.Font(10, FontStyle.Regular);
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
@@ -451,7 +452,10 @@ namespace Mingle.ActivityReminder
             timer.Tick += delegate { TickClock(); };
             last = watch.Elapsed.TotalSeconds; timer.Start();
             RefreshDisplay(0, false);
-            AutoScaleDimensions = new SizeF(96, 96);
+            // Scale the completed hierarchy once, including nested panel contents.
+            // DPI autoscaling during construction can scale the form before cards exist.
+            using (Graphics graphics = CreateGraphics())
+                Scale(new SizeF(graphics.DpiX / 96f, graphics.DpiY / 96f));
             ResumeLayout(true);
             MinimumSize = Size; MaximumSize = Size;
         }
