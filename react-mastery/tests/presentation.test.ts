@@ -14,6 +14,14 @@ test('translation uses authored component names without reading learner code',()
   assert.deepEqual(presentationIdentifiers({session:{draft:{code:'function LearnerSecret() {}'}}}),[]);
 });
 
+test('Shopify keywords are protected even in older prose without inline code',()=>{
+  const original={scenario:'Both sections share badge markup using a snippet and render.'};
+  const [masked]=presentationStrings(original);
+  assert.equal(masked,'Both ⟦CLARITY_CODE_0⟧ share ⟦CLARITY_CODE_1⟧ ⟦CLARITY_CODE_2⟧ using a ⟦CLARITY_CODE_3⟧ and ⟦CLARITY_CODE_4⟧.');
+  const view=present(original,{[masked]:'两个 ⟦CLARITY_CODE_0⟧ 通过 ⟦CLARITY_CODE_4⟧ 使用一个 ⟦CLARITY_CODE_3⟧，共用 ⟦CLARITY_CODE_1⟧ ⟦CLARITY_CODE_2⟧。'});
+  assert.equal(view.scenario,'两个 sections 通过 render 使用一个 snippet，共用 badge markup。');
+});
+
 test('translation caches distinguish the code names supplied for otherwise identical prose',async()=>{
   let calls=0;const run=async<T>():Promise<T>=>{calls++;return {translations:['修改组件。']} as T;};
   const input={texts:['修复编辑器。'],language:'zh',identifiers:['NameEditor']};

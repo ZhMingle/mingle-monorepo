@@ -31,7 +31,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
   const live=useRef(true);const saving=useRef<Promise<unknown>>(Promise.resolve());
   const savedDraft=useRef('');
 
-  const {view:payload,switchingLanguage,translationError,retryTranslation}=usePresentation(rawPayload,language);
+  const {view:payload,translating,translationError,retryTranslation}=usePresentation(rawPayload,language);
   const session=payload?.session;const lesson=session?.lesson;
   // Historical assistance is evidence, not permission to reveal answers on open.
   const referenceVisible=revealedReference?.id===session?.id&&revealedReference?.kind===current;
@@ -130,9 +130,9 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
       {journey.next&&<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next topic','下一知识点')} →</button>}
     </nav>
     {error&&<div role="alert" className="tp-error">{error}<button disabled={!!busy} onClick={()=>session?void action('load'):location.reload()}>{say('Reload saved practice','重新读取练习')}</button></div>}
-    {switchingLanguage&&<p role="status">{say('Translating this exercise…','正在切换题目语言…')}</p>}
+    {translating&&<p role="status">{say('Preparing exercise text…','正在准备中文题目…')}</p>}
     {translationError&&<div role="alert" className="tp-error">{say('Translation failed: ','翻译未完成：')}{translationError}<button onClick={retryTranslation}>{say('Retry translation','重试翻译')}</button></div>}
-    {loading?<p role="status">{say('Preparing exercises…','正在准备题目…')}</p>:!session?<div className="tp-card"><h2>{say('Choose, then build.','先选择，再写代码。')}</h2><button className="tp-primary" disabled={!!busy} onClick={()=>void action('new')}>{busy?say('Preparing exercises…','正在准备题目…'):say('Start practice','开始练习')}</button></div>:lesson&&<>
+    {loading?<p role="status">{say('Preparing exercises…','正在准备题目…')}</p>:translating||translationError?null:!session?<div className="tp-card"><h2>{say('Choose, then build.','先选择，再写代码。')}</h2><button className="tp-primary" disabled={!!busy} onClick={()=>void action('new')}>{busy?say('Preparing exercises…','正在准备题目…'):say('Start practice','开始练习')}</button></div>:lesson&&<>
 
 
       <div className="tp-practice-controls"><nav className="tp-tabs" aria-label={say('Question types','题型')}><button aria-pressed={showLesson} disabled={!!busy} onClick={()=>setShowLesson(true)}>{say('Explanation & example','讲解与示例')}</button>{studyKinds.map(k=><button key={k} aria-pressed={!showLesson&&current===k} disabled={!!busy} onClick={()=>void navigate(k)}>{labels[k]}{payload.completed.includes(k)&&<span className="tp-tab-complete">{say('Done','已完成')}</span>}</button>)}</nav><div className="tp-toolbar"><span role="status">{payload.completed.length}/2 {say('completed','已完成')}{payload.supported?` · ${say('with support','含辅助练习')}`:''}</span><button disabled={!!busy} onClick={()=>void action('new')}>{say('New variation · Codex','换一组题 · 使用额度')}</button></div></div>

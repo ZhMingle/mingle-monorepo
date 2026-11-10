@@ -9,7 +9,7 @@ export function mapProse(text:string,map:(text:string)=>string):string {
   if (/^\s*(?:SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|WITH|GRANT|REVOKE|TRUNCATE)\b[\s\S]*;\s*$/i.test(text)) return text;
   let prefix='CLARITY_CODE_';while(text.includes(prefix))prefix+='_';
   const protectedCode:{token:string;source:string}[]=[];
-  const masked=text.replace(/```[\s\S]*?```|`[^`\n]+`/g,source=>{
+  const masked=text.replace(/```[\s\S]*?```|`[^`\n]+`|\b(?:sections?|snippets?|badge|markup|render|assign|schema|JSON template)\b/g,source=>{
     const token=`⟦${prefix}${protectedCode.length}⟧`;protectedCode.push({token,source});return token;
   });
   if(!masked.replace(/⟦CLARITY_CODE_+\d+⟧/g,'').trim())return text;

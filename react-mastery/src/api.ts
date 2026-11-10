@@ -1,6 +1,10 @@
 import type { Bootstrap, SessionPayload } from '../shared/types.ts';
+function requestLanguage() {
+  try { const saved=localStorage.getItem('clarity.language');if(saved==='zh'||saved==='en')return saved; } catch { /* Fall back to the document language. */ }
+  return document.documentElement.lang === 'zh-CN' ? 'zh' : 'en';
+}
 export async function request<T>(path: string, data?: unknown): Promise<T> {
-  const response = await fetch(`/api/${path}`, data === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Clarity-Request': '1', 'X-Clarity-Language': document.documentElement.lang === 'zh-CN' ? 'zh' : 'en' }, body: JSON.stringify(data) });
+  const response = await fetch(`/api/${path}`, data === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Clarity-Request': '1', 'X-Clarity-Language': requestLanguage() }, body: JSON.stringify(data) });
   const result = await response.json();
   if (!response.ok) {
     if (result.error === 'Unknown topic.') throw new Error(document.documentElement.lang === 'zh-CN'

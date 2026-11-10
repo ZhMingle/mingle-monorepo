@@ -201,3 +201,5 @@ Reference answers show the complete task code with highlighted changes from the 
 Reference answers stay hidden when opening or reloading a practice and when switching question types, including previously assisted sessions. Only clicking View answer reveals the current answer and diff; historical assistance records remain saved independently.
 
 启动器会优先通知已经打开的页面刷新，保留当前路线和知识点；没有连接中的页面时才新建标签。旧版本标签首次需刷新一次以启用通知。
+
+练习请求优先读取已保存的界面语言，避免首次加载时误用英文。题目文字准备完成后再显示；翻译失败会提供重试，不显示其他语言的原题。中文题目保留技术关键字和代码，Shopify 的 section、snippet、badge、markup、render、assign 等不会被翻译；已有题目的中文展示也会按新版规则重新处理，保留学习记录和草稿。
