@@ -26,6 +26,21 @@ namespace Mingle.ActivityReminder
             }
         }
         internal string Percent { get { return Remaining.HasValue ? Remaining.Value.ToString("0.#", CultureInfo.InvariantCulture) + "% left" : "Unavailable"; } }
+        internal string ResetRemaining(DateTime nowUtc)
+        {
+            if (!ResetsAt.HasValue) return "--";
+            try
+            {
+                DateTime reset = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(ResetsAt.Value);
+                double minutes = Math.Ceiling((reset - nowUtc).TotalMinutes);
+                if (minutes <= 0) return "due";
+                long total = (long)minutes;
+                if (total >= 1440) return (total / 1440) + "d" + ((total % 1440) / 60) + "h";
+                if (total >= 60) return (total / 60) + "h" + (total % 60) + "m";
+                return total + "m";
+            }
+            catch (ArgumentOutOfRangeException) { return "--"; }
+        }
         internal string Reset
         {
             get

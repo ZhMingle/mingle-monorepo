@@ -246,10 +246,10 @@ namespace Mingle.ActivityReminder
             close.FlatAppearance.MouseOverBackColor = Color.FromArgb(48, 62, 72);
             close.AccessibleName = "Hide floating timer";
             details.SetToolTip(close, "Hide floating timer and open Rise");
-            countdown = Theme.Label(this, "30:00", 114, 21, 94, 43, 23, Theme.Mint);
-            countdown.Font = Theme.Font(23, FontStyle.Regular);
+            countdown = Theme.Label(this, "30:00", 122, 21, 86, 43, 21, Theme.Mint);
+            countdown.Font = Theme.Font(21, FontStyle.Regular);
             countdown.TextAlign = ContentAlignment.MiddleCenter;
-            quota = Theme.Label(this, "Codex:\nConnecting...", 12, 23, 94, 38, 10, Theme.White);
+            quota = Theme.Label(this, "Codex:\nConnecting...", 12, 23, 108, 38, 8, Theme.White);
             quota.TextAlign = ContentAlignment.MiddleLeft;
             quota.AutoEllipsis = true; quota.Cursor = Cursors.Hand; quota.Click += delegate { main.ShowQuota(); };
             var open = Theme.Button(this, "Open app", 12, 66, 94, false, main.ShowMain);
@@ -282,7 +282,7 @@ namespace Mingle.ActivityReminder
             if (bucket == null) return "Codex:\nUnavailable";
             string text = "";
             foreach (QuotaWindow window in bucket.Windows)
-                text += (text.Length == 0 ? "" : "\n") + window.Period + ": " + (window.Remaining.HasValue ? window.Remaining.Value.ToString("0.#") + "%" : "N/A");
+                text += (text.Length == 0 ? "" : "\n") + window.Period + ": " + (window.Remaining.HasValue ? window.Remaining.Value.ToString("0.#") + "%" : "N/A") + " " + window.ResetRemaining(DateTime.UtcNow);
             return text.Length == 0 ? "Codex:\nUnavailable" : text;
         }
         protected override void Dispose(bool disposing)
