@@ -2,7 +2,7 @@
 
 打开一个 HTTPS 链接，选择邮箱并连接自己的账号，即可分类、筛选及整理邮件。使用者无需下载程序、配置开发者项目或部署服务器。网站维护者统一部署一次后端。
 
-当前状态：源码、本地网页验证及自动化检查已完成；尚未部署到公网。正式上线需要连接具有外网 IMAP 能力的托管平台（已准备 Railway Docker 配置）。原 Sites 网站仍保留原来的 Gmail 功能，没有被这份未上线的服务替换。
+源码、本地网页验证及 73 项自动化检查已完成。通过 Railway 的独立服务部署，原 Sites 网站保留原有 Gmail 功能。运行状态以 Railway 部署和 /health 检查为准。
 
 ## 支持范围
 
@@ -48,7 +48,7 @@ dotnet publish/Mailroom.dll
 ## Railway 部署
 
 1. 将本目录作为服务源码根目录，使用 Dockerfile 构建。单仓库部署时设置服务 Root Directory 为 /mailroom-web。
-2. 使用 railway.json 配置的 /health 健康检查。容器会读取平台 PORT，默认 8080。
+2. 在服务设置中选择 Dockerfile 构建、设置 /health 健康检查（60 秒），保留单个运行实例。容器会读取平台 PORT，默认 8080。
 3. 生成公网 HTTPS 域名。可将 PUBLIC_ORIGIN 设置为这个完整 HTTPS origin；不要在生产设置 MAILROOM_ALLOW_HTTP。
 4. 保持一个运行实例：连接和会话仅存内存，不需要数据库或磁盘卷，多实例需要另行实现共享会话路由。
 5. 验证平台能访问 IMAP 993/143，再由账号本人在网页输入授权码，验证真实登录、读取和移动。此步骤尚未在真实 QQ/网易账号上验证。
