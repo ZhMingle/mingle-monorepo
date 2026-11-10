@@ -223,6 +223,8 @@ namespace Mingle.ActivityReminder
         private readonly ToolTip details = new ToolTip();
         [DllImport("user32.dll")] private static extern bool ReleaseCapture();
         [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
+        [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr window, int command);
+        [DllImport("user32.dll")] private static extern bool SetWindowPos(IntPtr window, IntPtr after, int x, int y, int width, int height, uint flags);
         internal MiniWindow(MainWindow main)
         {
             SuspendLayout();
@@ -298,6 +300,20 @@ namespace Mingle.ActivityReminder
             foreach (Screen screen in Screen.AllScreens) if (screen.WorkingArea.Contains(saved)) usable = true;
             Location = usable ? saved.Location : new Point(area.Right - Width - 24, area.Bottom - Height - 24);
         }
+        internal void Reveal(bool nearMain)
+        {
+            WindowState = FormWindowState.Normal;
+            Place();
+            if (nearMain)
+            {
+                Rectangle area = Screen.FromControl(main).WorkingArea;
+                Location = new Point(area.Right - Width - 24, area.Bottom - Height - 24);
+            }
+            Show();
+            // Explicitly reveal the native window even after a hidden launcher startup.
+            ShowWindow(Handle, 8); // SW_SHOWNA
+            SetWindowPos(Handle, new IntPtr(-1), 0, 0, 0, 0, 0x53); // TOPMOST, SHOWWINDOW, NOMOVE, NOSIZE, NOACTIVATE
+        }
     }
 
     internal sealed class MainWindow : Form
@@ -367,7 +383,7 @@ namespace Mingle.ActivityReminder
             usageLine = Theme.Label(this, "Codex: checking usage...", 34, 73, 790, 26, 10, Theme.Mint);
             usageLine.Cursor = Cursors.Hand; usageLine.Click += delegate { ShowQuota(); };
             Theme.Button(this, "Codex usage", 480, 32, 150, false, ShowQuota);
-            Theme.Button(this, "Use floating timer", 648, 32, 178, false, delegate { SetFloating(true); Hide(); });
+            Theme.Button(this, "Use floating timer", 648, 32, 178, false, UseFloatingTimer);
 
             Panel timerCard = Theme.CardPanel(this, 32, 116, 490, 344);
             status = Theme.Label(timerCard, "●  Tracking active time", 22, 16, 448, 27, 10, Theme.Mint);
@@ -421,7 +437,7 @@ namespace Mingle.ActivityReminder
             {
                 usageMonitor = new UsageActivityMonitor(UsageActivityMonitor.CodexHome);
                 usageMonitor.Changed += QueueUsageUpdate;
-                if (Clock.State.floating) mini.Show();
+                if (Clock.State.floating) BeginInvoke((Action)UseFloatingTimer);
                 RefreshDisplay(Native.Idle(), Native.Locked()); RefreshQuota();
             };
             FormClosing += delegate(object sender, FormClosingEventArgs e)
@@ -593,8 +609,14 @@ namespace Mingle.ActivityReminder
         {
             Clock.State.floating = visible;
             if (floating.Checked != visible) floating.Checked = visible;
-            if (mini != null) { if (visible) { if (!mini.Visible) mini.Place(); mini.Show(); } else mini.Hide(); }
+            if (mini != null) { if (visible) mini.Reveal(false); else mini.Hide(); }
             Save();
+        }
+        private void UseFloatingTimer()
+        {
+            SetFloating(true);
+            Hide();
+            mini.Reveal(true);
         }
         private void StartRest()
         {
