@@ -3,10 +3,7 @@
 obj
 bin
 publish
-release
 tests
-test-results.json
-dotnet-install.ps1
 .git
 *.user
 *.env

@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -8,10 +7,9 @@
     <RootNamespace>Mailroom</RootNamespace>
     <Version>1.0.0</Version>
     <DebugType>none</DebugType>
-    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**;publish/**;release/**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**;publish/**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="tests\**\*.cs" />
     <PackageReference Include="MailKit" Version="4.18.2" />
     <EmbeddedResource Include="Web\**\*" />
     <Content Remove="Web\**\*" />

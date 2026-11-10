@@ -1,18 +1,14 @@
 bin/
 obj/
 publish/
-release/
 .packages/
 .dotnet/
 *.user
 *.suo
 *.pdb
-*.result.json
 
 # Local development settings and credentials must not enter source control.
 .env
 .env.*
 !.env.example
 appsettings.Local.json
-dotnet-install.ps1
-test-results.json

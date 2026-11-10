@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Threading.RateLimiting;
 using MailKit.Net.Imap;
 using MailKit.Security;
-using Microsoft.AspNetCore.RateLimiting;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Mailroom.Tests")]
 
@@ -13,7 +12,7 @@ namespace Mailroom;
 
 internal static class Program
 {
-    public static async Task Main(string[] args)
+    public static async Task Main()
     {
         var app = WebHost.Build();
         await app.RunAsync();
@@ -40,7 +39,6 @@ internal static class WebHost
             options.RejectionStatusCode = 429;
             options.OnRejected = async (context, ct) => { context.HttpContext.Response.Headers.RetryAfter = "60"; await context.HttpContext.Response.WriteAsJsonAsync(new { error = "rate_limited", message = "请求较频繁，请稍后再试。" }, ct); };
             options.AddPolicy("bootstrap", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
-            options.AddPolicy("login", context => RateLimitPartition.GetFixedWindowLimiter(context.Request.Cookies[cookieName] ?? "anonymous", _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(5), QueueLimit = 0 }));
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions { PermitLimit = 300, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
         });
         var app = builder.Build();
@@ -107,7 +105,7 @@ internal static class WebHost
             var service = lease.Service;
             object result;
             if (context.Request.Method == "GET")
-                result = path switch { "state" => await service.State(), "providers" => Providers.All, _ => throw new UserError("此接口不存在。") };
+                result = path switch { "state" => await service.State(), _ => throw new UserError("此接口不存在。") };
             else
             {
                 if (path == "connect")
