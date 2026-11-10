@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>拾邮 · 给收件箱留一点空白</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <aside>
+    <a class="brand" href="/" aria-label="拾邮首页"><span class="logo">拾</span>拾邮<span class="en">MAILROOM</span></a>
+    <div class="workspace"><span class="avatar">我</span><div class="account-box">我的邮件空间<small id="account">连接你自己的邮箱</small></div><span id="connection-dot" class="dot offline"></span></div>
+    <span class="nav-label">工作空间</span>
+    <nav id="nav" aria-label="邮件分类"></nav>
+    <div class="aside-bottom">
+      <div class="privacy">◈ &nbsp; 你的邮件，由你掌控<small>独立连接自己的邮箱，会话结束后清除</small></div>
+      <button id="settings" class="wide">⚙ &nbsp; 邮箱连接与设置</button>
+      <div class="user"><span class="avatar light">我</span><div>我的邮件工作台<small>打开网页，整理自己的邮箱</small></div></div>
+    </div>
+  </aside>
+  <main>
+    <header><span class="breadcrumb">我的空间 <span>/</span> 邮件整理</span><div class="header-right"><span id="mode" class="badge">● 尚未连接</span><button id="connect">＋ 连接邮箱</button></div></header>
+    <section class="content">
+      <div class="title-row"><div><div class="eyebrow">A LITTLE LESS, A LITTLE BETTER</div><h1>给收件箱，留一点空白<span>✦</span></h1><p>把繁杂交给分类，把注意力留给重要的人和事。</p></div><button id="refresh" class="secondary" disabled>↻ &nbsp; 重新整理</button></div>
+      <div id="work-status" class="work-status" role="status" hidden></div>
+      <div id="connection-warning" class="connection-warning" role="status" hidden></div>
+      <div class="overview"><div><span class="stat-label">已加载收件箱 <span>↗</span></span><strong id="total">0</strong><small id="loaded-scope">先连接邮箱，再开始整理</small></div><div><span class="stat-label">促销与订阅 <span>✧</span></span><strong id="cleanable">0</strong><small>清理前，花一点时间确认</small></div><div><span class="stat-label">本次移入垃圾箱 <span>♧</span></span><strong id="cleaned">0</strong><small>保留恢复与撤销入口</small></div><div class="overview-art"><div class="envelope">✉</div><span>整理邮件，也整理心情。</span></div></div>
+      <div class="section-heading"><h2>按类别，轻松整理 <span>规则自动识别</span></h2><button id="rules" class="text-button">查看分类规则 ↗</button></div>
+      <div id="cards" class="cards"></div>
+      <section class="mail-panel" aria-label="邮件列表">
+        <div class="panel-top"><div><h2 id="list-title">全部邮件</h2><span id="list-count"></span></div><label class="search">⌕ <input id="search" type="search" placeholder="搜索发件人、邮箱或主题" aria-label="搜索发件人、邮箱或主题"><kbd>Ctrl K</kbd></label></div>
+        <div class="filters"><div><button id="all-filter" class="filter active">全部</button><button id="unread-filter" class="filter">仅未读</button><button id="old-filter" class="filter">30 天前</button></div><div class="list-options"><label class="load-label">读取范围 <select id="limit" aria-label="读取最近多少封邮件"><option value="100">最近 100 封</option><option value="500" selected>最近 500 封</option><option value="1000">最近 1000 封</option></select></label><select id="sort" aria-label="邮件排序"><option value="new">最新优先</option><option value="old">最早优先</option><option value="sender">按发件人</option></select></div></div>
+        <div class="bulk"><label><input type="checkbox" id="select-all"> <span id="selection-label">全选当前结果</span></label><div><button id="clear-selection" class="text-button">取消选择</button><button id="undo" class="secondary" disabled>↶ 撤销上次操作</button><button id="delete" class="delete" disabled>♧ &nbsp; 移入垃圾箱</button><button id="restore" class="secondary" hidden disabled>恢复所选</button></div></div>
+        <div id="mails"></div>
+        <div class="panel-footer"><span id="footer-count">尚未加载邮件</span><span id="trash-note">只在你选择后移动邮件。</span></div>
+      </section>
+      <footer><span>拾邮 MAILROOM</span><span>使用完毕后，请主动断开邮箱连接。</span><span>20 分钟无操作后清除连接</span></footer>
+    </section>
+  </main>
+  <dialog id="dialog" aria-labelledby="dialog-title"><button id="close-dialog" class="close" aria-label="关闭窗口">×</button><div id="dialog-content"></div></dialog>
+  <div id="toast" role="status" hidden></div>
+</body>
+</html>

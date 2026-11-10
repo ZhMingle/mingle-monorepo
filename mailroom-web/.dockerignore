@@ -1,0 +1,9 @@
+.dotnet
+.packages
+obj
+bin
+publish
+tests
+.git
+*.user
+*.env

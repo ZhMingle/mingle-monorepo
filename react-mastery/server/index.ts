@@ -17,6 +17,7 @@ import { runtimeVersion } from '../shared/runtime-version.ts';
 import { pathsVersion } from '../shared/paths.ts';
 import { tutorReply } from './tutor.ts';
 import {topicImportance} from './topic-importance.ts';
+import {englishCards,lookupEnglish,updateEnglishCard,deleteEnglishCard} from './english.ts';
 import type { LearningSession, RunReport, SessionMode, Stage } from '../shared/types.ts';
 
 const port = Number(process.env.PORT ?? 4317);
@@ -49,6 +50,8 @@ const server = createServer(async (req, res) => {
   try {
     if (url.pathname.startsWith('/api/')) {
       if (req.method === 'GET') {
+        if (url.pathname === '/api/english') { send(res, 200, {cards:englishCards()}); return; }
+        if (url.pathname === '/api/english/export') { res.setHeader('Content-Disposition', 'attachment; filename="clarity-english.json"'); send(res, 200, {version:1,cards:englishCards()}); return; }
         if (url.pathname === '/api/runtime') { send(res, 200, { version: runtimeVersion, pathsVersion, pid: process.pid, root: resolve('.') }); return; }
         if (url.pathname === '/api/understanding') { send(res, 200, understandingPayload(understandingSessions()[0] ?? null)); return; }
         if (url.pathname === '/api/bootstrap') {
@@ -61,6 +64,9 @@ const server = createServer(async (req, res) => {
       if (!origins.has(req.headers.origin ?? '') || req.headers['x-clarity-request'] !== '1' || !req.headers['content-type']?.startsWith('application/json')) { send(res, 403, { error: 'Only requests from the local application are accepted' }); return; }
       const input = await body(req);
       if (url.pathname === '/api/topic-importance') { send(res, 200, await topicImportance(input)); return; }
+      if (url.pathname === '/api/english/lookup') { send(res, 200, await lookupEnglish(input)); return; }
+      if (url.pathname === '/api/english/update') { send(res, 200, {card:updateEnglishCard(input)}); return; }
+      if (url.pathname === '/api/english/delete') { send(res, 200, deleteEnglishCard(input)); return; }
       if (url.pathname === '/api/browser/wait') {
         browserTabs.add(res);
         const timer = setTimeout(() => { browserTabs.delete(res); send(res, 200, {refresh:false}); }, 20000);
