@@ -1,0 +1,19 @@
+Mailroom / 拾邮 Web application
+Third-party software notices
+
+This service uses .NET / ASP.NET Core under the MIT license:
+https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
+https://github.com/dotnet/aspnetcore/blob/main/LICENSE.txt
+https://github.com/dotnet/runtime/blob/main/THIRD-PARTY-NOTICES.TXT
+
+MailKit and MimeKit 4.18.2 use the MIT license.
+Copyright .NET Foundation and Contributors.
+https://github.com/jstedfast/MailKit/blob/master/LICENSE
+https://github.com/jstedfast/MimeKit/blob/master/LICENSE
+
+BouncyCastle.Cryptography uses the MIT license.
+Copyright The Legion of the Bouncy Castle Inc.
+https://github.com/bcgit/bc-csharp/blob/master/LICENSE.md
+
+The original licenses and notices distributed with NuGet packages and the
+Microsoft container base images continue to apply.
