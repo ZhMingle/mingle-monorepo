@@ -82,9 +82,16 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
   },[session?.id,draft,busy]);
   useEffect(()=>{
     if(!rawPayload?.session.id||!journey.next)return;
-    // Cache only the adjacent topic, without marking it started.
-    void request('study/prefetch',{topicId:topic.id}).catch(()=>{});
-  },[rawPayload?.session.id,topic.id]);
+    // Prepare the adjacent lesson AND its display language. A transient failure
+    // must not silently abandon preparation for the rest of this topic.
+    let active=true;let timer:ReturnType<typeof setTimeout>|undefined;
+    async function prepare(attempt=0){
+      try{await request('study/prefetch',{topicId:topic.id});}
+      catch{if(active&&attempt<2)timer=setTimeout(()=>void prepare(attempt+1),5000*(attempt+1));}
+    }
+    void prepare();
+    return()=>{active=false;if(timer)clearTimeout(timer);};
+  },[rawPayload?.session.id,topic.id,language]);
   async function action(name:'new'|'answer'|'reference'|'load',answerDraft:StudyDraft=draft){
     if(busy)return;setBusy(name);setError('');
     try{

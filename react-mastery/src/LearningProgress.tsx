@@ -16,9 +16,9 @@ export function useLearningOverview(route:string){
   useEffect(()=>{mounted.current=true;reload();return()=>{mounted.current=false;sequence.current++;};},[route,reload]);
   return {overview,error,reload};
 }
-export function ProgressMeter({value,label}:{value:ProgressSummary;label:string}){
+export function ProgressMeter({value,label,showTopicCount=true}:{value:ProgressSummary;label:string;showTopicCount?:boolean}){
   const {language}=useLanguage();
-  return <div className="learning-meter"><div><strong>{label}</strong><span>{value.completedChecks}/{value.totalChecks} · {value.percent}%</span></div><progress aria-label={label} value={value.completedChecks} max={value.totalChecks||1}/><small>{language==='zh'?`${value.completedTopics}/${value.totalTopics} 个知识点完成`:`${value.completedTopics}/${value.totalTopics} topics complete`}</small></div>;
+  return <div className="learning-meter"><div><strong>{label}</strong><span>{value.completedChecks}/{value.totalChecks} · {value.percent}%</span></div><progress aria-label={label} value={value.completedChecks} max={value.totalChecks||1}/>{showTopicCount&&<small>{language==='zh'?`${value.completedTopics}/${value.totalTopics} 个知识点完成`:`${value.completedTopics}/${value.totalTopics} topics complete`}</small>}</div>;
 }
 export function LearningProgress({overview,pathId,error,onRetry}:{overview:LearningOverview|null;pathId?:string;error?:string;onRetry:()=>void}){
   const {language}=useLanguage();const say=(en:string,zh:string)=>language==='zh'?zh:en;

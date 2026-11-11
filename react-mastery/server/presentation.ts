@@ -2,10 +2,16 @@ import { createHash } from 'node:crypto';
 import { db } from './store.ts';
 import { runStructured } from './coach.ts';
 import {writingStyleVersion} from './writing-style.ts';
-import {codeTokens} from '../shared/presentation.ts';
+import {codeTokens,presentationBatches,presentationStrings,presentationIdentifiers} from '../shared/presentation.ts';
 
 db.exec('CREATE TABLE IF NOT EXISTS presentation_translations (key TEXT PRIMARY KEY, payload TEXT NOT NULL)');
 const pending=new Map<string,Promise<Record<string,string>>>();
+export async function preparePresentation(payload:unknown,language:'en'|'zh',run:typeof runStructured=runStructured){
+  const identifiers=presentationIdentifiers(payload);
+  // Keep speculative work below visible translations and learner actions.
+  const background:typeof runStructured=(prompt,schema)=>run(prompt,schema,'background');
+  for(const texts of presentationBatches(presentationStrings(payload)))await translatePresentation({texts,language,identifiers},background);
+}
 export async function translatePresentation(input:Record<string,unknown>,run:typeof runStructured=runStructured):Promise<Record<string,string>>{
   const {texts,language}=input;
   const identifiers=input.identifiers??[];

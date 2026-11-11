@@ -25,6 +25,18 @@ export function presentationStrings(value:unknown):string[]{
   visit(value,[],(text)=>{if(text.trim())result.add(text);return text;});
   return [...result];
 }
+// The browser and background preparation must use identical batches so they
+// address the same durable presentation cache entries.
+export function presentationBatches(texts:string[]):string[][]{
+  const batches:string[][]=[];let batch:string[]=[];let size=0;
+  for(const text of texts){
+    const length=JSON.stringify(text).length;
+    if(batch.length&&(size+length>60000||batch.length>=100)){batches.push(batch);batch=[];size=0;}
+    batch.push(text);size+=length;
+  }
+  if(batch.length)batches.push(batch);
+  return batches;
+}
 // Supply names from authored task code, never learner drafts or submissions.
 export function presentationIdentifiers(value:unknown):string[]{
   if(!value||typeof value!=='object')return [];

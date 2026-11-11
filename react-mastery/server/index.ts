@@ -11,7 +11,7 @@ import { markReferenceViewed, referenceAnswerFor } from './reference-answers.ts'
 import { codeHintsFor, codeReferenceFor } from './code-support.ts';
 import { understandingAction, understandingPayload, understandingSessions } from './understanding.ts';
 import { topicAction, topicProgress } from './topic-practice.ts';
-import { studyAction, studyProgress, studyOverview } from './study.ts';
+import { studyAction, studyProgress, studyOverview, openStudy } from './study.ts';
 import { translatePresentation } from './presentation.ts';
 import { runtimeVersion } from '../shared/runtime-version.ts';
 import { pathsVersion } from '../shared/paths.ts';
@@ -85,7 +85,8 @@ const server = createServer(async (req, res) => {
         send(res, 200, studyProgress(text(input.pathId, 40))); return;
       }
       if (url.pathname.startsWith('/api/study/')) {
-        send(res, 200, await studyAction(url.pathname.slice('/api/study/'.length), input, req.headers['x-clarity-language'] === 'zh' ? 'zh' : 'en')); return;
+        const action=url.pathname.slice('/api/study/'.length);const language=req.headers['x-clarity-language']==='zh'?'zh':'en';
+        send(res, 200, action==='open'?await openStudy(text(input.topicId,100),language):await studyAction(action,input,language)); return;
       }
       if (url.pathname === '/api/topic/progress') {
         send(res, 200, topicProgress(text(input.pathId, 40))); return;

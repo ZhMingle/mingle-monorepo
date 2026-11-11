@@ -10,6 +10,7 @@ import { aliasMatches, completedKinds, englishKeyword, publicStudy, studyKinds, 
 import type { BlankResult, StudyDraft, StudyKind, StudyPayload, StudySession } from '../shared/study.ts';
 import { learningOverview } from '../shared/learning-progress.ts';
 import { sessionList } from './store.ts';
+import { preparePresentation } from './presentation.ts';
 
 const str={type:'string'};const strings={type:'array',items:str};
 const object=(properties:Record<string,unknown>)=>({type:'object',additionalProperties:false,properties,required:Object.keys(properties)});
@@ -45,6 +46,13 @@ export function studyOverview(){
   const sessions=(db.prepare('SELECT payload FROM study_sessions').all() as {payload:string}[]).map(r=>JSON.parse(r.payload) as StudySession);
   return learningOverview(learningPaths,sessions,sessionList(true));
 }
+export async function openStudy(topicId:string,language:'en'|'zh',run:typeof runStructured=runStructured){
+  const payload=await studyAction('open',{topicId},language,run);
+  // Start before the browser has rendered this topic. The client also retries
+  // this idempotent request if a transient connection or AI failure occurs.
+  void studyAction('prefetch',{topicId},language,run).catch(()=>{});
+  return payload;
+}
 function draftFor(s:StudySession,input:Record<string,unknown>):StudyDraft {
   const raw=input.keywords;
   if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('Invalid keyword draft.');
@@ -62,7 +70,11 @@ export async function studyAction(action:string,input:Record<string,unknown>,lan
       topicId=next.id;
     }
     const existing=latestStudy(topicId);
-    if(existing)return action==='open'?publicStudy(existing):{session:null};
+    if(existing){
+      if(action==='open')return publicStudy(existing);
+      await preparePresentation(publicStudy(existing),language,run);
+      return {session:null};
+    }
     if(!preparedStudy(topicId)) {
       let work=preparing.get(topicId);
       if(!work){
@@ -73,7 +85,14 @@ export async function studyAction(action:string,input:Record<string,unknown>,lan
       }
       await work;
     }
-    if(action==='prefetch')return {session:null};
+    if(action==='prefetch'){
+      // Generation alone is insufficient: opening also waits for wording and
+      // translation, even when the lesson was generated in this language.
+      const ready=latestStudy(topicId)??preparedStudy(topicId);
+      if(!ready)throw new Error('The prepared exercise is unavailable. Please retry.');
+      await preparePresentation(publicStudy(ready),language,run);
+      return {session:null};
+    }
     // Another tab may have opened or generated this topic while we waited.
     const latest=latestStudy(topicId);if(latest)return publicStudy(latest);
     const prepared=preparedStudy(topicId);

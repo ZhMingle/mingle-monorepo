@@ -3,11 +3,19 @@ import assert from 'node:assert/strict';
 import { mkdtempSync,rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { present,presentationStrings,presentationIdentifiers } from '../shared/presentation.ts';
+import { present,presentationStrings,presentationIdentifiers,presentationBatches } from '../shared/presentation.ts';
 const scratch=mkdtempSync(join(tmpdir(),'clarity-translation-'));process.env.DATA_DIR=scratch;
 const {translatePresentation}=await import('../server/presentation.ts');
 const {db}=await import('../server/store.ts');
 after(()=>{db.close();rmSync(scratch,{recursive:true,force:true});});
+test('background and visible presentation requests share deterministic bounded batches',()=>{
+  assert.deepEqual(presentationBatches([]),[]);
+  const texts=Array.from({length:205},(_,i)=>'Question '+i);
+  const batches=presentationBatches(texts);
+  assert.deepEqual(batches.map(batch=>batch.length),[100,100,5]);
+  assert.deepEqual(batches.flat(),texts);
+  assert.deepEqual(presentationBatches(['a'.repeat(30000),'b'.repeat(30000),'c']),[['a'.repeat(30000)],['b'.repeat(30000),'c']]);
+});
 test('translation uses authored component names without reading learner code',()=>{
   const payload={session:{lesson:{coding:{starter:'export default function NameEditor() {}\nfunction save() {}'}},draft:{code:'function LearnerSecret() {}'},attempts:[{input:'function PrivateSubmission() {}'}]}};
   assert.deepEqual(presentationIdentifiers(payload),['NameEditor','save']);

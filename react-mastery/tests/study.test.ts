@@ -8,13 +8,16 @@ import type {StudyLesson,StudyPayload} from '../shared/study.ts';
 import { learningPaths } from '../shared/paths.ts';
 const scratch=mkdtempSync(join(tmpdir(),'clarity-study-test-'));process.env.DATA_DIR=scratch;
 const {db,exportData}=await import('../server/store.ts');
-const {studyAction,getStudy,saveStudy,studyProgress}=await import('../server/study.ts');
+const {studyAction,getStudy,saveStudy,studyProgress,openStudy}=await import('../server/study.ts');
+const {translatePresentation}=await import('../server/presentation.ts');
+const {presentationStrings,presentationIdentifiers,presentationBatches}=await import('../shared/presentation.ts');
 after(()=>{db.close();for(const name of ['learning.sqlite','learning.sqlite-wal','learning.sqlite-shm'])rmSync(join(scratch,name),{force:true});rmdirSync(scratch);});
 const lesson:StudyLesson={overview:'Repeat-safe updates can set a value without mutating the input.',example:'const done = {...item, done: true};',pitfall:'Incrementing is not the same as setting.',keywords:[
   {id:'k1',prompt:'Repeating a request has no further effect: it is ____.',answer:'idempotent',aliases:[],explanation:'Repeating it has the same effect as applying it once.'},
   {id:'k2',prompt:'Keep the original object unchanged; use an ____ update.',answer:'immutable',aliases:['immutability'],explanation:'Return a new object without changing the old one.'}
 ],choice:{scenario:'A counter starts at zero.',code:'n += 1;',question:'Is repeating this operation idempotent?',options:['Yes','No','Only on Tuesdays'],correct:1,explanation:'No: repeating increments changes the result.'},coding:{scenario:'Implement markDone(item).',language:'JavaScript',starter:'function markDone(item) { /* TODO */ }',requirements:['Return a new object with done true','Keep other fields and leave input unchanged'],reference:'function markDone(item) { return {...item, done: true}; }',rubric:['Copies the input','Sets done true without mutation'],cases:[{id:'c1',input:'{id: 1, done: false}',expected:'A new {id: 1, done: true}; original unchanged'},{id:'c2',input:'{id: 2, done: true}',expected:'A new {id: 2, done: true}; original unchanged'}],fixtures:{correct:'function markDone(item) { return {...item, done: true}; }',incorrect:'function markDone(item) { item.done = true; return item; }'}}};
 const generate=async<T>():Promise<T>=>structuredClone(lesson) as T;
+function translated<T>(prompt:string):T{return {translations:JSON.parse(prompt.slice(prompt.lastIndexOf('\n')+1))} as T;}
 async function create(topicId='typescript.inference'){return (await studyAction('new',{topicId},'en',generate) as StudyPayload).session.id;}
 async function legacyCreate(){const id=await create();const s=getStudy(id);s.version='mixed-practice-v1';s.current='keywords';s.lesson.keywords=structuredClone(lesson.keywords);saveStudy(s);return id;}
 const draft={keywords:{k1:'idempotency',k2:'immutability'},choice:1,code:lesson.coding.fixtures.correct};
@@ -143,7 +146,7 @@ test('prefetch persists the next exercise without learner progress and concurren
   let calls=0;let priority='';let release!:()=>void;
   const gate=new Promise<void>(resolve=>{release=resolve;});
   const delayed:typeof generate=async<T>():Promise<T>=>{calls++;await gate;return structuredClone(lesson) as T;};
-  const run:typeof import('../server/coach.ts').runStructured=(prompt,schema,kind)=>{priority=kind??'interactive';return delayed();};
+  const run:typeof import('../server/coach.ts').runStructured=(prompt,schema,kind)=>{priority=kind??'interactive';return prompt.startsWith('Translate each')?Promise.resolve(translated(prompt)):delayed();};
   const preparing=studyAction('prefetch',{topicId:current},'en',run);
   const duplicate=studyAction('prefetch',{topicId:current},'en',run);
   assert.equal(studyProgress(path.id).topics[next].started,false);
@@ -168,13 +171,77 @@ test('opening during prefetch joins the same job and failed preparation can retr
   db.prepare('DELETE FROM prepared_studies WHERE topic_id=?').run(next);
   await assert.rejects(studyAction('prefetch',{topicId:topics[0].id},'en',async()=>{throw Error('offline');}),/offline/);
   let calls=0;let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
-  const run=async<T>():Promise<T>=>{calls++;await gate;return structuredClone(lesson) as T;};
+  const run=async<T>(prompt:string):Promise<T>=>{if(prompt.startsWith('Translate each'))return translated(prompt);calls++;await gate;return structuredClone(lesson) as T;};
   const preparing=studyAction('prefetch',{topicId:topics[0].id},'en',run);
   const opening=studyAction('open',{topicId:next},'en',run);
   release();await preparing;
   assert.equal((await opening as StudyPayload).session.topicId,next);assert.equal(calls,1);
   await studyAction('prefetch',{topicId:topics.at(-1)!.id},'en',run);
   assert.equal(calls,1);
+});
+
+test('next-topic preparation includes the exact visible language cache without starting the topic',async()=>{
+  const topics=learningPaths.find(path=>path.id==='postgresql')!.stages.flatMap(stage=>stage.topics);
+  const current=topics[9].id,next=topics[10].id;
+  db.prepare('DELETE FROM study_sessions WHERE topic_id=?').run(next);
+  db.prepare('DELETE FROM prepared_studies WHERE topic_id=?').run(next);
+  db.prepare('DELETE FROM presentation_translations').run();
+  let generations=0,translations=0;
+  const priorities:string[]=[];
+  const run:typeof import('../server/coach.ts').runStructured=async<T>(prompt:string,_schema:unknown,priority?:'interactive'|'translation'|'background'):Promise<T>=>{
+    priorities.push(priority??'interactive');
+    if(prompt.startsWith('Translate each')){translations++;return translated(prompt);}
+    generations++;return structuredClone(lesson) as T;
+  };
+  await Promise.all([studyAction('prefetch',{topicId:current},'zh',run),studyAction('prefetch',{topicId:current},'zh',run)]);
+  assert.equal(generations,1);assert.equal(translations,1);
+  assert.ok(priorities.every(priority=>priority==='background'));
+  assert.equal(studyProgress('postgresql').topics[next].started,false);
+  const opened=await studyAction('open',{topicId:next},'zh',run) as StudyPayload;
+  const noAI=async<T>():Promise<T>=>{throw new Error('Opening a fully prepared topic must not call AI');};
+  for(const texts of presentationBatches(presentationStrings(opened))){
+    const cached=await translatePresentation({texts,language:'zh',identifiers:presentationIdentifiers(opened)},noAI);
+    assert.equal(Object.keys(cached).length,texts.length);
+  }
+  // A saved next topic still needs presentation prepared after a language switch.
+  await studyAction('prefetch',{topicId:current},'en',run);
+  assert.equal(generations,1);assert.equal(translations,2);
+  assert.equal((await studyAction('open',{topicId:next},'en',run) as StudyPayload).session.id,opened.session.id);
+});
+
+test('failed background wording retries without generating another lesson or losing the saved draft',async()=>{
+  const topics=learningPaths.find(path=>path.id==='python')!.stages.flatMap(stage=>stage.topics);
+  const current=topics[6].id,next=topics[7].id;
+  db.prepare('DELETE FROM study_sessions WHERE topic_id=?').run(next);
+  db.prepare('DELETE FROM prepared_studies WHERE topic_id=?').run(next);
+  db.prepare('DELETE FROM presentation_translations').run();
+  let generations=0,translations=0;
+  const run=async<T>(prompt:string):Promise<T>=>{
+    if(prompt.startsWith('Translate each')){if(++translations===1)throw Error('Temporary translation failure');return translated(prompt);}
+    generations++;return structuredClone(lesson) as T;
+  };
+  await assert.rejects(studyAction('prefetch',{topicId:current},'zh',run),/Temporary translation failure/);
+  assert.equal(studyProgress('python').topics[next].started,false);
+  await studyAction('prefetch',{topicId:current},'zh',run);
+  assert.equal(generations,1);assert.equal(translations,2);
+});
+
+test('opening a topic starts adjacent preparation before a browser prefetch request',async()=>{
+  const topics=learningPaths.find(path=>path.id==='java')!.stages.flatMap(stage=>stage.topics);
+  const current=topics[5].id,next=topics[6].id;
+  const currentId=await create(current);
+  db.prepare('DELETE FROM study_sessions WHERE topic_id=?').run(next);
+  db.prepare('DELETE FROM prepared_studies WHERE topic_id=?').run(next);
+  let generations=0;let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  const run=async<T>(prompt:string):Promise<T>=>{
+    if(prompt.startsWith('Translate each'))return translated(prompt);
+    generations++;await gate;return structuredClone(lesson) as T;
+  };
+  const opened=await openStudy(current,'zh',run) as StudyPayload;
+  assert.equal(opened.session.id,currentId);assert.equal(generations,1);
+  assert.equal(studyProgress('java').topics[next].started,false);
+  release();await studyAction('prefetch',{topicId:current},'zh',run);
+  assert.equal(generations,1);
 });
 test('task rules can be split into up to eight separate requirements',()=>{
   const expanded=structuredClone(lesson);

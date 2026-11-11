@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
-import { presentationStrings,presentationIdentifiers, present } from '../shared/presentation.ts';
+import { presentationStrings,presentationIdentifiers,presentationBatches, present } from '../shared/presentation.ts';
 import { request } from './api.ts';
 
 const cache=new Map<string,Record<string,string>>();
 const pending=new Map<string,Promise<Record<string,string>>>();
 async function translate(texts:string[],language:'en'|'zh',identifiers:string[]){
-  const result:Record<string,string>={};let batch:string[]=[];let size=0;
-  async function flush(){if(batch.length)Object.assign(result,await request<Record<string,string>>('presentation',{texts:batch,language,identifiers}));batch=[];size=0;}
-  for(const text of texts){const length=JSON.stringify(text).length;if(size+length>60000||batch.length>=100)await flush();batch.push(text);size+=length;}
-  await flush();return result;
+  const result:Record<string,string>={};
+  for(const batch of presentationBatches(texts))Object.assign(result,await request<Record<string,string>>('presentation',{texts:batch,language,identifiers}));
+  return result;
 }
 export function usePresentation<T>(payload:T|null,language:'en'|'zh'){
   const texts=presentationStrings(payload);

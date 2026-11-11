@@ -1,3 +1,9 @@
+## 2026-11-12 — Prepare complete next topics
+
+- Prepare the next topic's lesson and selected-language presentation together; cached lessons no longer wait for a separate wording/translation AI call on first display.
+- Start adjacent preparation when opening a topic, reuse concurrent jobs and persisted translations, and retry transient background failures without marking the next topic started.
+- Reuse saved exercises and drafts when preparing another display language.
+
 ## 2026-10-27 — Node.js learning path
 
 - Add 12 bilingual Node.js topics across foundations, practice, and advanced service engineering, with official references and phase projects.
