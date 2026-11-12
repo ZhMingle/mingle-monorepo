@@ -4,7 +4,7 @@ import {request} from './api.ts';
 import {useLanguage} from './language.tsx';
 import type {EnglishCard} from '../shared/english.ts';
 import {englishBatchInput} from '../shared/english.ts';
-import {englishVoices} from './english-speech.ts';
+import {englishVoices,createEnglishSpeaker} from './english-speech.ts';
 import './english-notebook.css';
 
 export default function EnglishNotebook(){
@@ -28,11 +28,14 @@ export default function EnglishNotebook(){
   const [voices,setVoices]=useState<SpeechSynthesisVoice[]>([]);
   const [voiceURI,setVoiceURI]=useState(()=>{try{return localStorage.getItem('clarity.englishVoice')||'';}catch{return '';}});
   const [speechRate,setSpeechRate]=useState(1);
+  const [speechState,setSpeechState]=useState<'loading'|'speaking'|'idle'|'error'>('idle');
+  const [speechError,setSpeechError]=useState('');
+  const speaker=useRef<ReturnType<typeof createEnglishSpeaker>|null>(null);
   useEffect(()=>{
     if(!('speechSynthesis' in window))return;
     const update=()=>setVoices(englishVoices(window.speechSynthesis.getVoices()));
     update();window.speechSynthesis.addEventListener('voiceschanged',update);
-    return()=>window.speechSynthesis.removeEventListener('voiceschanged',update);
+    return()=>{window.speechSynthesis.removeEventListener('voiceschanged',update);speaker.current?.stop();speaker.current=null;};
   },[]);
   async function load(){
     setLoading(true);setError('');
@@ -76,11 +79,9 @@ export default function EnglishNotebook(){
     catch(e){setError((e as Error).message);}finally{setEditing(false);}
   }
   function speak(value:string){
-    if(!('speechSynthesis' in window))return;
-    window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(value);
-    const voice=voices.find(voice=>voice.voiceURI===voiceURI)||voices[0];
-    if(voice)utterance.voice=voice;
-    utterance.lang=voice?.lang||'en-US';utterance.rate=speechRate;window.speechSynthesis.speak(utterance);
+    if(!('speechSynthesis' in window)){setSpeechState('error');setSpeechError('unsupported');return;}
+    speaker.current??=createEnglishSpeaker(window.speechSynthesis,value=>new SpeechSynthesisUtterance(value),(state,error)=>{setSpeechState(state);setSpeechError(error||'');});
+    speaker.current.speak(value,voiceURI,speechRate);
   }
   return <div className="english-notebook">
     <div className="page-heading"><div><span className="eyebrow">A LITTLE ENGLISH, EVERY DAY</span><h1>{text('把遇到的英语，变成自己的。','Make everyday English your own.')}<span className="heading-dot">.</span></h1><p>{text('查一个词，记住一种用法。AI 帮你整理，你只管慢慢积累。','Look up a word or expression. Keep a small, useful note for next time.')}</p></div><a className="secondary" href="/api/english/export"><ArrowDownToLine size={16}/>{text('导出卡片','Export cards')}</a></div>
@@ -100,6 +101,8 @@ export default function EnglishNotebook(){
     {notice&&<p className="english-status" role="status"><Check size={16}/>{notice}</p>}
     <div className="english-library-heading"><h2><BookOpen size={20}/>{text('我的英语积累','My English notebook')}</h2><span>{text('少一点堆砌，多一点会用。','Small notes. Useful English.')}</span></div>
     {'speechSynthesis' in window&&<div className="english-voice-settings"><label>{text('朗读声音','Reading voice')} <select value={voices.some(voice=>voice.voiceURI===voiceURI)?voiceURI:''} onChange={e=>{setVoiceURI(e.target.value);try{localStorage.setItem('clarity.englishVoice',e.target.value);}catch{}}}><option value="">{text('自动选择（优先自然声音）','Automatic (prefer natural voices)')}</option>{voices.map(voice=><option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} · {voice.lang}</option>)}</select></label><label>{text('语速','Speed')} <select value={speechRate} onChange={e=>setSpeechRate(Number(e.target.value))}><option value={.85}>{text('稍慢','Slower')}</option><option value={1}>{text('正常','Normal')}</option><option value={1.1}>{text('稍快','Faster')}</option></select></label><button onClick={()=>speak('Could you give me a hand?')}>{text('试听声音','Preview voice')}</button><small>{text('声音由当前浏览器提供，单词和例句使用同一个设置。','Voices are provided by this browser. Words and examples share these settings.')}</small></div>}
+      {speechState==='error'&&<p role="alert">{text('朗读未能播放，请尝试选择其他声音，并检查浏览器标签页是否静音。','Speech could not play. Try another voice and check whether this tab is muted.')} ({speechError})</p>}
+      {(speechState==='loading'||speechState==='speaking')&&<p role="status">{speechState==='loading'?text('正在启动朗读…','Starting speech…'):text('正在朗读…','Speaking…')}</p>}
     <div className="english-library">
       <aside className="english-card-list" aria-label={text('已保存的英语卡片','Saved English cards')}>
         <label className="english-filter"><Search size={16}/><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder={text('搜索已存的卡片','Search saved cards')} aria-label={text('搜索已存的卡片','Search saved cards')}/></label>

@@ -123,3 +123,5 @@
 - Fix the batch textarea's nested focus border and spacing, keeping one accessible outer focus ring.
 
 - Simplify the English batch input placeholder, move generation below the textarea, and add an accessible clear-input icon that returns focus to the field.
+
+- Retain speech utterances through playback, separate cancellation from enqueueing, resume the engine and fall back once to its default voice on failure/start timeout. Show playback state and errors for words and examples.
