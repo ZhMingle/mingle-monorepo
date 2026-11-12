@@ -1,5 +1,5 @@
 import {useEffect,useState,useRef} from 'react';
-import {ArrowDownToLine,ArrowUpRight,BookOpen,Check,Headphones,LoaderCircle,Search,Sparkles,Star,Trash2} from 'lucide-react';
+import {ArrowDownToLine,ArrowUpRight,BookOpen,Check,Headphones,LoaderCircle,Search,Sparkles,Star,Trash2,X} from 'lucide-react';
 import {request} from './api.ts';
 import {useLanguage} from './language.tsx';
 import type {EnglishCard} from '../shared/english.ts';
@@ -20,6 +20,7 @@ export default function EnglishNotebook(){
   const [loading,setLoading]=useState(true);
   const [working,setWorking]=useState(false);
   const running=useRef(false);
+  const queryInput=useRef<HTMLTextAreaElement>(null);
   const [batch,setBatch]=useState<{query:string;context:string;status:'pending'|'working'|'done'|'failed';error?:string}[]>([]);
   const [editing,setEditing]=useState(false);
   const [error,setError]=useState('');
@@ -87,8 +88,9 @@ export default function EnglishNotebook(){
       <span className="english-kicker"><Sparkles size={15}/>{text('今天遇到了什么？','What did you come across today?')}</span>
       <h2 id="english-search-title">{text('一次输入多个词，分别生成卡片。','Add several words or phrases, one card for each.')}</h2>
       <form onSubmit={e=>{e.preventDefault();void lookup();}}>
-        <div className="english-query"><Search size={21}/><textarea aria-label={text('批量输入单词或表达','Enter words or phrases')} maxLength={10000} rows={4} disabled={working} value={query} onChange={e=>setQuery(e.target.value)} placeholder={'stem; trunk; take in; root\ncatalyst; manifest; pervasive'} required/><button className="dark-button" disabled={loading||working||!query.trim()}>{working?<LoaderCircle className="spin" size={17}/>:<Sparkles size={17}/>} {working?text('正在生成…','Generating…'):text('生成并保存卡片','Generate & save cards')}</button></div>
+        <div className="english-query"><textarea ref={queryInput} aria-label={text('批量输入单词或表达','Enter words or phrases')} maxLength={10000} rows={3} disabled={working} value={query} onChange={e=>setQuery(e.target.value)} placeholder={text('在这里输入单词或短语…','Enter words or phrases here…')} required/>{query&&<button type="button" className="english-clear" disabled={working} aria-label={text('清空输入','Clear input')} title={text('清空输入','Clear input')} onClick={()=>{setQuery('');setError('');setNotice('');queryInput.current?.focus();}}><X size={18}/></button>}</div>
         <p>{text('每行一个，或用分号分隔；短语中的空格会保留。一次最多 50 项，重复项自动合并。','One per line, or separate with semicolons. Spaces inside phrases are kept. Up to 50 unique items.')}</p>
+        <div className="english-query-actions"><button type="submit" className="dark-button" disabled={loading||working||!query.trim()}>{working?<LoaderCircle className="spin" size={17}/>:<Sparkles size={17}/>} {working?text('正在生成…','Generating…'):text('生成并保存卡片','Generate & save cards')}</button></div>
         <details className="english-context"><summary>{text('有原句？补充语境会更准确','Have a sentence? Add context for a better explanation')}</summary><label>{text('它出现在哪句话里？（选填）','Where did you see it? (optional)')}<textarea value={context} onChange={e=>setContext(e.target.value)} maxLength={500} rows={2} placeholder="I’m down for coffee after work."/></label></details>
       </form>
       <div className="english-search-foot"><span>{text('英文或中文都能查 · 自动保存 · 再查直接打开','English or Chinese · Automatically saved · Reuse saved cards')}</span><span><strong>{todayCount}</strong> {text('张今日新卡片','new today')}<i/> <strong>{cards.length}</strong> {text('张积累','in your notebook')}</span></div>

@@ -121,3 +121,5 @@
 
 - Reuse English cards by normalized query or title before generation. Backfill stable, non-recycled card numbers. Prefer natural English browser voices, with a shared voice picker and normal-speed playback for words and examples.
 - Fix the batch textarea's nested focus border and spacing, keeping one accessible outer focus ring.
+
+- Simplify the English batch input placeholder, move generation below the textarea, and add an accessible clear-input icon that returns focus to the field.
