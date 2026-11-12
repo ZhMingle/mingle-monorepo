@@ -1,14 +1,9 @@
 import { useEffect, useState } from 'react';
-import { presentationStrings,presentationIdentifiers,presentationBatches, present } from '../shared/presentation.ts';
+import { presentationStrings,presentationIdentifiers, present } from '../shared/presentation.ts';
 import { request } from './api.ts';
+import {PresentationCache} from './presentation-cache.ts';
 
-const cache=new Map<string,Record<string,string>>();
-const pending=new Map<string,Promise<Record<string,string>>>();
-async function translate(texts:string[],language:'en'|'zh',identifiers:string[]){
-  const result:Record<string,string>={};
-  for(const batch of presentationBatches(texts))Object.assign(result,await request<Record<string,string>>('presentation',{texts:batch,language,identifiers}));
-  return result;
-}
+const presentations=new PresentationCache((texts,language,identifiers,background)=>request<Record<string,string>>('presentation',{texts,language,identifiers,background}));
 export function usePresentation<T>(payload:T|null,language:'en'|'zh'){
   const texts=presentationStrings(payload);
   const identifiers=presentationIdentifiers(payload);
@@ -19,14 +14,15 @@ export function usePresentation<T>(payload:T|null,language:'en'|'zh'){
   const [,refresh]=useState(0);const [failure,setFailure]=useState<{key:string;message:string}|null>(null);
   const [retry,setRetry]=useState(0);
   useEffect(()=>{
-    if(!payload||!texts.length||cache.has(key))return;
+    if(!payload||!texts.length)return;
     let current=true;
-    let task=pending.get(key);
-    if(!task){task=translate(texts,language,identifiers);pending.set(key,task);void task.finally(()=>pending.delete(key)).catch(()=>{});}
-    void task.then(result=>{cache.set(key,result);if(current){setFailure(null);refresh(v=>v+1);}}).catch(e=>{if(current)setFailure({key,message:e.message});});
-    return()=>{current=false;};
+    void presentations.prepare(payload,language).then(()=>{if(current){setFailure(null);refresh(v=>v+1);}}).catch(e=>{if(current)setFailure({key,message:e.message});});
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    async function warm(attempt=0){try{await presentations.prepare(payload,language==='zh'?'en':'zh',true);}catch{if(current&&attempt<2)timer=setTimeout(()=>void warm(attempt+1),5000*(attempt+1));}}
+    void warm();
+    return()=>{current=false;if(timer)clearTimeout(timer);};
   },[key,retry]);
-  const translations=cache.get(key);
+  const translations=presentations.get(payload,language);
   const translating=!!payload&&texts.length>0&&!translations&&failure?.key!==key;
   const switchingLanguage=translating&&(languageChange.language!==language||languageChange.key===key);
   return {view:payload&&translations?present(payload,translations):payload,translating,switchingLanguage,translationError:failure?.key===key?failure.message:'',retryTranslation:()=>{setFailure(null);setRetry(v=>v+1);}};

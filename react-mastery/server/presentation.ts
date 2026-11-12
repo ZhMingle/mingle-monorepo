@@ -10,10 +10,12 @@ export async function preparePresentation(payload:unknown,language:'en'|'zh',run
   const identifiers=presentationIdentifiers(payload);
   // Keep speculative work below visible translations and learner actions.
   const background:typeof runStructured=(prompt,schema)=>run(prompt,schema,'background');
-  for(const texts of presentationBatches(presentationStrings(payload)))await translatePresentation({texts,language,identifiers},background);
+  for(const target of [language,language==='zh'?'en':'zh'] as const)
+    for(const texts of presentationBatches(presentationStrings(payload)))await translatePresentation({texts,language:target,identifiers},background);
 }
 export async function translatePresentation(input:Record<string,unknown>,run:typeof runStructured=runStructured):Promise<Record<string,string>>{
   const {texts,language}=input;
+  if(input.background===true){const original=run;run=(prompt,schema)=>original(prompt,schema,'background');}
   const identifiers=input.identifiers??[];
   if(!Array.isArray(identifiers)||identifiers.length>20||identifiers.some(name=>typeof name!=='string'||! /^[A-Za-z_$][\w$]{0,99}$/.test(name)))throw new Error('Invalid code identifiers.');
   if(!Array.isArray(texts)||texts.length>600||texts.some(t=>typeof t!=='string'||t.length>20000)||!['en','zh'].includes(String(language))||JSON.stringify(texts).length>85000)throw new Error('Invalid translation request.');

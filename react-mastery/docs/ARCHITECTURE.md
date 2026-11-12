@@ -54,3 +54,5 @@ Add identity and per-user authorization, account data isolation, a managed secre
 3. Add a real delayed-review browser test using a controlled test clock and disposable database.
 4. Improve editor diagnostics and provide a visible isolated preview alongside behavior checks.
 5. Add advanced hooks/effect lessons and a project-level capstone with explicit acceptance tests.
+
+PresentationCache preloads both languages into browser memory and deduplicates requests. Next-topic server preparation warms both durable language caches; speculative presentation requests use background priority.

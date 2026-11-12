@@ -194,13 +194,13 @@ test('next-topic preparation includes the exact visible language cache without s
     generations++;return structuredClone(lesson) as T;
   };
   await Promise.all([studyAction('prefetch',{topicId:current},'zh',run),studyAction('prefetch',{topicId:current},'zh',run)]);
-  assert.equal(generations,1);assert.equal(translations,1);
+  assert.equal(generations,1);assert.equal(translations,2);
   assert.ok(priorities.every(priority=>priority==='background'));
   assert.equal(studyProgress('postgresql').topics[next].started,false);
   const opened=await studyAction('open',{topicId:next},'zh',run) as StudyPayload;
   const noAI=async<T>():Promise<T>=>{throw new Error('Opening a fully prepared topic must not call AI');};
-  for(const texts of presentationBatches(presentationStrings(opened))){
-    const cached=await translatePresentation({texts,language:'zh',identifiers:presentationIdentifiers(opened)},noAI);
+  for(const language of ['zh','en'])for(const texts of presentationBatches(presentationStrings(opened))){
+    const cached=await translatePresentation({texts,language,identifiers:presentationIdentifiers(opened)},noAI);
     assert.equal(Object.keys(cached).length,texts.length);
   }
   // A saved next topic still needs presentation prepared after a language switch.
@@ -223,7 +223,7 @@ test('failed background wording retries without generating another lesson or los
   await assert.rejects(studyAction('prefetch',{topicId:current},'zh',run),/Temporary translation failure/);
   assert.equal(studyProgress('python').topics[next].started,false);
   await studyAction('prefetch',{topicId:current},'zh',run);
-  assert.equal(generations,1);assert.equal(translations,2);
+  assert.equal(generations,1);assert.equal(translations,3);
 });
 
 test('opening a topic starts adjacent preparation before a browser prefetch request',async()=>{

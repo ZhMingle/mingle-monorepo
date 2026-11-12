@@ -114,3 +114,5 @@
 - Label study guides separately from assessed labs; reading does not change mastery.
 
 - Add independent ASP.NET Core and EF Core paths with 48 bilingual topics, staged projects, official references, C# editor support and explicit AI exercise assumptions. Preserve C#/.NET topic IDs and bump catalog version.
+
+- Prepare and cache both display languages for current and upcoming lessons; language toggles reuse browser memory without another request. Background failures retry without changing drafts.
