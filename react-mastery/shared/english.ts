@@ -10,6 +10,16 @@ export type EnglishPoint={
 };
 export type EnglishCard=EnglishPoint&{id:string;query:string;context:string;createdAt:string;favorite:boolean};
 
+export function englishBatchInput(value:string,context=''){
+  if(value.length>10000)throw new Error('一次输入最多 10000 个字符。');
+  const queries=value.split(/[\n;；]+/).map(query=>query.trim()).filter(Boolean);
+  if(!queries.length)throw new Error('请输入单词或表达，每行一个，或用分号分隔。');
+  const unique=new Map<string,ReturnType<typeof englishInput>>();
+  for(const query of queries){const item=englishInput({query,context});unique.set(item.key,item);}
+  if(unique.size>50)throw new Error('一次最多生成 50 张卡片，请分批输入。');
+  return [...unique.values()];
+}
+
 export function englishInput(input:Record<string,unknown>){
   if(typeof input.query!=='string'||!input.query.trim()||input.query.length>160)throw new Error('请输入 1–160 个字符的单词或表达。');
   if(input.context!==undefined&&(typeof input.context!=='string'||input.context.length>500))throw new Error('语境最多 500 个字符。');

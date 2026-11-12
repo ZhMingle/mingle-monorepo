@@ -3,11 +3,28 @@ import assert from 'node:assert/strict';
 import {mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {englishInput,validateEnglishPoint} from '../shared/english.ts';
+import {englishInput,englishBatchInput,validateEnglishPoint} from '../shared/english.ts';
 const scratch=mkdtempSync(join(tmpdir(),'clarity-english-'));
 process.env.DATA_DIR=scratch;
 const {lookupEnglish,englishCards,updateEnglishCard,deleteEnglishCard}=await import('../server/english.ts');
 const {db}=await import('../server/store.ts');
+
+test('batch inputs preserve phrases, normalize duplicates, and validate everything before generation',()=>{
+  assert.deepEqual(englishBatchInput('stem; trunk； take in\nroot\nSTEM; inherently').map(item=>item.query),['STEM','trunk','take in','root','inherently']);
+  assert.equal(englishBatchInput('significantly vs very huge')[0].query,'significantly vs very huge');
+  for(const value of ['', 'x'.repeat(161),Array.from({length:51},(_,i)=>'word'+i).join(';')])assert.throws(()=>englishBatchInput(value));
+  assert.equal(englishBatchInput('take in; root','shared sentence')[1].context,'shared sentence');
+});
+test('batch members save independently, failed items retry and successes reuse saved cards',async()=>{
+  const items=englishBatchInput('batch-stem; batch-failure; batch-root');
+  let calls=0;
+  for(const item of items){try{await lookupEnglish(item,async<T>()=>{calls++;if(item.query==='batch-failure')throw Error('offline');return structuredClone(point) as T;});}catch{}}
+  assert.equal(calls,3);
+  assert.ok(englishCards().some(card=>card.query==='batch-root'));
+  assert.ok(!englishCards().some(card=>card.query==='batch-failure'));
+  await lookupEnglish(items[1],async<T>()=>structuredClone(point) as T);
+  await lookupEnglish(items[0],async()=>{throw Error('Saved success must not regenerate');});
+});
 after(()=>{db.close();rmSync(scratch,{recursive:true,force:true});});
 const point={term:'figure out',kind:'expression',pronunciation:'',meaning:'想明白，弄清楚。',usage:'遇到问题、还在找答案时可以用。',examples:[{english:'I figured out how to fix it.',chinese:'我弄清楚怎么修好了。'},{english:'Let’s figure out where to eat.',chinese:'我们想想去哪儿吃。'}],pitfall:'figure out 强调想出答案，不只是知道一件事。',related:[{term:'work out',meaning:'想出办法'}]};
 test('lookup deduplicates simultaneous requests and persists reusable cards without calling AI again',async()=>{

@@ -1,8 +1,9 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useState,useRef} from 'react';
 import {ArrowDownToLine,ArrowUpRight,BookOpen,Check,Headphones,LoaderCircle,Search,Sparkles,Star,Trash2} from 'lucide-react';
 import {request} from './api.ts';
 import {useLanguage} from './language.tsx';
 import type {EnglishCard} from '../shared/english.ts';
+import {englishBatchInput} from '../shared/english.ts';
 import './english-notebook.css';
 
 export default function EnglishNotebook(){
@@ -17,6 +18,8 @@ export default function EnglishNotebook(){
   const [tab,setTab]=useState<'all'|'word'|'expression'|'favorite'>('all');
   const [loading,setLoading]=useState(true);
   const [working,setWorking]=useState(false);
+  const running=useRef(false);
+  const [batch,setBatch]=useState<{query:string;context:string;status:'pending'|'working'|'done'|'failed';error?:string}[]>([]);
   const [editing,setEditing]=useState(false);
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
@@ -30,14 +33,25 @@ export default function EnglishNotebook(){
   const visible=cards.filter(c=>(tab==='all'||(tab==='favorite'?c.favorite:c.kind===tab))&&[c.term,c.query,c.meaning,c.usage,c.context,...c.examples.flatMap(e=>[e.english,e.chinese])].join(' ').toLocaleLowerCase().includes(filter.toLocaleLowerCase().trim()));
   const today=new Date().toDateString();
   const todayCount=cards.filter(c=>new Date(c.createdAt).toDateString()===today).length;
-  async function lookup(value=query,lookupContext=context){
-    if(loading||working||!value.trim())return;
-    setQuery(value);setWorking(true);setError('');setNotice('');
+  async function lookup(value=query,lookupContext=context,retry=false){
+    if(loading||running.current||!value.trim())return;
+    let items:ReturnType<typeof englishBatchInput>;
+    try{items=englishBatchInput(value,lookupContext);}catch(e){setError((e as Error).message);return;}
+    running.current=true;setWorking(true);setError('');setNotice('');
+    if(retry)setBatch(old=>old.map(item=>item.query===items[0].query?{...item,status:'pending',error:undefined}:item));
+    else{setQuery(value);setBatch(items.map(item=>({...item,status:'pending'})));}
+    let completed=0;
     try{
-      const {card,cached}=await request<{card:EnglishCard;cached:boolean}>('english/lookup',{query:value,context:lookupContext});
-      setCards(old=>[card,...old.filter(c=>c.id!==card.id)]);setSelected(card.id);
-      setNotice(cached?text('已打开之前整理的卡片。','Opened your saved card.'):text('已整理并保存到你的卡片库。','Organized and saved to your notebook.'));
-    }catch(e){setError((e as Error).message);}finally{setWorking(false);}
+      for(const item of items){
+        const update=(status:'working'|'done'|'failed',error?:string)=>setBatch(old=>old.map(row=>row.query===item.query?{...row,status,error}:row));
+        update('working');
+        try{
+          const {card}=await request<{card:EnglishCard;cached:boolean}>('english/lookup',{query:item.query,context:item.context});
+          setCards(old=>[card,...old.filter(c=>c.id!==card.id)]);setSelected(card.id);completed++;update('done');
+        }catch(e){update('failed',(e as Error).message);}
+      }
+      setNotice(text(`已保存／打开 ${completed} 张卡片，失败项可单独重试。`,`Saved or opened ${completed} cards. Failed items can be retried individually.`));
+    }finally{running.current=false;setWorking(false);}
   }
   async function favorite(card:EnglishCard){
     setEditing(true);setError('');
@@ -58,14 +72,15 @@ export default function EnglishNotebook(){
     <div className="page-heading"><div><span className="eyebrow">A LITTLE ENGLISH, EVERY DAY</span><h1>{text('把遇到的英语，变成自己的。','Make everyday English your own.')}<span className="heading-dot">.</span></h1><p>{text('查一个词，记住一种用法。AI 帮你整理，你只管慢慢积累。','Look up a word or expression. Keep a small, useful note for next time.')}</p></div><a className="secondary" href="/api/english/export"><ArrowDownToLine size={16}/>{text('导出卡片','Export cards')}</a></div>
     <section className="english-search-panel" aria-labelledby="english-search-title">
       <span className="english-kicker"><Sparkles size={15}/>{text('今天遇到了什么？','What did you come across today?')}</span>
-      <h2 id="english-search-title">{text('一个单词，一句表达，都可以。','A word, a phrase, or something you want to say.')}</h2>
+      <h2 id="english-search-title">{text('一次输入多个词，分别生成卡片。','Add several words or phrases, one card for each.')}</h2>
       <form onSubmit={e=>{e.preventDefault();void lookup();}}>
-        <label className="english-query"><Search size={21}/><input aria-label={text('查单词或表达','Look up a word or expression')} maxLength={160} value={query} onChange={e=>setQuery(e.target.value)} placeholder={text('例如：figure out / I’m down / 辛苦了','Try: figure out / I’m down / 辛苦了')} required/><button className="dark-button" disabled={working||!query.trim()}>{working?<LoaderCircle className="spin" size={17}/>:<Sparkles size={17}/>} {working?text('正在整理…','Organizing…'):text('查一查，存下来','Look up & save')}</button></label>
+        <label className="english-query"><Search size={21}/><textarea aria-label={text('批量输入单词或表达','Enter words or phrases')} maxLength={10000} rows={4} disabled={working} value={query} onChange={e=>setQuery(e.target.value)} placeholder={'stem; trunk; take in; root\ncatalyst; manifest; pervasive'} required/><button className="dark-button" disabled={loading||working||!query.trim()}>{working?<LoaderCircle className="spin" size={17}/>:<Sparkles size={17}/>} {working?text('正在生成…','Generating…'):text('生成并保存卡片','Generate & save cards')}</button></label>
+        <p>{text('每行一个，或用分号分隔；短语中的空格会保留。一次最多 50 项，重复项自动合并。','One per line, or separate with semicolons. Spaces inside phrases are kept. Up to 50 unique items.')}</p>
         <details className="english-context"><summary>{text('有原句？补充语境会更准确','Have a sentence? Add context for a better explanation')}</summary><label>{text('它出现在哪句话里？（选填）','Where did you see it? (optional)')}<textarea value={context} onChange={e=>setContext(e.target.value)} maxLength={500} rows={2} placeholder="I’m down for coffee after work."/></label></details>
       </form>
       <div className="english-search-foot"><span>{text('英文或中文都能查 · 自动保存 · 再查直接打开','English or Chinese · Automatically saved · Reuse saved cards')}</span><span><strong>{todayCount}</strong> {text('张今日新卡片','new today')}<i/> <strong>{cards.length}</strong> {text('张积累','in your notebook')}</span></div>
     </section>
-    {working&&<p className="english-status" role="status"><LoaderCircle className="spin" size={16}/>{text('AI 正在整理意思和例句，通常需要几十秒。','AI is preparing the meaning and examples. This may take a little while.')}</p>}
+    {batch.length>0&&<section className="english-batch" aria-label={text('生成进度','Generation progress')}><p role="status">{text('生成进度','Progress')}：{batch.filter(item=>item.status==='done'||item.status==='failed').length}/{batch.length} · {text('已保存／打开','Saved or opened')} {batch.filter(item=>item.status==='done').length}</p><ul>{batch.map(item=><li key={item.query}><strong>{item.query}</strong><span>{({pending:text('等待生成','Queued'),working:text('正在生成…','Generating…'),done:text('已保存／打开','Saved or opened'),failed:text('生成失败','Failed')})[item.status]}</span>{item.error&&<span role="alert">{item.error}</span>}{item.status==='failed'&&<button disabled={working} onClick={()=>void lookup(item.query,item.context,true)}>{text('重试此项','Retry this item')}</button>}</li>)}</ul></section>}
     {error&&<div className="error-banner" role="alert"><span>{error}</span>{loading?null:<button onClick={()=>void load()}>{text('刷新卡片库','Reload notebook')}</button>}</div>}
     {notice&&<p className="english-status" role="status"><Check size={16}/>{notice}</p>}
     <div className="english-library-heading"><h2><BookOpen size={20}/>{text('我的英语积累','My English notebook')}</h2><span>{text('少一点堆砌，多一点会用。','Small notes. Useful English.')}</span></div>
