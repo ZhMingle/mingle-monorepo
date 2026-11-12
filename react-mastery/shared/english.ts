@@ -8,7 +8,8 @@ export type EnglishPoint={
   pitfall:string;
   related:{term:string;meaning:string}[];
 };
-export type EnglishCard=EnglishPoint&{id:string;query:string;context:string;createdAt:string;favorite:boolean};
+export type EnglishCard=EnglishPoint&{id:string;number:number;query:string;context:string;createdAt:string;favorite:boolean};
+export const englishTermKey=(term:string)=>term.normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
 
 export function englishBatchInput(value:string,context=''){
   if(value.length>10000)throw new Error('一次输入最多 10000 个字符。');

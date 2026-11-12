@@ -18,11 +18,11 @@ test('batch inputs preserve phrases, normalize duplicates, and validate everythi
 test('batch members save independently, failed items retry and successes reuse saved cards',async()=>{
   const items=englishBatchInput('batch-stem; batch-failure; batch-root');
   let calls=0;
-  for(const item of items){try{await lookupEnglish(item,async<T>()=>{calls++;if(item.query==='batch-failure')throw Error('offline');return structuredClone(point) as T;});}catch{}}
+  for(const item of items){try{await lookupEnglish(item,async<T>()=>{calls++;if(item.query==='batch-failure')throw Error('offline');return {...structuredClone(point),term:item.query} as T;});}catch{}}
   assert.equal(calls,3);
   assert.ok(englishCards().some(card=>card.query==='batch-root'));
   assert.ok(!englishCards().some(card=>card.query==='batch-failure'));
-  await lookupEnglish(items[1],async<T>()=>structuredClone(point) as T);
+  await lookupEnglish(items[1],async<T>()=>({...structuredClone(point),term:items[1].query}) as T);
   await lookupEnglish(items[0],async()=>{throw Error('Saved success must not regenerate');});
 });
 after(()=>{db.close();rmSync(scratch,{recursive:true,force:true});});
@@ -35,7 +35,7 @@ test('lookup deduplicates simultaneous requests and persists reusable cards with
   assert.equal(cached.cached,true);assert.equal(calls,1);
   assert.equal(englishCards().find(c=>c.id===a.card.id)?.meaning,point.meaning);
   const contextual=await lookupEnglish({query:'figure out',context:'Can you figure out the total?'},run);
-  assert.notEqual(contextual.card.id,a.card.id);assert.equal(calls,2);
+  assert.equal(contextual.card.id,a.card.id);assert.equal(calls,1);
   const starred=updateEnglishCard({id:a.card.id,favorite:true});
   assert.equal(starred.favorite,true);assert.equal((await lookupEnglish({query:'figure out'},run)).card.favorite,true);
   assert.equal(starred.meaning,point.meaning);
@@ -49,8 +49,21 @@ test('invalid inputs and AI responses never create saved cards; failed requests 
   assert.equal(englishCards().length,count);
   await assert.rejects(lookupEnglish({query:'network-retry'},async()=>{throw new Error('Connection failed');}),/Connection failed/);
   assert.equal(englishCards().length,count);
-  await lookupEnglish({query:'network-retry'},async<T>()=>structuredClone(point) as T);
+  await lookupEnglish({query:'network-retry'},async<T>()=>({...structuredClone(point),term:'network-retry'}) as T);
   assert.equal(englishCards().length,count+1);
   assert.throws(()=>updateEnglishCard({id:'missing',favorite:true}),/不存在/);
   assert.throws(()=>updateEnglishCard({id:'missing',favorite:'yes'}),/无效/);
+});
+test('canonical titles reuse existing cards before AI; stable numbers are unique and never reused',async()=>{
+  const first=await lookupEnglish({query:'number-test-a'},async<T>()=>({...structuredClone(point),term:'Number Alpha'}) as T);
+  assert.ok(Number.isInteger(first.card.number));
+  const reused=await lookupEnglish({query:'  NUMBER   ALPHA ',context:'different context'},async()=>{throw Error('Must reuse existing title before AI');});
+  assert.equal(reused.card.id,first.card.id);assert.equal(reused.card.number,first.card.number);
+  const second=await lookupEnglish({query:'number-test-b'},async<T>()=>({...structuredClone(point),term:'Number Beta'}) as T);
+  assert.ok(second.card.number>first.card.number);
+  deleteEnglishCard({id:second.card.id});
+  const third=await lookupEnglish({query:'number-test-c'},async<T>()=>({...structuredClone(point),term:'Number Gamma'}) as T);
+  assert.ok(third.card.number>second.card.number);
+  assert.equal(updateEnglishCard({id:first.card.id,favorite:true}).number,first.card.number);
+  assert.equal(englishCards().find(card=>card.id===first.card.id)?.number,first.card.number);
 });

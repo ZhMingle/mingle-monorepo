@@ -118,3 +118,6 @@
 - Prepare and cache both display languages for current and upcoming lessons; language toggles reuse browser memory without another request. Background failures retry without changing drafts.
 
 - English notebook accepts up to 50 unique words/phrases per batch, separated by newlines or semicolons. Each card saves independently with progress, saved-card reuse and per-item retry.
+
+- Reuse English cards by normalized query or title before generation. Backfill stable, non-recycled card numbers. Prefer natural English browser voices, with a shared voice picker and normal-speed playback for words and examples.
+- Fix the batch textarea's nested focus border and spacing, keeping one accessible outer focus ring.
