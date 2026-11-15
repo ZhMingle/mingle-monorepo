@@ -1,0 +1,24 @@
+.product-page{max-width:1280px;margin:auto;padding:32px 0 80px;min-height:65dvh}
+body:has(.product-page) .chat-launch{display:none}
+.product-back{display:inline-flex;align-items:center;gap:9px;font-size:12px;color:var(--muted);padding:10px 0;margin-bottom:24px}
+.product-back svg{transform:rotate(180deg)}
+.product-detail-layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:64px;align-items:start}
+.product-detail-media{min-width:0}
+.product-detail-media .gallery-main,.product-detail-media .detail-art{height:auto;aspect-ratio:1;border-radius:12px;overflow:hidden}
+.product-detail-media .detail-art>*{width:100%;height:100%;object-fit:contain}
+.product-detail-media .product-gallery{margin:0}
+.product-detail-info{padding:14px 0;min-width:0}
+.product-detail-info .eyebrow{margin-bottom:12px}
+.product-detail-info h1{font-size:32px;font-weight:500;line-height:1.4;overflow-wrap:anywhere}
+.product-detail-price{font-size:30px;margin-top:24px;line-height:1.5}
+.product-detail-price small{font-size:11px;font-weight:400;color:var(--muted);margin-left:8px}
+.product-availability{font-size:12px;color:var(--muted);margin-top:8px}
+.product-detail-actions{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+.product-detail-actions .button{min-height:48px;flex:1;gap:10px;white-space:nowrap}
+.product-description{border-top:1px solid var(--line);margin-top:32px;padding-top:26px}
+.product-description h2{font-size:15px;font-weight:500;margin-bottom:14px}
+.product-description p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9;font-size:13px;color:#687762}
+.modal,.drawer-body,.chat-history,.editor-scroll{overscroll-behavior:contain}
+.drawer-body{min-height:0}
+@media(max-width:1350px){.product-page{margin:0 5.5%}}
+@media(max-width:700px){.product-page{margin:0;padding:12px 20px 45px}.product-back{font-size:11px;margin-bottom:15px;min-height:40px}.product-detail-layout{grid-template-columns:minmax(0,1fr);gap:25px}.product-detail-info{padding:0}.product-detail-info h1{font-size:25px;line-height:1.5}.product-detail-info .eyebrow{font-size:9px;margin-bottom:10px}.product-detail-price{font-size:28px;margin-top:18px}.product-detail-actions{gap:10px;margin-top:22px}.product-detail-actions .button{font-size:12px;padding:14px 10px;min-height:49px}.product-description{margin-top:28px;padding-top:22px}.product-description p{font-size:13px}.product-page .empty h1{font-size:23px}.product-page .empty p{margin:12px 0 24px}}

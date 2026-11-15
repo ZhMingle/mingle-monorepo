@@ -1,5 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import useOverlayScrollLock from './use-overlay-scroll-lock';
 import ProductEditor from './product-editor';
 import {ProductCover,ProductGallery} from './product-gallery';
 import MobileApp from './mobile-app';
@@ -15,6 +17,7 @@ async function api(path, data) {
   const result = await response.json(); if (!response.ok) throw Error(result.error || '暂时无法完成操作。'); return result;
 }
 function Modal({ title, children, onClose, drawer = false }) {
+  useOverlayScrollLock();
   const ref = useRef(null);
   useEffect(() => { const element = ref.current; element.showModal(); return () => element.close(); }, []);
   return <dialog ref={ref} className={drawer ? 'modal drawer' : 'modal'} onCancel={onClose} onClick={event => { if (event.target === ref.current) onClose(); }}><div className="modal-head"><h2>{title}</h2><button className="icon-button" aria-label="关闭" onClick={onClose}><X size={22}/></button></div>{children}</dialog>;
@@ -24,14 +27,19 @@ function Illustration({ category, hero = false }) {
   if (!hero) return <div className={'product-art art-' + Math.max(0, categoryNames.indexOf(category))}><span className="art-orbit"/><Icon strokeWidth={1.05}/><small>品类示意</small></div>;
   return <div className="hero-art" aria-label="桌面好物插画"><div className="art-label">A LITTLE BETTER,<br/>EVERY DAY.</div><div className="sun-disc"/><div className="desk-line"/><div className="draw-lamp"><span/><i/><b/></div><div className="draw-speaker"><span/><i/></div><div className="draw-phone"><span/></div><div className="draw-keyboard">{Array.from({length:30},(_,i)=><i key={i}/>)}</div><div className="art-note"><span/> 日常灵感 · 品类示意</div><div className="art-star">✳</div></div>;
 }
-export default function Shop({ admin = false }) {
+export default function Shop({ admin = false, productId = null }) {
   const [boot, setBoot] = useState(null), [error, setError] = useState(''), [toast, setToast] = useState('');
-  const [cart, setCart] = useState([]), [cartOpen, setCartOpen] = useState(false), [chatOpen, setChatOpen] = useState(false), [product, setProduct] = useState(null), [policy, setPolicy] = useState(null);
+  const [cart, setCart] = useState([]), [cartOpen, setCartOpen] = useState(false), [chatOpen, setChatOpen] = useState(false), [policy, setPolicy] = useState(null);
   const [category, setCategory] = useState('全部好物'), [search, setSearch] = useState(''), [quote, setQuote] = useState(null), [order, setOrder] = useState(null);
   const load = async () => { try { const data = await api('bootstrap'); setBoot(data); setError(''); return data; } catch (e) { setError(e.message); } };
   useEffect(() => { load(); try { const saved = JSON.parse(localStorage.getItem('mc-bag') || '[]'); if (Array.isArray(saved)) setCart(saved.filter(x=>typeof x.id==='string'&&Number.isInteger(x.quantity)&&x.quantity>0&&x.quantity<100).slice(0,20)); } catch {} }, []);
   useEffect(() => { if (boot) localStorage.setItem('mc-bag', JSON.stringify(cart)); }, [cart, boot]);
   useEffect(() => { if (!toast) return; const timer = setTimeout(()=>setToast(''),4000); return ()=>clearTimeout(timer); }, [toast]);
+  useEffect(() => {
+    if (!boot || admin || productId || location.hash !== '#collection') return;
+    const frame = requestAnimationFrame(() => document.getElementById('collection')?.scrollIntoView({behavior:'instant'}));
+    return () => cancelAnimationFrame(frame);
+  }, [!!boot, admin, productId]);
   useEffect(() => {
     if (!boot || admin) return;
     const params = new URLSearchParams(location.search), id = params.get('order') || params.get('cancelled');
@@ -42,31 +50,51 @@ export default function Shop({ admin = false }) {
   }, [!!boot, admin]);
   const add = (p, quantity = 1) => {
     if (!p?.id || p.price_cents === null || !p.available) return;
-    setCart(old=>{ const exists=old.find(x=>x.id===p.id); return exists?old.map(x=>x.id===p.id?{...x,quantity:Math.min(p.available,99,x.quantity+quantity)}:x):[...old,{id:p.id,quantity:Math.min(quantity,p.available,99)}]; }); setToast('已加入购物袋'); setProduct(null);
+    setCart(old=>{ const exists=old.find(x=>x.id===p.id); return exists?old.map(x=>x.id===p.id?{...x,quantity:Math.min(p.available,99,x.quantity+quantity)}:x):[...old,{id:p.id,quantity:Math.min(quantity,p.available,99)}]; }); setToast('已加入购物袋');
   };
-  const ask = p => { setProduct(null); setChatOpen(p || true); };
+  const ask = p => setChatOpen(p || true);
   if (!boot) return <main className="loading"><span className="brand-mark">m.</span><h1>Mingle's Choice</h1><p>{error || '正在打开小店…'}</p>{error&&<button className="button" onClick={load}>重新加载</button>}</main>;
   const products=boot.products, settings=boot.settings, count=cart.reduce((s,p)=>s+p.quantity,0);
   const visibleCategories=[...new Set([...categoryNames,...products.map(p=>p.category)])];
   const filtered=products.filter(p=>(category==='全部好物'||p.category===category)&&(!search||(p.name+p.description).toLowerCase().includes(search.toLowerCase())));
-  return <><MobileApp admin={admin}/><div className="announcement">日常好物，慢慢挑选。<span>所有价格均以 NZD 标示</span></div><header className="site-header"><a className="brand" href="/"><span className="brand-mark">m.</span><span>{settings.name}<small>EVERYDAY, CONSIDERED.</small></span></a><nav><a href="/#collection">逛逛小店</a><button onClick={()=>ask(null)}>在线咨询 <ArrowUpRight size={14}/></button></nav><div className="header-actions">{admin?<a className="quiet-link" href="/">返回店铺 <ArrowUpRight size={15}/></a>:<button className="bag-button" aria-label={"打开购物袋，共 "+count+" 件"} onClick={()=>setCartOpen(true)}><ShoppingBag size={20}/><span>购物袋</span><b>{count}</b></button>}</div></header>
-  {admin?<AdminPanel notify={setToast} reloadShop={load}/>:<main>
+  return <><MobileApp admin={admin}/><div className="announcement">日常好物，慢慢挑选。<span>所有价格均以 NZD 标示</span></div><header className="site-header"><Link className="brand" href="/"><span className="brand-mark">m.</span><span>{settings.name}<small>EVERYDAY, CONSIDERED.</small></span></Link><nav><Link href="/#collection">逛逛小店</Link><button onClick={()=>ask(null)}>在线咨询 <ArrowUpRight size={14}/></button></nav><div className="header-actions">{admin?<a className="quiet-link" href="/">返回店铺 <ArrowUpRight size={15}/></a>:<button className="bag-button" aria-label={"打开购物袋，共 "+count+" 件"} onClick={()=>setCartOpen(true)}><ShoppingBag size={20}/><span>购物袋</span><b>{count}</b></button>}</div></header>
+  {admin?<AdminPanel notify={setToast} reloadShop={load}/>:productId?<ProductDetail key={productId} product={products.find(p=>p.id===productId)} add={add} ask={ask}/>:<main>
     {order&&<div className="order-banner" role="status"><ShieldCheck size={22}/><div><strong>{statuses[order.state] || order.state}</strong><p>订单 {order.id.slice(0,8)} · {format(order.totalCents)}{order.tracking?' · '+order.tracking:''}{['creating','awaiting_payment'].includes(order.state)?' · 尚未确认付款，正在核对。':''}</p></div><button className="icon-button" aria-label="关闭订单状态" onClick={()=>{setOrder(null);history.replaceState({},'', '/');}}><X size={18}/></button></div>}
     <section className="hero"><div className="hero-copy"><p className="eyebrow"><span/> SMALL FINDS. EVERYDAY JOYS.</p><h1>让日常，<br/>多一点<span>刚刚好。</span></h1><p className="hero-description">从桌面的一盏灯，到顺手的小配件。<br/>挑些实用的，把生活过得舒服一点。</p><div className="hero-actions"><a className="button" href="#collection">看看有什么 <ArrowRight size={18}/></a><button className="text-button" onClick={()=>ask(null)}>有问题？聊一聊 <ArrowUpRight size={16}/></button></div><div className="hero-footnote"><span>01 / 日常选物</span><span>少一点将就，多一点喜欢。</span></div></div><Illustration hero/></section>
     <div className="benefits"><span><ShoppingBag size={19}/> NZD 清晰标价</span><span><MessageCircle size={19}/> 商品问题，随时问</span><span><Truck size={19}/> 查看自取与配送安排</span></div>
     <section className="collection" id="collection"><div className="section-heading"><div><p className="eyebrow">THE EVERYDAY EDIT</p><h2>给日常挑点好物<span>。</span></h2></div><label className="search"><Search size={17}/><input aria-label="搜索商品" placeholder="找件喜欢的…" value={search} onChange={e=>setSearch(e.target.value)}/></label></div><div className="filters" aria-label="商品分类">{['全部好物',...visibleCategories].map(c=><button key={c} className={category===c?'active':''} onClick={()=>setCategory(c)}>{c}</button>)}</div>
-    {products.length?<div className="product-grid">{filtered.map(p=><article className="product-card" key={p.id}><button className="product-visual" aria-label={'查看'+p.name} onClick={()=>setProduct(p)}><ProductCover product={p} fallback={<Illustration category={p.category}/>}/><span className="product-tag">{p.available>0?(p.quantityOffer?'多件有优惠':'日常好物'):'暂时售罄'}</span><span className="product-peek"><ArrowUpRight size={19}/></span></button><div className="product-meta"><small>{p.category}</small><h3><button onClick={()=>setProduct(p)}>{p.name}</button></h3><div><strong>{format(p.price_cents)}</strong><button className="icon-button round" aria-label={'添加'+p.name+'到购物袋'} disabled={!p.available} onClick={()=>add(p)}><Plus size={19}/></button></div></div></article>)}</div>:<><div className="preparing-note"><span className="status-dot"/>小店正在准备上架，先看看即将见面的品类。</div><div className="product-grid">{categoryNames.filter(c=>category==='全部好物'||category===c).filter(c=>!search||c.includes(search)).map(c=><article key={c} className="product-card"><button className="product-visual" aria-label={'咨询'+c} onClick={()=>ask(null)}><Illustration category={c}/><span className="product-tag">即将上架</span><span className="product-peek"><ArrowUpRight size={19}/></span></button><div className="product-meta"><small>EVERYDAY ESSENTIALS</small><h3>{c}</h3><div><span className="muted">价格待确认</span><button className="text-button small" onClick={()=>ask(null)}>问问看 <ArrowUpRight size={15}/></button></div></div></article>)}</div></>}
+    {products.length?<div className="product-grid">{filtered.map(p=><article className="product-card" key={p.id}><Link className="product-visual" aria-label={'查看'+p.name} href={'/products/'+encodeURIComponent(p.id)}><ProductCover product={p} fallback={<Illustration category={p.category}/>}/><span className="product-tag">{p.available>0?(p.quantityOffer?'多件有优惠':'日常好物'):'暂时售罄'}</span><span className="product-peek"><ArrowUpRight size={19}/></span></Link><div className="product-meta"><small>{p.category}</small><h3><Link href={'/products/'+encodeURIComponent(p.id)}>{p.name}</Link></h3><div><strong>{format(p.price_cents)}</strong><button className="icon-button round" aria-label={'添加'+p.name+'到购物袋'} disabled={!p.available} onClick={()=>add(p)}><Plus size={19}/></button></div></div></article>)}</div>:<><div className="preparing-note"><span className="status-dot"/>小店正在准备上架，先看看即将见面的品类。</div><div className="product-grid">{categoryNames.filter(c=>category==='全部好物'||category===c).filter(c=>!search||c.includes(search)).map(c=><article key={c} className="product-card"><button className="product-visual" aria-label={'咨询'+c} onClick={()=>ask(null)}><Illustration category={c}/><span className="product-tag">即将上架</span><span className="product-peek"><ArrowUpRight size={19}/></span></button><div className="product-meta"><small>EVERYDAY ESSENTIALS</small><h3>{c}</h3><div><span className="muted">价格待确认</span><button className="text-button small" onClick={()=>ask(null)}>问问看 <ArrowUpRight size={15}/></button></div></div></article>)}</div></>}
     {products.length>0&&!filtered.length&&<div className="empty"><Search size={30}/><h3>还没找到这件好物</h3><p>试试其他关键词或分类。</p><button className="text-button" onClick={()=>{setSearch('');setCategory('全部好物');}}>查看全部商品</button></div>}</section>
     <section className="help-banner"><span className="help-symbol">✳</span><div><p className="eyebrow">A LITTLE HELP?</p><h2>选之前，先问清楚。</h2><p>价格、库存、取货，或者想多买几件。都可以聊聊。</p></div><button className="button light" onClick={()=>ask(null)}>打开在线咨询 <ArrowUpRight size={18}/></button></section>
   </main>}
-  <footer><div className="footer-top"><div><a className="brand" href="/"><span className="brand-mark">m.</span><span>{settings.name}<small>为日常，选一点喜欢。</small></span></a></div><div><strong>购物帮助</strong><button onClick={()=>setPolicy({title:'自取与配送',text:[settings.pickupEnabled?settings.pickupDetails:'自取安排待确认。',settings.shippingEnabled?'配送至 '+settings.shippingCountry+'，每单邮费 '+format(settings.shippingCents)+'。':'配送安排待确认。'].join('\n\n')})}>自取与配送</button><button onClick={()=>setPolicy({title:'退换说明',text:settings.returnPolicy||'退换说明尚未公布，请在购买前向店主确认。'})}>退换说明</button></div><div><strong>保持联系</strong><button onClick={()=>ask(null)}>在线咨询 <ArrowUpRight size={13}/></button>{settings.contactEmail&&<a href={'mailto:'+settings.contactEmail}>{settings.contactEmail}</a>}<a href="/admin">店主管理</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} {settings.name}</span><button onClick={()=>setPolicy({title:'隐私说明',text:settings.privacyPolicy||'店铺隐私说明尚未公布。咨询会保存聊天内容；请勿提交银行卡、密码等敏感信息。'})}>隐私说明</button><span>NZD · New Zealand Dollar</span></div></footer>
+  <footer><div className="footer-top"><div><Link className="brand" href="/"><span className="brand-mark">m.</span><span>{settings.name}<small>为日常，选一点喜欢。</small></span></Link></div><div><strong>购物帮助</strong><button onClick={()=>setPolicy({title:'自取与配送',text:[settings.pickupEnabled?settings.pickupDetails:'自取安排待确认。',settings.shippingEnabled?'配送至 '+settings.shippingCountry+'，每单邮费 '+format(settings.shippingCents)+'。':'配送安排待确认。'].join('\n\n')})}>自取与配送</button><button onClick={()=>setPolicy({title:'退换说明',text:settings.returnPolicy||'退换说明尚未公布，请在购买前向店主确认。'})}>退换说明</button></div><div><strong>保持联系</strong><button onClick={()=>ask(null)}>在线咨询 <ArrowUpRight size={13}/></button>{settings.contactEmail&&<a href={'mailto:'+settings.contactEmail}>{settings.contactEmail}</a>}<a href="/admin">店主管理</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} {settings.name}</span><button onClick={()=>setPolicy({title:'隐私说明',text:settings.privacyPolicy||'店铺隐私说明尚未公布。咨询会保存聊天内容；请勿提交银行卡、密码等敏感信息。'})}>隐私说明</button><span>NZD · New Zealand Dollar</span></div></footer>
   {!admin&&<button className="chat-launch" onClick={()=>ask(null)}><MessageCircle size={21}/><span>小店在线咨询</span><span className="status-dot"/></button>}
   {toast&&<div className="toast" role="status"><Check size={17}/>{toast}</div>}
-  {product&&<Modal title={product.name} onClose={()=>setProduct(null)}><ProductGallery product={product} fallback={<Illustration category={product.category}/>}/><p className="eyebrow">{product.category}</p><h3 className="detail-price">{format(product.price_cents)}</h3><p className="description">{product.description||'更多商品细节可以向小店咨询。'}</p><p className="muted">当前可购买 {product.available} 件{product.quantityOffer?' · 多件购买可询问优惠':''}</p><div className="button-row"><button className="button" disabled={!product.available} onClick={()=>add(product)}>加入购物袋 <Plus size={18}/></button><button className="button secondary" onClick={()=>ask(product)}>咨询这件商品</button></div></Modal>}
   {cartOpen&&<Cart cart={cart} setCart={setCart} products={products} settings={settings} quote={quote} clearQuote={()=>setQuote(null)} onClose={()=>setCartOpen(false)} notify={setToast}/>}
   {chatOpen&&<Chat products={products} initialProduct={typeof chatOpen==='object'?chatOpen:null} onClose={()=>setChatOpen(false)} notify={setToast} applyQuote={q=>{const p=products.find(p=>p.id===q.productId);setCart(old=>[...old.filter(p=>p.id!==q.productId),{id:q.productId,quantity:q.quantity}]);setQuote(q);setChatOpen(false);setCartOpen(true);}}/>}
   {policy&&<Modal title={policy.title} onClose={()=>setPolicy(null)}><p className="policy-text">{policy.text}</p></Modal>}
   </>;
+}
+function ProductDetail({product,add,ask}) {
+  useEffect(() => {
+    const previous = document.title;
+    document.title = product ? `${product.name} · Mingle's Choice` : "商品未找到 · Mingle's Choice";
+    return () => { document.title = previous; };
+  }, [product?.id, product?.name]);
+  return <main className="product-page">
+    <Link className="product-back" href="/#collection"><ArrowRight size={16}/> 返回全部商品</Link>
+    {product ? <div className="product-detail-layout">
+      <div className="product-detail-media"><ProductGallery product={product} fallback={<Illustration category={product.category}/>}/></div>
+      <section className="product-detail-info" aria-labelledby="product-title">
+        <p className="eyebrow">{product.category}</p>
+        <h1 id="product-title">{product.name}</h1>
+        <p className="product-detail-price">{format(product.price_cents)} <small>NZD</small></p>
+        <p className="product-availability">{product.available>0?`当前可购买 ${product.available} 件`:'暂时售罄'}{product.quantityOffer?' · 多件购买可询问优惠':''}</p>
+        <div className="product-detail-actions"><button className="button" disabled={!product.available} onClick={()=>add(product)}><ShoppingBag size={18}/>{product.available?'加入购物袋':'暂时售罄'}</button><button className="button secondary" onClick={()=>ask(product)}><MessageCircle size={18}/>咨询这件商品</button></div>
+        <div className="product-description"><h2>商品介绍</h2><p>{product.description||'更多商品细节可以向小店咨询。'}</p></div>
+      </section>
+    </div> : <div className="empty"><Package size={40}/><h1>这件商品暂时找不到</h1><p>商品可能已下架，看看小店里的其他好物。</p><Link className="button" href="/#collection">逛逛小店 <ArrowRight size={17}/></Link></div>}
+  </main>;
 }
 function Cart({cart,setCart,products,settings,quote,clearQuote,onClose,notify}) {
   const [fulfilment,setFulfilment]=useState(settings.pickupEnabled?'pickup':settings.shippingEnabled?'shipping':''), [summary,setSummary]=useState(null), [error,setError]=useState(''), [busy,setBusy]=useState(false);

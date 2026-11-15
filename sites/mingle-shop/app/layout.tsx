@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { Viewport } from "next";
 import "./shop.css";
 import "./mobile.css";
+import "./product-page.css";
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#223e35" };
 

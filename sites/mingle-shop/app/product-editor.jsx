@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
+import useOverlayScrollLock from './use-overlay-scroll-lock';
 import {Camera,ImagePlus,Video,Upload,Trash2,ArrowUp,ArrowDown,Sparkles,X,Check,LoaderCircle,ChevronRight} from 'lucide-react';
 const categories=['手机支架','台灯','感应灯','键盘','鼠标','音响','其他'];
 async function preparePhoto(file) {
@@ -23,6 +24,7 @@ function uploadFile(file,onProgress,register) {
   });
 }
 export default function ProductEditor({initial,onClose,save,busy,error,capabilities={}}) {
+  useOverlayScrollLock();
   const dialog=useRef(null),album=useRef(null),camera=useRef(null),video=useRef(null),uploadRef=useRef(null),aiAbort=useRef(null),alive=useRef(true);
   const [p,setP]=useState(initial),[media,setMedia]=useState(initial.media||[]),[price,setPrice]=useState(initial.price_cents===null?'':(initial.price_cents/100).toFixed(2)),[minimum,setMinimum]=useState(initial.minimum_cents===null?'':(initial.minimum_cents/100).toFixed(2));
   const [progress,setProgress]=useState(null),[generating,setGenerating]=useState(false),[localError,setLocalError]=useState(''),[language,setLanguage]=useState('en'),[autoGenerate,setAutoGenerate]=useState(true),[draft,setDraft]=useState(null),[applied,setApplied]=useState(false);
