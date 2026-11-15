@@ -16,3 +16,10 @@ export const events = sqliteTable('payment_events', { id: text('id').primaryKey(
 export const messages = sqliteTable('chat_messages', { id: text('id').primaryKey(), visitor: text('visitor').notNull(), direction: text('direction').notNull(), text: text('text').notNull(), contact: text('contact').notNull().default(''), needsOwner: integer('needs_owner').notNull().default(0), resolved: integer('resolved').notNull().default(0), createdAt: integer('created_at').notNull() });
 export const limits = sqliteTable('rate_limits', { id: text('id').primaryKey(), count: integer('count').notNull() });
 export const audit = sqliteTable('shop_audit', { id: text('id').primaryKey(), action: text('action').notNull(), detail: text('detail').notNull(), createdAt: integer('created_at').notNull() });
+export const mediaAssets = sqliteTable('media_assets', {
+  id: text('id').primaryKey(), storageKey: text('storage_key').notNull().unique(), kind: text('kind').notNull(), contentType: text('content_type').notNull(),
+  size: integer('size').notNull(), name: text('name').notNull(), createdAt: integer('created_at').notNull(),
+});
+export const productMedia = sqliteTable('product_media', {
+  productId: text('product_id').notNull().references(() => products.id), assetId: text('asset_id').notNull().references(() => mediaAssets.id), position: integer('position').notNull(),
+}, t => [primaryKey({ columns: [t.productId, t.assetId] })]);

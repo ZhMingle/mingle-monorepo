@@ -1,4 +1,5 @@
 import { categories, defaults, ShopError, integer, textValue, validateProduct, validateSettings, readiness, publicProduct, unitPrice, parseCart, answerQuestion, hash, verifyWebhook } from './commerce.mjs';
+import { productMediaMap, validateMediaIds, uploadMedia, serveMedia, generateProductCopy } from './product-media.mjs';
 
 const uuid = () => crypto.randomUUID();
 const all = async (db, sql, args = []) => (await db.prepare(sql).bind(...args).all()).results;
@@ -51,13 +52,14 @@ async function settle(db, session, eventId, env) {
     db.prepare("UPDATE orders SET state=?,session_id=?,customer=? WHERE id=? AND state=?").bind(state, session.id, JSON.stringify({ contact: session.customer_details || {}, shipping: session.collected_information?.shipping_details || session.shipping_details || null }), order.id, order.state),
   ]);
 }
-export async function handleShopRequest(request, env, { dev = false, stripeFetch = fetch } = {}) {
+export async function handleShopRequest(request, env, { dev = false, stripeFetch = fetch, visionFetch = fetch } = {}) {
   let newCookie = '';
   const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...(newCookie ? { 'Set-Cookie': newCookie } : {}) } });
   try {
     const db = env.DB;
     if (!db) throw new ShopError('店铺数据库尚未连接。', 503);
     const url = new URL(request.url), path = url.pathname.replace(/^\/api\/?/, '');
+    if (path.startsWith('media/') && ['GET','HEAD'].includes(request.method)) return await serveMedia(request, env, textValue(path.slice(6),100,'媒体编号',true), owner(request,env,dev));
     if (path === 'stripe/webhook' && request.method === 'POST') {
       const raw = await request.text();
       if (raw.length > 1000000 || !await verifyWebhook(raw, request.headers.get('stripe-signature'), env.STRIPE_WEBHOOK_SECRET)) throw new ShopError('无效的支付签名。', 401);
@@ -73,9 +75,13 @@ export async function handleShopRequest(request, env, { dev = false, stripeFetch
     if (request.method === 'GET') {
       if (path === 'bootstrap') {
         const settings = await settingsFor(db);
-        return json({ settings: { ...settings, checkoutEnabled: settings.checkoutEnabled && readiness(settings, env).ready }, products: (await all(db, 'SELECT * FROM products WHERE enabled=1 ORDER BY updated_at DESC')).map(publicProduct), categories, isOwner });
+        const media = await productMediaMap(db);
+        return json({ settings: { ...settings, checkoutEnabled: settings.checkoutEnabled && readiness(settings, env).ready }, products: (await all(db, 'SELECT * FROM products WHERE enabled=1 ORDER BY updated_at DESC')).map(p=>({...publicProduct(p),media:media.get(p.id)||[]})), categories, isOwner });
       }
-      if (path === 'admin') return json({ settings: await settingsFor(db), products: await all(db, 'SELECT * FROM products ORDER BY updated_at DESC'), orders: await all(db, 'SELECT * FROM orders ORDER BY created_at DESC LIMIT 100'), orderItems: await all(db, 'SELECT * FROM order_items WHERE order_id IN (SELECT id FROM orders ORDER BY created_at DESC LIMIT 100)'), messages: await all(db, 'SELECT * FROM chat_messages ORDER BY created_at DESC LIMIT 300'), payment: readiness(await settingsFor(db), env) });
+      if (path === 'admin') {
+        const media = await productMediaMap(db);
+        return json({ settings: await settingsFor(db), products: (await all(db, 'SELECT * FROM products ORDER BY updated_at DESC')).map(p=>({...p,media:media.get(p.id)||[]})), orders: await all(db, 'SELECT * FROM orders ORDER BY created_at DESC LIMIT 100'), orderItems: await all(db, 'SELECT * FROM order_items WHERE order_id IN (SELECT id FROM orders ORDER BY created_at DESC LIMIT 100)'), messages: await all(db, 'SELECT * FROM chat_messages ORDER BY created_at DESC LIMIT 300'), payment: readiness(await settingsFor(db), env), capabilities:{mediaUpload:!!env.BUCKET,photoGeneration:!!env.OPENAI_API_KEY} });
+      }
       if (path === 'chat') return json({ messages: await all(db, 'SELECT * FROM (SELECT direction,text,created_at FROM chat_messages WHERE visitor=? ORDER BY created_at DESC LIMIT 100) ORDER BY created_at', [visitor]) });
       if (path === 'order') {
         let order = await first(db, 'SELECT * FROM orders WHERE id=? AND visitor=?', [url.searchParams.get('id') || '', visitor]);
@@ -90,9 +96,20 @@ export async function handleShopRequest(request, env, { dev = false, stripeFetch
       throw new ShopError('未找到此页面。', 404);
     }
     if (request.method !== 'POST') throw new ShopError('不支持的请求方式。', 405);
+    if (path === 'admin/upload') {
+      if (request.headers.get('origin') !== url.origin) throw new ShopError('请从店铺页面上传。',403);
+      await limited(db,request,visitor,'upload',30);
+      return json({media:await uploadMedia(request,env)});
+    }
     if (request.headers.get('origin') !== url.origin || !request.headers.get('content-type')?.startsWith('application/json')) throw new ShopError('请从店铺页面提交。', 403);
     const raw = await request.text(); if (raw.length > 32000) throw new ShopError('提交内容过长。', 413);
     const input = JSON.parse(raw);
+    if (path === 'admin/generate') {
+      await limited(db,request,visitor,'generate',6);
+      const draft=await generateProductCopy(env,input,visionFetch);
+      await audit(db,'product_copy_generated',{images:input.mediaIds.length,language:draft.language});
+      return json({draft});
+    }
     if (path === 'admin/seed') {
       const count = await first(db, 'SELECT COUNT(*) AS total FROM products');
       if (count.total) throw new ShopError('已有商品，不会重复导入品类。');
@@ -101,11 +118,14 @@ export async function handleShopRequest(request, env, { dev = false, stripeFetch
     }
     if (path === 'admin/product') {
       const p = validateProduct(input);
+      const mediaIds = input.mediaIds === undefined ? null : await validateMediaIds(db,input.mediaIds);
+      const productId = input.id ? textValue(input.id,100,'商品编号',true) : uuid();
       if (input.id) {
         const result = await run(db, 'UPDATE products SET name=?,category=?,description=?,image_url=?,price_cents=?,minimum_cents=?,stock=?,enabled=?,negotiable=?,bulk_qty=?,bulk_percent=?,revision=revision+1,updated_at=? WHERE id=? AND revision=?', [...Object.values(p), Date.now(), textValue(input.id, 100, '商品编号'), integer(input.revision, 1, 1000000000, '版本')]);
         if (!result.meta.changes) throw new ShopError('商品已被修改，请刷新后再试。', 409);
-      } else await run(db, 'INSERT INTO products(id,name,category,description,image_url,price_cents,minimum_cents,stock,enabled,negotiable,bulk_qty,bulk_percent,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)', [uuid(), ...Object.values(p), Date.now()]);
-      await audit(db, 'product_saved', { id: input.id || 'new', name: p.name }); return json({ saved: true });
+      } else await run(db, 'INSERT INTO products(id,name,category,description,image_url,price_cents,minimum_cents,stock,enabled,negotiable,bulk_qty,bulk_percent,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)', [productId, ...Object.values(p), Date.now()]);
+      if(mediaIds !== null) await db.batch([db.prepare('DELETE FROM product_media WHERE product_id=?').bind(productId),...mediaIds.map((id,index)=>db.prepare('INSERT INTO product_media VALUES(?,?,?)').bind(productId,id,index))]);
+      await audit(db, 'product_saved', { id: productId, name: p.name }); return json({ saved: true, id:productId });
     }
     if (path === 'admin/bulk') {
       if (!Array.isArray(input.ids) || !input.ids.length || input.ids.length > 100) throw new ShopError('请选择最多 100 件商品。');
