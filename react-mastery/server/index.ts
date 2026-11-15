@@ -1,3 +1,4 @@
+import {readJSONBody as body} from './http-body.ts';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
@@ -9,7 +10,7 @@ import { createSession, exportData, getSession, progressList, record, saveSessio
 import { assess, aiConnection } from './coach.ts';
 import {cloudSettings,cloudAuthorized} from './cloud-access.ts';
 import {bridgeHeartbeat,claimAIJob,completeAIJob} from './cloud-ai.ts';
-import {importSnapshot,migrationStatus} from './cloud-migration.ts';
+import {importSnapshot,migrationStatus,repairSnapshot} from './cloud-migration.ts';
 import { markReferenceViewed, referenceAnswerFor } from './reference-answers.ts';
 import { codeHintsFor, codeReferenceFor } from './code-support.ts';
 import { understandingAction, understandingPayload, understandingSessions } from './understanding.ts';
@@ -37,10 +38,6 @@ const payload = (session: LearningSession) => {
 function send(res: ServerResponse, code: number, body: unknown) {
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(body));
 }
-async function body(req: IncomingMessage,max=100000): Promise<Record<string, unknown>> {
-  let text = ''; for await (const chunk of req) { text += chunk; if (Buffer.byteLength(text) > max) throw Object.assign(new Error('Submission is too large'), { status: 413 }); }
-  try { return JSON.parse(text); } catch { throw Object.assign(new Error('Invalid JSON body'), { status: 400 }); }
-}
 function text(value: unknown, max = 20000) { if (typeof value !== 'string' || value.length > max) throw Object.assign(new Error('Invalid text input'), { status: 400 }); return value; }
 function stageReady(session: LearningSession, stage: Stage) {
   if (stage === 'build' && !session.prediction) throw new Error('Make a prediction first.');
@@ -56,6 +53,7 @@ const server = createServer(async (req, res) => {
     if(cloud.enabled&&url.pathname==='/healthz'&&req.method==='GET'){send(res,200,{ok:true});return;}
     if(!cloudAuthorized(req,url.pathname)){send(res,401,{error:'Sign in through your private Clarity Site.'});return;}
     if(cloud.enabled&&url.pathname==='/api/admin/migration-status'&&req.method==='GET'){send(res,200,migrationStatus());return;}
+    if(cloud.enabled&&req.method==='POST'&&url.pathname==='/api/admin/repair-migration'){send(res,200,await repairSnapshot(await body(req,20000000)));return;}
     if(cloud.enabled&&req.method==='POST'&&url.pathname==='/api/admin/migrate'){send(res,200,importSnapshot(await body(req,20000000)));return;}
     if(cloud.enabled&&req.method==='POST'&&url.pathname.startsWith('/api/bridge/')){
       const input=await body(req,1100000);

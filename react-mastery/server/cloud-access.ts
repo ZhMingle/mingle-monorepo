@@ -16,6 +16,6 @@ export function cloudSettings(env:NodeJS.ProcessEnv=process.env){
 export function cloudAuthorized(req:Pick<IncomingMessage,'headers'>,path:string,env:NodeJS.ProcessEnv=process.env):boolean {
   if(env.CLARITY_CLOUD!=='1')return true;
   if(path.startsWith('/api/bridge/'))return secretMatches(req.headers['x-clarity-bridge-key'],env.CLARITY_BRIDGE_KEY);
-  if(path==='/api/admin/migrate'||path==='/api/admin/migration-status')return secretMatches(req.headers['x-clarity-migration-key'],env.CLARITY_MIGRATION_KEY);
+  if(['/api/admin/migrate','/api/admin/migration-status','/api/admin/repair-migration'].includes(path))return secretMatches(req.headers['x-clarity-migration-key'],env.CLARITY_MIGRATION_KEY);
   return secretMatches(req.headers['x-clarity-proxy-key'],env.CLARITY_PROXY_KEY);
 }

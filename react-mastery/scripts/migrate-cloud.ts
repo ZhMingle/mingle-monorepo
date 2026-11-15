@@ -1,11 +1,9 @@
 // Read the migration origin/key from stdin. Never put secrets or learner data in Git.
-import {createInterface} from 'node:readline';
+import {readSecretJSON} from './secret-input.ts';
 import {DatabaseSync,backup} from 'node:sqlite';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-const lines=createInterface({input:process.stdin});
-const line=await new Promise<string>(resolve=>lines.once('line',resolve));lines.close();
-const config=JSON.parse(line) as {origin:string;key:string};
+const config=await readSecretJSON<{origin:string;key:string}>();
 if(new URL(config.origin).protocol!=='https:'||config.key.length<32)throw new Error('Invalid migration configuration.');
 mkdirSync('data/backups',{recursive:true});
 const path=`data/backups/cloud-${new Date().toISOString().replace(/[:.]/g,'-')}.sqlite`;
@@ -20,7 +18,7 @@ const tables=Object.fromEntries(names.map(name=>{
   return [name,{columns,rows}];
 }));copy.close();
 const digest=createHash('sha256').update(JSON.stringify(tables)).digest('hex');
-const response=await fetch(new URL('/api/admin/migrate',config.origin),{method:'POST',headers:{'Content-Type':'application/json','X-Clarity-Migration-Key':config.key},body:JSON.stringify({tables}),signal:AbortSignal.timeout(120000)});
+const response=await fetch(new URL(process.argv.includes('--repair')?'/api/admin/repair-migration':'/api/admin/migrate',config.origin),{method:'POST',redirect:'error',headers:{'Content-Type':'application/json','X-Clarity-Migration-Key':config.key},body:JSON.stringify({tables}),signal:AbortSignal.timeout(120000)});
 const result=await response.json();if(!response.ok)throw new Error(result.error??'Migration failed.');
 if(result.digest!==digest)throw new Error('Migration digest mismatch.');
 const counts=Object.fromEntries(Object.entries(tables).map(([name,table])=>[name,table.rows.length]));

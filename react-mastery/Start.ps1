@@ -1,5 +1,14 @@
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
+if (Test-Path -LiteralPath 'data/cloud-bridge.json') {
+    $cloudConfig = Get-Content -LiteralPath 'data/cloud-bridge.json' -Raw | ConvertFrom-Json
+    $cloudSiteUri = [Uri]$cloudConfig.siteOrigin
+    if ($cloudSiteUri.Scheme -ne 'https' -or !$cloudSiteUri.Host.EndsWith('.chatgpt.site')) { throw 'Invalid private cloud Site address.' }
+    & (Join-Path $PSScriptRoot 'Start-Cloud-Bridge.ps1')
+    Start-Process $cloudSiteUri.AbsoluteUri
+    Write-Host 'Opened the private online workspace and started its local Codex bridge.'
+    exit
+}
 $bundledNode = Join-Path $env:USERPROFILE '.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe'
 $nodePath = if (Test-Path -LiteralPath $bundledNode) { $bundledNode } else { (Get-Command node.exe -ErrorAction Stop).Source }
 $buildInputs = @('src', 'shared', 'scripts/build-sandbox.mjs', 'index.html', 'package.json', 'pnpm-lock.yaml', 'tsconfig.json', 'vite.config.ts')
