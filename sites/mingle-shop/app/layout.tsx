@@ -8,7 +8,6 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 export const metadata: Metadata = {
   title: "Mingle's Choice · 日常好物",
   description: "挑选日常好物，在线咨询，用 NZD 轻松结账。",
-  manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "我的小店", statusBarStyle: "default" },
   icons: {
     icon: "/shop-icon.svg",
@@ -24,6 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
+      <head>
+        <link rel="manifest" href="/manifest.webmanifest" crossOrigin="use-credentials" />
+      </head>
       <body className="antialiased">{children}</body>
     </html>
   );
