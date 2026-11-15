@@ -22,7 +22,7 @@ export function mapProse(text:string,map:(text:string)=>string):string {
 }
 export function presentationStrings(value:unknown):string[]{
   const result=new Set<string>();
-  visit(value,[],(text)=>{if(text.trim())result.add(text);return text;});
+  visit(value,[],(text)=>{if(text.trim())result.add(text);return text;},isResponse(value));
   return [...result];
 }
 // The browser and background preparation must use identical batches so they
@@ -47,19 +47,23 @@ export function presentationIdentifiers(value:unknown):string[]{
   const names=[...source.matchAll(/(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(|(?:export\s+)?(?:const|class)\s+([A-Z][\w$]*)\b/g)].map(match=>match[1]??match[2]);
   return [...new Set(names)].filter(name=>name.length<=100).slice(0,20);
 }
-function visit(value:unknown,path:string[],map:(text:string)=>string):unknown {
+function isResponse(value:unknown):boolean {
+  return (value as {session?:{lesson?:{coding?:{format?:string}}}})?.session?.lesson?.coding?.format==='response';
+}
+function visit(value:unknown,path:string[],map:(text:string)=>string,response=false):unknown {
   if(typeof value==='string'){
     const key=path.at(-1)!;
     const inDraft=path.includes('draft')||path.includes('drafts');
     const learnerReason=(key==='reason'&&!path.includes('cases'))||(key==='explanation'&&path.includes('attempts'));
-    const reference=path.includes('references')&&key!=='code';
+    const reference=path.includes('references')&&(key!=='code'||response);
+    const responseText=response&&path.includes('coding')&&(key==='starter'||key==='input'&&path.includes('cases'));
     const explanatoryExample=key==='example'&&!isSourceExample(value);
-    return !inDraft&&!learnerReason&&(prose.has(key)||reference||explanatoryExample)?mapProse(value,map):value;
+    return !inDraft&&!learnerReason&&(prose.has(key)||reference||explanatoryExample||responseText)?mapProse(value,map):value;
   }
-  if(Array.isArray(value))return value.map(item=>visit(item,path,map));
-  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,visit(item,[...path,key],map)]));
+  if(Array.isArray(value))return value.map(item=>visit(item,path,map,response));
+  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,visit(item,[...path,key],map,response)]));
   return value;
 }
 export function present<T>(value:T,translations:Record<string,string>):T {
-  return visit(value,[],text=>translations[text]??text) as T;
+  return visit(value,[],text=>translations[text]??text,isResponse(value)) as T;
 }

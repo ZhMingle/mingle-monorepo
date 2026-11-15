@@ -6,7 +6,10 @@ import { createServer as createViteServer } from 'vite';
 import { lessons, getLesson, challengeFor } from '../shared/curriculum.ts';
 import { testNames } from '../shared/test-spec.ts';
 import { createSession, exportData, getSession, progressList, record, saveSession, sessionList } from './store.ts';
-import { assess, findCodex } from './coach.ts';
+import { assess, aiConnection } from './coach.ts';
+import {cloudSettings,cloudAuthorized} from './cloud-access.ts';
+import {bridgeHeartbeat,claimAIJob,completeAIJob} from './cloud-ai.ts';
+import {importSnapshot,migrationStatus} from './cloud-migration.ts';
 import { markReferenceViewed, referenceAnswerFor } from './reference-answers.ts';
 import { codeHintsFor, codeReferenceFor } from './code-support.ts';
 import { understandingAction, understandingPayload, understandingSessions } from './understanding.ts';
@@ -22,7 +25,9 @@ import type { LearningSession, RunReport, SessionMode, Stage } from '../shared/t
 
 const port = Number(process.env.PORT ?? 4317);
 const production = process.argv.includes('--production');
-const origins = new Set([`http://127.0.0.1:${port}`, `http://localhost:${port}`]);
+const cloud=cloudSettings();
+if(cloud.enabled&&!production)throw new Error('Cloud mode requires the production build.');
+const origins = new Set(cloud.enabled?[cloud.origin]:[`http://127.0.0.1:${port}`, `http://localhost:${port}`]);
 const busy = new Set<string>();
 const browserTabs = new Set<ServerResponse>();
 const payload = (session: LearningSession) => {
@@ -32,8 +37,8 @@ const payload = (session: LearningSession) => {
 function send(res: ServerResponse, code: number, body: unknown) {
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(body));
 }
-async function body(req: IncomingMessage): Promise<Record<string, unknown>> {
-  let text = ''; for await (const chunk of req) { text += chunk; if (Buffer.byteLength(text) > 100000) throw Object.assign(new Error('Submission is too large'), { status: 413 }); }
+async function body(req: IncomingMessage,max=100000): Promise<Record<string, unknown>> {
+  let text = ''; for await (const chunk of req) { text += chunk; if (Buffer.byteLength(text) > max) throw Object.assign(new Error('Submission is too large'), { status: 413 }); }
   try { return JSON.parse(text); } catch { throw Object.assign(new Error('Invalid JSON body'), { status: 400 }); }
 }
 function text(value: unknown, max = 20000) { if (typeof value !== 'string' || value.length > max) throw Object.assign(new Error('Invalid text input'), { status: 400 }); return value; }
@@ -45,9 +50,20 @@ function stageReady(session: LearningSession, stage: Stage) {
 const server = createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
-  if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(req.headers.host ?? '')) { send(res, 403, { error: 'Local access only' }); return; }
+  if (!cloud.enabled&&![`127.0.0.1:${port}`, `localhost:${port}`].includes(req.headers.host ?? '')) { send(res, 403, { error: 'Local access only' }); return; }
   const url = new URL(req.url ?? '/', `http://127.0.0.1:${port}`);
   try {
+    if(cloud.enabled&&url.pathname==='/healthz'&&req.method==='GET'){send(res,200,{ok:true});return;}
+    if(!cloudAuthorized(req,url.pathname)){send(res,401,{error:'Sign in through your private Clarity Site.'});return;}
+    if(cloud.enabled&&url.pathname==='/api/admin/migration-status'&&req.method==='GET'){send(res,200,migrationStatus());return;}
+    if(cloud.enabled&&req.method==='POST'&&url.pathname==='/api/admin/migrate'){send(res,200,importSnapshot(await body(req,20000000)));return;}
+    if(cloud.enabled&&req.method==='POST'&&url.pathname.startsWith('/api/bridge/')){
+      const input=await body(req,1100000);
+      if(url.pathname==='/api/bridge/heartbeat'){bridgeHeartbeat();send(res,200,{ok:true});return;}
+      if(url.pathname==='/api/bridge/claim'){send(res,200,{job:claimAIJob()});return;}
+      if(url.pathname==='/api/bridge/complete'){send(res,200,completeAIJob(input));return;}
+      send(res,404,{error:'Unknown bridge action.'});return;
+    }
     if (url.pathname.startsWith('/api/')) {
       if (req.method === 'GET') {
         if (url.pathname === '/api/english') { send(res, 200, {cards:englishCards()}); return; }
@@ -55,7 +71,7 @@ const server = createServer(async (req, res) => {
         if (url.pathname === '/api/runtime') { send(res, 200, { version: runtimeVersion, pathsVersion, pid: process.pid, root: resolve('.') }); return; }
         if (url.pathname === '/api/understanding') { send(res, 200, understandingPayload(understandingSessions()[0] ?? null)); return; }
         if (url.pathname === '/api/bootstrap') {
-          send(res, 200, { lessons: lessons.map(({ prediction: _, ...lesson }) => lesson), progress: progressList(), sessions: sessionList(), connection: { available: !!findCodex(), provider: 'Codex local sign-in', message: findCodex() ? 'CLI detected · connection verified on first assessment' : 'Codex CLI not found. Sign in locally or set CODEX_BIN.' }, now: new Date().toISOString() }); return;
+          send(res, 200, { lessons: lessons.map(({ prediction: _, ...lesson }) => lesson), progress: progressList(), sessions: sessionList(), connection: aiConnection(), storage:cloud.enabled?'cloud':'local', now: new Date().toISOString() }); return;
         }
         if (url.pathname === '/api/session') { send(res, 200, payload(getSession(url.searchParams.get('id') ?? ''))); return; }
         if (url.pathname === '/api/export') { res.setHeader('Content-Disposition', 'attachment; filename="clarity-learning-evidence.json"'); send(res, 200, exportData()); return; }
@@ -198,5 +214,5 @@ const server = createServer(async (req, res) => {
   }
 });
 const vite = production ? null : await createViteServer({ server: { middlewareMode: true, hmr: { server } }, appType: 'spa' });
-server.listen(port, '127.0.0.1', () => console.log(`Clarity is ready at http://127.0.0.1:${port}`));
+server.listen(port, cloud.host, () => console.log(`Clarity is ready on ${cloud.host}:${port}`));
 for (const signal of ['SIGINT', 'SIGTERM'] as const) process.on(signal, () => { server.close(); void vite?.close(); process.exit(0); });

@@ -31,3 +31,6 @@
 .tp-tabs>button{display:inline-flex;align-items:center;gap:9px}
 .tp-tab-complete{display:inline-block;padding:2px 7px;border:1px solid #cbd8c4;border-radius:5px;background:#eaf0e5;color:#4c6542;font-size:12px;font-weight:500;line-height:1.5;white-space:nowrap}
 .tp-tabs>button[aria-pressed=true] .tp-tab-complete{background:#f4f8ee;border-color:#b7cba6}
+.tp-response-label{display:grid;gap:.6rem;margin-top:1rem;font-weight:600}
+.tp-response{width:100%;box-sizing:border-box;min-height:18rem;padding:1rem;resize:vertical;font-family:inherit;font-size:1rem;font-weight:400;line-height:1.7;color:inherit;background:var(--surface,#fff);border:1px solid var(--border,#cbd5e1);border-radius:.6rem}
+.tp-response:focus-visible{outline:2px solid var(--accent,#2563eb);outline-offset:2px}

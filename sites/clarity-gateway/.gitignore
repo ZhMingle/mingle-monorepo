@@ -1,0 +1,4 @@
+.sites-checkout/
+dist/
+*.zip
+node_modules/

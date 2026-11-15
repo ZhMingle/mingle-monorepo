@@ -1,3 +1,11 @@
+## 2026-11-16 — Performance and behavioral interview paths
+
+- Add 24 bilingual topics each for frontend performance, backend performance and behavioral interviews, with prerequisites, three stage projects, self-checks and official references.
+- Add the Interviews & career filter and nontechnical response practice with saved drafts, AI feedback, follow-ups and prose reference answers. Preserve existing records and two-part progress; the catalog now includes 27 paths and 642 topics.
+- Require supplied performance evidence and truthful interview scaffolds. Keep learner code execution in the existing React sandbox; interview review cannot certify events or predict hiring outcomes.
+- Add an owner-private Sites gateway, keyed Railway backend, persistent SQLite volume and verified one-time progress migration. Connect cloud AI to the owner's existing local Codex without copying sign-in files or enabling paid API usage.
+- Add phone bottom navigation, full-width learning and answer layouts, and authenticated loading of the isolated browser runner.
+
 ## 2026-11-12 — Prepare complete next topics
 
 - Prepare the next topic's lesson and selected-language presentation together; cached lessons no longer wait for a separate wording/translation AI call on first display.

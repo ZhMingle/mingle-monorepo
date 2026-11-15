@@ -1,5 +1,19 @@
 # Clarity — Developer Learning Lab
 
+线上版本使用原有 Clarity 站点的 ChatGPT 登录保护、Railway 持久化存储及手机底部导航。已有学习记录通过一次性校验迁移保留，本地数据库另存完整备份。未启用付费 API；线上 AI 通过保持在线的本机 Codex 连接工作。部署边界、数据迁移和运行方式见 [线上运行说明](docs/CLOUD.md)。下文中“本地”说明对应独立的本地运行方式。
+
+### 性能优化与行为面试路线
+
+新增「前端性能优化」「后端性能优化」「行为面试（Behavioral Questions）」三条中英双语路线，各 24 个主题、三个阶段。目录现为 **27 条路线、642 个知识点、1284 项完成检查**，原有主题编号与学习记录保持不变。
+
+- 前端性能优化：测量基线、LCP/INP/CLS、请求瀑布、图片字体、代码拆分、长任务、布局、React 分析与记忆化、长列表、内存、Worker、缓存、SSR、性能预算和回归验证。
+- 后端性能优化：延迟分位数、负载与追踪、CPU/内存、阻塞、算法与响应体、索引和执行计划、N+1、分页、连接池、受控并发、缓存、超时重试、背压、限流、队列、扩容和压测评审。选择题与小型代码/配置任务使用提供的样本或模拟依赖，由 AI 评审；不会执行真实压测，也不把推理结果当作实测加速。
+- 行为面试：在「面试与职业发展」分类中，涵盖 STAR、真实故事库、个人贡献、协作冲突、反馈、失误、优先级、模糊需求、用户沟通、影响力、辅导、诚信、失败复盘与模拟面试。每个主题提供情境选择题与带追问的文字回答练习，支持草稿、参考结构、AI 反馈和累计进度。工作、学校、志愿活动和个人项目经历均可；不要求编造数字或成功结果。AI 只评价回答中的证据，不核实经历或预测录用。
+
+路线链接：`/#roadmap/frontend-performance`、`/#roadmap/backend-performance`、`/#roadmap/behavioral-interviews`。参考资料来自 [web.dev](https://web.dev/learn/performance/)、[React](https://react.dev/reference/react/Profiler)、[Microsoft Learn](https://learn.microsoft.com/en-us/azure/architecture/antipatterns/)、[Amazon 招聘准备](https://amazon.jobs/content/en/faq/interview-prep)及 [Microsoft Careers](https://careers.microsoft.com/v2/global/en/hiring-tips)。课程中的面试题是练习题，不声称是企业原题或统一招聘评分标准。
+
+验证：`pnpm test`、`pnpm build`。可选 `node scripts/verify-study.ts --performance-career` 使用真实 Codex 额度，在忽略的独立数据库中验证三条新路线的出题及正确、错误示例评审，不影响学习记录。
+
 AI requests use two serial lanes: learner actions have a reserved CLI slot, while translation and background preparation share a second slot. Running background work no longer blocks a submitted code review. At most two CLI processes run concurrently. Failed jobs release the queue, each request uses its own schema file, and a timed-out CLI process is stopped before the next job starts. Presentation translation is requested only for the currently selected language, without automatically warming the other language.
 
 源码更新后重新运行 `Start.bat` 或 `Start.ps1`；启动器会在构建缺失或源码比构建更新时自动执行类型检查和构建。新增路线后也请重新运行启动器。启动器会同时检查服务版本与路线目录版本；发现旧服务时，只重启经端口、进程和项目目录核验的本项目服务，保留 `data/` 下的学习记录。页面出现 `Unknown topic.` 或知识点总数仍为旧值时，也可用此方式更新服务后刷新页面。

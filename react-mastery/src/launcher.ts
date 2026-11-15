@@ -18,4 +18,4 @@ async function listenForLaunch() {
     }
   }
 }
-void listenForLaunch();
+if(['127.0.0.1','localhost'].includes(location.hostname))void listenForLaunch();

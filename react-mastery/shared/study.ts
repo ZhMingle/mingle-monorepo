@@ -8,7 +8,7 @@ export interface StudyLesson {
   overview:string;example:string;pitfall:string;
   keywords:KeywordBlank[];
   choice:{scenario:string;code:string;question:string;options:string[];correct:number;explanation:string};
-  coding:{scenario:string;language:string;starter:string;requirements:string[];reference:string;rubric:string[];cases:{id:string;input:string;expected:string}[];fixtures:{correct:string;incorrect:string};execution?:Challenge};
+  coding:{scenario:string;language:string;starter:string;requirements:string[];reference:string;rubric:string[];cases:{id:string;input:string;expected:string}[];fixtures:{correct:string;incorrect:string};execution?:Challenge;format?:'response'};
 }
 export interface StudyDraft {keywords:Record<string,string>;choice:number;code:string}
 export interface BlankResult {id:string;accepted:boolean;feedback:string}
@@ -50,16 +50,21 @@ export function validateStudyLesson(raw:unknown):StudyLesson {
   if(!c||![c.scenario,c.question,c.explanation].every(x=>nonempty(x))||typeof c.code!=='string'||c.code.length>6000||!Array.isArray(c.options)||c.options.length!==3||!c.options.every(x=>nonempty(x,2000))||new Set(c.options).size!==3||!Number.isInteger(c.correct)||c.correct<0||c.correct>2)throw new Error('Invalid choice exercise. Please try again.');
   const p=l.coding;
   if(!p||![p.scenario,p.language,p.starter,p.reference,p.fixtures?.correct,p.fixtures?.incorrect].every(x=>nonempty(x,12000))||!Array.isArray(p.requirements)||p.requirements.length<2||p.requirements.length>8||!p.requirements.every(x=>nonempty(x,1500))||!Array.isArray(p.rubric)||p.rubric.length<2||p.rubric.length>4||!p.rubric.every(x=>nonempty(x,1500))||!Array.isArray(p.cases)||p.cases.length!==2||new Set(p.cases.map(c=>c.id)).size!==2||p.cases.some(c=>![c.id,c.input,c.expected].every(x=>nonempty(x,2000)))||p.fixtures.correct===p.fixtures.incorrect)throw new Error('Invalid coding exercise. Please try again.');
-  return {...l,coding:{...p,starter:displayCode(p.starter).code}};
+  return {...l,coding:{...p,starter:p.format==='response'?p.starter:displayCode(p.starter).code}};
+}
+export function validateResponseLesson(raw:unknown):StudyLesson {
+  const lesson=raw as StudyLesson;
+  if(!lesson?.coding||lesson.coding.language!=='Plain text'||lesson.choice?.code!==''||lesson.coding.execution||lesson.keywords?.length!==0)throw new Error('Invalid response exercise. Please try again.');
+  return validateStudyLesson({...lesson,coding:{...lesson.coding,format:'response'}});
 }
 export function validateBlankResults(raw:unknown,ids:string[]):BlankResult[]{
   const list=(raw as {results?:BlankResult[]})?.results;
   if(!Array.isArray(list)||list.length!==ids.length||new Set(list.map(r=>r.id)).size!==ids.length||list.some(r=>!ids.includes(r.id)||typeof r.accepted!=='boolean'||!nonempty(r.feedback,1500)))throw new Error('Incomplete keyword feedback. Your answers are saved.');
   return list;
 }
-export function validateCodeReview(raw:unknown,code:string,ids:string[]):CodeReview {
+export function validateCodeReview(raw:unknown,code:string,ids:string[],format:'code'|'response'='code'):CodeReview {
   const r=raw as CodeReview;
-  if(!r||!nonempty(r.quote,1000)||r.quote.trim().length<4||!code.includes(r.quote.trim())||!nonempty(r.feedback,2500)||!Array.isArray(r.issues)||r.issues.length>8||!r.issues.every(x=>nonempty(x,1500))||!Array.isArray(r.cases)||r.cases.length!==ids.length||new Set(r.cases.map(c=>c.id)).size!==ids.length||r.cases.some(c=>!ids.includes(c.id)||typeof c.passed!=='boolean'||!nonempty(c.reason,1500)))throw new Error('Invalid AI code review. Your code is saved; retry later.');
+  if(!r||!nonempty(r.quote,1000)||r.quote.trim().length<4||!code.includes(r.quote.trim())||!nonempty(r.feedback,2500)||!Array.isArray(r.issues)||r.issues.length>8||!r.issues.every(x=>nonempty(x,1500))||!Array.isArray(r.cases)||r.cases.length!==ids.length||new Set(r.cases.map(c=>c.id)).size!==ids.length||r.cases.some(c=>!ids.includes(c.id)||typeof c.passed!=='boolean'||!nonempty(c.reason,1500)))throw new Error(format==='response'?'Invalid AI response feedback. Your answer is saved; retry later.':'Invalid AI code review. Your code is saved; retry later.');
   return {...r,quote:r.quote.trim()};
 }
 export function completedKinds(s:StudySession){return studyKinds.filter(kind=>s.attempts.some(a=>a.kind===kind&&a.accepted&&!a.error));}

@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {aliasMatches,completedKinds,publicStudy,validateBlankResults,validateCodeReview,validateStudyLesson} from '../shared/study.ts';
 import type {StudyLesson,StudyPayload} from '../shared/study.ts';
 import { learningPaths } from '../shared/paths.ts';
+import {responseLesson} from './response-fixtures.ts';
 const scratch=mkdtempSync(join(tmpdir(),'clarity-study-test-'));process.env.DATA_DIR=scratch;
 const {db,exportData}=await import('../server/store.ts');
 const {studyAction,getStudy,saveStudy,studyProgress,openStudy}=await import('../server/study.ts');
@@ -16,7 +17,7 @@ const lesson:StudyLesson={overview:'Repeat-safe updates can set a value without 
   {id:'k1',prompt:'Repeating a request has no further effect: it is ____.',answer:'idempotent',aliases:[],explanation:'Repeating it has the same effect as applying it once.'},
   {id:'k2',prompt:'Keep the original object unchanged; use an ____ update.',answer:'immutable',aliases:['immutability'],explanation:'Return a new object without changing the old one.'}
 ],choice:{scenario:'A counter starts at zero.',code:'n += 1;',question:'Is repeating this operation idempotent?',options:['Yes','No','Only on Tuesdays'],correct:1,explanation:'No: repeating increments changes the result.'},coding:{scenario:'Implement markDone(item).',language:'JavaScript',starter:'function markDone(item) { /* TODO */ }',requirements:['Return a new object with done true','Keep other fields and leave input unchanged'],reference:'function markDone(item) { return {...item, done: true}; }',rubric:['Copies the input','Sets done true without mutation'],cases:[{id:'c1',input:'{id: 1, done: false}',expected:'A new {id: 1, done: true}; original unchanged'},{id:'c2',input:'{id: 2, done: true}',expected:'A new {id: 2, done: true}; original unchanged'}],fixtures:{correct:'function markDone(item) { return {...item, done: true}; }',incorrect:'function markDone(item) { item.done = true; return item; }'}}};
-const generate=async<T>():Promise<T>=>structuredClone(lesson) as T;
+const generate=async<T>(prompt=''):Promise<T>=>structuredClone(prompt.includes('nontechnical behavioral interview practice lesson')?responseLesson:lesson) as T;
 function translated<T>(prompt:string):T{return {translations:JSON.parse(prompt.slice(prompt.lastIndexOf('\n')+1))} as T;}
 async function create(topicId='typescript.inference'){return (await studyAction('new',{topicId},'en',generate) as StudyPayload).session.id;}
 async function legacyCreate(){const id=await create();const s=getStudy(id);s.version='mixed-practice-v1';s.current='keywords';s.lesson.keywords=structuredClone(lesson.keywords);saveStudy(s);return id;}
@@ -24,7 +25,7 @@ const draft={keywords:{k1:'idempotency',k2:'immutability'},choice:1,code:lesson.
 
 test('every expanded stage and cloud topic can start without being mistaken for a static React lab',async()=>{
   for(const path of learningPaths){
-    const topics=(path.category==='cloud'||path.category==='tools'||['nextjs','django','angular','aspnet-core','ef-core'].includes(path.id))?path.stages.flatMap(s=>s.topics):path.stages.flatMap(s=>s.topics.slice(-4));
+    const topics=(path.category==='cloud'||path.category==='tools'||path.category==='career'||['nextjs','django','angular','aspnet-core','ef-core','frontend-performance','backend-performance'].includes(path.id))?path.stages.flatMap(s=>s.topics):path.stages.flatMap(s=>s.topics.slice(-4));
     for(const topic of topics){
       const id=await create(topic.id);const saved=getStudy(id);
       assert.equal(saved.topicId,topic.id);assert.equal(saved.lesson.coding.execution,undefined);
