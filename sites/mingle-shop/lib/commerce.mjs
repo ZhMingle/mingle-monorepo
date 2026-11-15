@@ -44,8 +44,8 @@ export function parseCart(input) {
   const seen = new Set();
   return input.map(item => { const id = textValue(item.id, 100, '商品编号', true); if (seen.has(id)) throw new ShopError('购物车有重复商品。'); seen.add(id); return { id, quantity: integer(item.quantity, 1, 99, '数量') }; }).sort((a, b) => a.id.localeCompare(b.id));
 }
-export function answerQuestion(text, product, settings, quantity = 1, explicitOffer = null) {
-  const en = !/[\u3400-\u9fff]/.test(text);
+export function answerQuestion(text, product, settings, quantity = 1, explicitOffer = null, language) {
+  const en = language==='en'||language!=='zh'&&!/[\u3400-\u9fff]/.test(text);
   const reply = (zh, english, needsOwner = false, acceptedCents = null) => ({ reply: en ? english : zh, needsOwner, acceptedCents });
   if (/退款|退货|投诉|损坏|取消|refund|return|complain|broken|cancel/i.test(text)) return reply(settings.returnPolicy || '我已记录你的售后问题，需要店主确认。可以留下联系邮箱。', settings.returnPolicy || 'I have noted your request for the shop owner. You can leave a contact email.', true);
   if (/人工|店主|human|owner|person/i.test(text)) return reply('已记录，请留下问题和联系邮箱，店主可在这里接着回复。', 'Please leave your question and contact email. The owner can continue this chat here.', true);

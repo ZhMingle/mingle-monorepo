@@ -1,4 +1,4 @@
-const OFFLINE_CACHE='mingle-offline-v1';
+const OFFLINE_CACHE='mingle-offline-v2';
 self.addEventListener('install',event=>{event.waitUntil(caches.open(OFFLINE_CACHE).then(cache=>cache.add('/offline.html')).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(self.clients.claim());});
 // Cache only the generic offline notice. Never cache shop/admin HTML, auth or API data.

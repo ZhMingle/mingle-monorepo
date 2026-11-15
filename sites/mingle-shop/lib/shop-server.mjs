@@ -1,3 +1,4 @@
+import {translateError} from './locale.mjs';
 import { categories, defaults, ShopError, integer, textValue, validateProduct, validateSettings, readiness, publicProduct, unitPrice, parseCart, answerQuestion, hash, verifyWebhook } from './commerce.mjs';
 import { productMediaMap, validateMediaIds, uploadMedia, serveMedia, generateProductCopy } from './product-media.mjs';
 
@@ -54,7 +55,8 @@ async function settle(db, session, eventId, env) {
 }
 export async function handleShopRequest(request, env, { dev = false, stripeFetch = fetch, visionFetch = fetch } = {}) {
   let newCookie = '';
-  const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...(newCookie ? { 'Set-Cookie': newCookie } : {}) } });
+  const language=request.headers.get('X-Shop-Language')==='zh'?'zh':'en';
+  const json = (value, status = 200) => new Response(JSON.stringify(value?.error?{...value,error:translateError(language,value.error)}:value), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...(newCookie ? { 'Set-Cookie': newCookie } : {}) } });
   try {
     const db = env.DB;
     if (!db) throw new ShopError('店铺数据库尚未连接。', 503);
@@ -172,7 +174,7 @@ export async function handleShopRequest(request, env, { dev = false, stripeFetch
       const product = input.productId ? await first(db, 'SELECT * FROM products WHERE id=? AND enabled=1', [textValue(input.productId, 100, '商品编号')]) : null;
       const contact = textValue(input.contact || '', 200, '联系邮箱');
       if (contact && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) throw new ShopError('联系邮箱格式不正确。');
-      const answer = answerQuestion(text, product, await settingsFor(db), quantity, input.offerCents ?? null);
+      const answer = answerQuestion(text, product, await settingsFor(db), quantity, input.offerCents ?? null, input.language);
       let quote = null;
       if (answer.acceptedCents !== null) {
         quote = { id: uuid(), productId: product.id, quantity, unitCents: answer.acceptedCents, expiresAt: Date.now() + 900000 };

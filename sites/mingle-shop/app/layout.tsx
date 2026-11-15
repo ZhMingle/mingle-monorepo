@@ -3,13 +3,14 @@ import type { Viewport } from "next";
 import "./shop.css";
 import "./mobile.css";
 import "./product-page.css";
+import "./language.css";
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#223e35" };
 
 export const metadata: Metadata = {
-  title: "Mingle's Choice · 日常好物",
-  description: "挑选日常好物，在线咨询，用 NZD 轻松结账。",
-  appleWebApp: { capable: true, title: "我的小店", statusBarStyle: "default" },
+  title: "Mingle's Choice · Everyday, considered.",
+  description: "Thoughtful everyday finds. Shop, chat and check out in NZD.",
+  appleWebApp: { capable: true, title: "My shop", statusBarStyle: "default" },
   icons: {
     icon: "/shop-icon.svg",
     shortcut: "/shop-icon.svg",
@@ -23,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
+    <html lang="en-NZ">
       <head>
         <link rel="manifest" href="/manifest.webmanifest" crossOrigin="use-credentials" />
       </head>
