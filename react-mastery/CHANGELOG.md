@@ -1,3 +1,8 @@
+## 2026-11-16 — Continuous notebook numbering and voice recovery
+
+- Close gaps in displayed English-card numbers after deletion, keep insertion order when reopening a saved word, and search by the displayed number. Preserve stored IDs, archival numbers, favorites and learning records.
+- Wait for late browser voices and try other natural English voices before system speech. Show the actual voice and fallback, allow longer online startup and provide natural-voice selection and stop controls.
+
 ## 2026-11-16 — Performance and behavioral interview paths
 
 - Add 24 bilingual topics each for frontend performance, backend performance and behavioral interviews, with prerequisites, three stage projects, self-checks and official references.

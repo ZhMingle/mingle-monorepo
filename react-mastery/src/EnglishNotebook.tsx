@@ -4,7 +4,8 @@ import {request} from './api.ts';
 import {useLanguage} from './language.tsx';
 import type {EnglishCard} from '../shared/english.ts';
 import {englishBatchInput} from '../shared/english.ts';
-import {englishVoices,createEnglishSpeaker} from './english-speech.ts';
+import {englishVoices,isNaturalVoice,createEnglishSpeaker} from './english-speech.ts';
+import type {VoiceInfo} from './english-speech.ts';
 import './english-notebook.css';
 
 export default function EnglishNotebook(){
@@ -30,6 +31,7 @@ export default function EnglishNotebook(){
   const [speechRate,setSpeechRate]=useState(1);
   const [speechState,setSpeechState]=useState<'loading'|'speaking'|'idle'|'error'>('idle');
   const [speechError,setSpeechError]=useState('');
+  const [playedVoice,setPlayedVoice]=useState<{voice?:VoiceInfo;fallback:boolean}|null>(null);
   const speaker=useRef<ReturnType<typeof createEnglishSpeaker>|null>(null);
   useEffect(()=>{
     if(!('speechSynthesis' in window))return;
@@ -43,8 +45,11 @@ export default function EnglishNotebook(){
     catch(e){setError((e as Error).message);}finally{setLoading(false);}
   }
   useEffect(()=>{void load();return()=>{if('speechSynthesis' in window)window.speechSynthesis.cancel();};},[]);
+  // Stored numbers preserve insertion order; visible ordinals close deletion gaps.
+  const orderedCards=cards.toSorted((a,b)=>b.number-a.number);
+  const displayNumbers=new Map(orderedCards.map((card,index)=>[card.id,orderedCards.length-index]));
   const active=cards.find(c=>c.id===selected);
-  const visible=cards.filter(c=>(tab==='all'||(tab==='favorite'?c.favorite:c.kind===tab))&&[String(c.number),c.term,c.query,c.meaning,c.usage,c.context,...c.examples.flatMap(e=>[e.english,e.chinese])].join(' ').toLocaleLowerCase().includes(filter.toLocaleLowerCase().trim()));
+  const visible=orderedCards.filter(c=>(tab==='all'||(tab==='favorite'?c.favorite:c.kind===tab))&&[String(displayNumbers.get(c.id)),c.term,c.query,c.meaning,c.usage,c.context,...c.examples.flatMap(e=>[e.english,e.chinese])].join(' ').toLocaleLowerCase().includes(filter.toLocaleLowerCase().trim()));
   const today=new Date().toDateString();
   const todayCount=cards.filter(c=>new Date(c.createdAt).toDateString()===today).length;
   async function lookup(value=query,lookupContext=context,retry=false){
@@ -80,7 +85,7 @@ export default function EnglishNotebook(){
   }
   function speak(value:string){
     if(!('speechSynthesis' in window)){setSpeechState('error');setSpeechError('unsupported');return;}
-    speaker.current??=createEnglishSpeaker(window.speechSynthesis,value=>new SpeechSynthesisUtterance(value),(state,error)=>{setSpeechState(state);setSpeechError(error||'');});
+    speaker.current??=createEnglishSpeaker(window.speechSynthesis,value=>new SpeechSynthesisUtterance(value),(state,error)=>{setSpeechState(state);setSpeechError(error||'');},(voice,fallback)=>setPlayedVoice({voice,fallback}));
     speaker.current.speak(value,voiceURI,speechRate);
   }
   return <div className="english-notebook">
@@ -100,18 +105,20 @@ export default function EnglishNotebook(){
     {error&&<div className="error-banner" role="alert"><span>{error}</span>{loading?null:<button onClick={()=>void load()}>{text('刷新卡片库','Reload notebook')}</button>}</div>}
     {notice&&<p className="english-status" role="status"><Check size={16}/>{notice}</p>}
     <div className="english-library-heading"><h2><BookOpen size={20}/>{text('我的英语积累','My English notebook')}</h2><span>{text('少一点堆砌，多一点会用。','Small notes. Useful English.')}</span></div>
-    {'speechSynthesis' in window&&<div className="english-voice-settings"><label>{text('朗读声音','Reading voice')} <select value={voices.some(voice=>voice.voiceURI===voiceURI)?voiceURI:''} onChange={e=>{setVoiceURI(e.target.value);try{localStorage.setItem('clarity.englishVoice',e.target.value);}catch{}}}><option value="">{text('自动选择（优先自然声音）','Automatic (prefer natural voices)')}</option>{voices.map(voice=><option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} · {voice.lang}</option>)}</select></label><label>{text('语速','Speed')} <select value={speechRate} onChange={e=>setSpeechRate(Number(e.target.value))}><option value={.85}>{text('稍慢','Slower')}</option><option value={1}>{text('正常','Normal')}</option><option value={1.1}>{text('稍快','Faster')}</option></select></label><button onClick={()=>speak('Could you give me a hand?')}>{text('试听声音','Preview voice')}</button><small>{text('声音由当前浏览器提供，单词和例句使用同一个设置。','Voices are provided by this browser. Words and examples share these settings.')}</small></div>}
+    {'speechSynthesis' in window&&<div className="english-voice-settings"><label>{text('朗读声音','Reading voice')} <select value={voices.some(voice=>voice.voiceURI===voiceURI)?voiceURI:''} onChange={e=>{setVoiceURI(e.target.value);try{localStorage.setItem('clarity.englishVoice',e.target.value);}catch{}}}><option value="">{text('自动选择（优先自然声音）','Automatic (prefer natural voices)')}</option>{voices.map(voice=><option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} · {voice.lang}</option>)}</select></label><label>{text('语速','Speed')} <select value={speechRate} onChange={e=>setSpeechRate(Number(e.target.value))}><option value={.85}>{text('稍慢','Slower')}</option><option value={1}>{text('正常','Normal')}</option><option value={1.1}>{text('稍快','Faster')}</option></select></label><button onClick={()=>speak('Could you give me a hand?')}>{text('试听声音','Preview voice')}</button><button disabled={!voices.some(isNaturalVoice)} onClick={()=>{setVoiceURI('');try{localStorage.removeItem('clarity.englishVoice');}catch{}}}>{text('使用推荐自然声音','Use recommended natural voice')}</button><small>{voices.some(isNaturalVoice)?text('优先使用浏览器提供的自然英语音色，单词和例句使用相同设置。','Prefer the browser’s natural English voices for both words and examples.'):text('当前浏览器未提供标为自然的英语音色；系统声音可能较机械。可用 Edge 打开，检查是否提供 Online (Natural) 声音。','This browser has no English voice marked as natural. System speech may sound robotic. Edge may offer Online (Natural) voices.')}</small></div>}
+      {playedVoice&&<p className="english-voice-status" role="status">{text('上次实际使用：','Last voice used: ')}{playedVoice.voice?.name??text('浏览器默认英语声音','Browser default English voice')}{playedVoice.fallback&&text('（前一个音色不可用，已切换）',' (the previous voice was unavailable)')}</p>}
+      {(speechState==='loading'||speechState==='speaking')&&<button className="secondary" onClick={()=>speaker.current?.stop()}>{text('停止朗读','Stop reading')}</button>}
       {speechState==='error'&&<p role="alert">{text('朗读未能播放，请尝试选择其他声音，并检查浏览器标签页是否静音。','Speech could not play. Try another voice and check whether this tab is muted.')} ({speechError})</p>}
       {(speechState==='loading'||speechState==='speaking')&&<p role="status">{speechState==='loading'?text('正在启动朗读…','Starting speech…'):text('正在朗读…','Speaking…')}</p>}
     <div className="english-library">
       <aside className="english-card-list" aria-label={text('已保存的英语卡片','Saved English cards')}>
         <label className="english-filter"><Search size={16}/><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder={text('搜索已存的卡片','Search saved cards')} aria-label={text('搜索已存的卡片','Search saved cards')}/></label>
         <div className="english-tabs" role="group" aria-label={text('筛选卡片','Filter cards')}>{(['all','word','expression','favorite'] as const).map(id=><button key={id} aria-pressed={tab===id} className={tab===id?'active':''} onClick={()=>setTab(id)}>{({all:text('全部','All'),word:text('单词','Words'),expression:text('表达','Phrases'),favorite:text('收藏','Starred')})[id]}</button>)}</div>
-        <div className="english-card-scroll">{loading?<p role="status" className="english-list-empty">{text('正在读取卡片…','Loading cards…')}</p>:visible.length?visible.map(card=><button className={`english-card-item ${selected===card.id?'active':''}`} key={card.id} aria-pressed={selected===card.id} onClick={()=>{setSelected(card.id);setNotice('');}}><span><strong lang="en">#{card.number} · {card.term}</strong>{card.favorite&&<Star size={14} fill="currentColor"/>}</span><p>{card.meaning}</p><small>{card.kind==='word'?text('单词','Word'):text('表达','Expression')} · {new Date(card.createdAt).toLocaleDateString(zh?'zh-CN':'en-NZ',{month:'short',day:'numeric'})}</small></button>):<p className="english-list-empty">{cards.length?text('没有符合筛选条件的卡片。','No matching cards.'):text('查过的词和表达会自动出现在这里。','Your words and expressions will appear here.')}</p>}</div>
+        <div className="english-card-scroll">{loading?<p role="status" className="english-list-empty">{text('正在读取卡片…','Loading cards…')}</p>:visible.length?visible.map(card=><button className={`english-card-item ${selected===card.id?'active':''}`} key={card.id} aria-pressed={selected===card.id} onClick={()=>{setSelected(card.id);setNotice('');}}><span><strong lang="en">#{displayNumbers.get(card.id)} · {card.term}</strong>{card.favorite&&<Star size={14} fill="currentColor"/>}</span><p>{card.meaning}</p><small>{card.kind==='word'?text('单词','Word'):text('表达','Expression')} · {new Date(card.createdAt).toLocaleDateString(zh?'zh-CN':'en-NZ',{month:'short',day:'numeric'})}</small></button>):<p className="english-list-empty">{cards.length?text('没有符合筛选条件的卡片。','No matching cards.'):text('查过的词和表达会自动出现在这里。','Your words and expressions will appear here.')}</p>}</div>
       </aside>
       {active?<article className="english-detail" key={active.id}>
         <div className="english-detail-top"><span className="english-kicker">{active.kind==='word'?text('一个单词，一点进步','ONE WORD, ONE SMALL STEP'):text('一句表达，多一种说法','ONE MORE WAY TO SAY IT')}</span><div><button className="icon-button" disabled={editing} onClick={()=>void favorite(active)} aria-label={active.favorite?text('取消收藏','Unstar card'):text('收藏卡片','Star card')} aria-pressed={active.favorite}><Star size={19} fill={active.favorite?'currentColor':'none'}/></button><button className="icon-button" disabled={editing} onClick={()=>void remove(active)} aria-label={text('删除卡片','Delete card')}><Trash2 size={17}/></button></div></div>
-        <div className="english-term"><h2 lang="en">#{active.number} · {active.term}</h2>{'speechSynthesis' in window&&<button className="english-audio" aria-label={text('朗读表达','Read expression aloud')} onClick={()=>speak(active.term)}><Headphones size={19}/></button>}</div>
+        <div className="english-term"><h2 lang="en">#{displayNumbers.get(active.id)} · {active.term}</h2>{'speechSynthesis' in window&&<button className="english-audio" aria-label={text('朗读表达','Read expression aloud')} onClick={()=>speak(active.term)}><Headphones size={19}/></button>}</div>
         {active.pronunciation&&<p className="english-pronunciation" lang="en">{active.pronunciation}</p>}
         <p className="english-meaning">{active.meaning}</p>
         {active.context&&<blockquote className="english-original"><span>{text('你看到的原句','Your context')}</span>{active.context}</blockquote>}
