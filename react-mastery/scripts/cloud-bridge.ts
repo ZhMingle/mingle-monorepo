@@ -12,5 +12,20 @@ async function call(path:string,body:unknown){const response=await fetch(new URL
 const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 async function heartbeat(){for(;;){try{await call('heartbeat',{});}catch{/* Retry without logging private data. */}await sleep(10000);}}
 async function work(){for(;;){try{const {job}=await call('claim',{});if(!job){await sleep(1200);continue;}let result:unknown,error:string|undefined;try{result=await runStructured(job.prompt,job.schema,job.priority);}catch(cause){error=(cause as Error).message;}await call('complete',{id:job.id,lease:job.lease,result,error});}catch{await sleep(3000);}}}
+async function speech(){
+  if(!existsSync('local-speech/node_modules/kokoro-js')){console.log('Local speech is not installed. See local-speech/README.md.');return;}
+  const moduleURL=new URL('../local-speech/speech.mjs',import.meta.url).href;
+  let model: {loadSpeech:()=>Promise<unknown>;generateSpeech:(text:string,voice:string)=>Promise<Buffer>};
+  for(;;){try{model=await import(moduleURL);await model.loadSpeech();break;}catch{console.error('Local speech could not start; retrying in 30 seconds.');await sleep(30000);}}
+  console.log('Kokoro local neural speech is ready.');
+  const heartbeat=async()=>{for(;;){try{await call('speech/heartbeat',{});}catch{/* Retry connection. */}await sleep(10000);}};
+  const work=async()=>{for(;;){try{
+    const {job}=await call('speech/claim',{});if(!job){await sleep(1000);continue;}
+    let audio:string|undefined,error:string|undefined;
+    try{audio=(await model.generateSpeech(job.text,job.voice)).toString('base64');}catch{error='本机语音生成失败，请重试。 / Local speech generation failed. Please retry.';}
+    await call('speech/complete',{id:job.id,lease:job.lease,audio,error});
+  }catch{await sleep(3000);}}};
+  await Promise.all([heartbeat(),work()]);
+}
 console.log('Clarity cloud bridge is running. Keep this computer awake for AI requests.');
-await Promise.all([heartbeat(),work(),work()]);
+await Promise.all([heartbeat(),work(),work(),speech()]);

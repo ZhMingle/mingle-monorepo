@@ -1,3 +1,9 @@
+## 2026-11-17 — Free local neural speech
+
+- Replace default notebook speech with real Kokoro CPU inference on the owner's computer, with US and British voices, preview, word/example reading, speed and mobile audio controls.
+- Add a separate authenticated speech queue and bounded persistent private audio cache. Cached clips replay offline; generation failures remain explicit, with browser speech available as a chosen backup.
+- Keep the optional model runtime outside the cloud image and preserve learner records. Verify lease validation, request selection, offline caching, audio format and byte-range playback.
+
 ## 2026-11-16 — Continuous notebook numbering and voice recovery
 
 - Close gaps in displayed English-card numbers after deletion, keep insertion order when reopening a saved word, and search by the displayed number. Preserve stored IDs, archival numbers, favorites and learning records.

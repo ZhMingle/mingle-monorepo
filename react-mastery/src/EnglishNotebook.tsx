@@ -6,6 +6,7 @@ import type {EnglishCard} from '../shared/english.ts';
 import {englishBatchInput} from '../shared/english.ts';
 import {englishVoices,isNaturalVoice,createEnglishSpeaker} from './english-speech.ts';
 import type {VoiceInfo} from './english-speech.ts';
+import {speechVoices,type SpeechVoice,type SpeechClip} from '../shared/english-audio.ts';
 import './english-notebook.css';
 
 export default function EnglishNotebook(){
@@ -33,6 +34,18 @@ export default function EnglishNotebook(){
   const [speechError,setSpeechError]=useState('');
   const [playedVoice,setPlayedVoice]=useState<{voice?:VoiceInfo;fallback:boolean}|null>(null);
   const speaker=useRef<ReturnType<typeof createEnglishSpeaker>|null>(null);
+  const [speechEngine,setSpeechEngine]=useState<'neural'|'browser'>('neural');
+  const [neuralVoice,setNeuralVoice]=useState<SpeechVoice>(()=>{try{return localStorage.getItem('clarity.neuralVoice')==='bf_emma'?'bf_emma':'af_heart';}catch{return 'af_heart';}});
+  const audioRef=useRef<HTMLAudioElement>(null);
+  const audioRequest=useRef<AbortController|null>(null);
+  const playbackGeneration=useRef(0);
+  const [audioURL,setAudioURL]=useState('');
+  const [audioLabel,setAudioLabel]=useState('');
+  const [audioCached,setAudioCached]=useState(false);
+  const [playBlocked,setPlayBlocked]=useState(false);
+  function stopSpeech(){playbackGeneration.current++;audioRequest.current?.abort();audioRequest.current=null;speaker.current?.stop();audioRef.current?.pause();setSpeechState('idle');}
+  useEffect(()=>()=>{playbackGeneration.current++;audioRequest.current?.abort();audioRef.current?.pause();},[]);
+  useEffect(()=>{if(audioRef.current)audioRef.current.playbackRate=speechRate;},[speechRate]);
   useEffect(()=>{
     if(!('speechSynthesis' in window))return;
     const update=()=>setVoices(englishVoices(window.speechSynthesis.getVoices()));
@@ -83,7 +96,20 @@ export default function EnglishNotebook(){
     try{await request('english/delete',{id:card.id});const next=cards.filter(c=>c.id!==card.id);setCards(next);setSelected(next[0]?.id??'');}
     catch(e){setError((e as Error).message);}finally{setEditing(false);}
   }
-  function speak(value:string){
+  async function speak(value:string,part:'preview'|'term'|'example'='term',index?:number){
+    stopSpeech();setSpeechError('');setPlayBlocked(false);setPlayedVoice(null);
+    if(speechEngine==='neural'){
+      const generation=playbackGeneration.current,controller=new AbortController();audioRequest.current=controller;
+      setSpeechState('loading');setAudioURL('');setAudioLabel(value);
+      try{
+        const clip=await request<SpeechClip>('english/speech',{cardId:active?.id,part,index,voice:neuralVoice},controller.signal);
+        if(playbackGeneration.current!==generation)return;
+        const audio=audioRef.current;if(!audio)return;
+        setAudioURL(clip.url);setAudioCached(clip.cached);audio.src=clip.url;audio.playbackRate=speechRate;
+        try{await audio.play();}catch(cause){if(playbackGeneration.current===generation){setSpeechState('idle');if((cause as Error).name==='NotAllowedError')setPlayBlocked(true);else{setSpeechState('error');setSpeechError(text('音频未能播放，请重试。','Audio could not play. Please retry.'));}}}
+      }catch(cause){if(!controller.signal.aborted&&playbackGeneration.current===generation){setSpeechState('error');setSpeechError((cause as Error).message);}}
+      return;
+    }
     if(!('speechSynthesis' in window)){setSpeechState('error');setSpeechError('unsupported');return;}
     speaker.current??=createEnglishSpeaker(window.speechSynthesis,value=>new SpeechSynthesisUtterance(value),(state,error)=>{setSpeechState(state);setSpeechError(error||'');},(voice,fallback)=>setPlayedVoice({voice,fallback}));
     speaker.current.speak(value,voiceURI,speechRate);
@@ -105,11 +131,17 @@ export default function EnglishNotebook(){
     {error&&<div className="error-banner" role="alert"><span>{error}</span>{loading?null:<button onClick={()=>void load()}>{text('刷新卡片库','Reload notebook')}</button>}</div>}
     {notice&&<p className="english-status" role="status"><Check size={16}/>{notice}</p>}
     <div className="english-library-heading"><h2><BookOpen size={20}/>{text('我的英语积累','My English notebook')}</h2><span>{text('少一点堆砌，多一点会用。','Small notes. Useful English.')}</span></div>
-    {'speechSynthesis' in window&&<div className="english-voice-settings"><label>{text('朗读声音','Reading voice')} <select value={voices.some(voice=>voice.voiceURI===voiceURI)?voiceURI:''} onChange={e=>{setVoiceURI(e.target.value);try{localStorage.setItem('clarity.englishVoice',e.target.value);}catch{}}}><option value="">{text('自动选择（优先自然声音）','Automatic (prefer natural voices)')}</option>{voices.map(voice=><option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} · {voice.lang}</option>)}</select></label><label>{text('语速','Speed')} <select value={speechRate} onChange={e=>setSpeechRate(Number(e.target.value))}><option value={.85}>{text('稍慢','Slower')}</option><option value={1}>{text('正常','Normal')}</option><option value={1.1}>{text('稍快','Faster')}</option></select></label><button onClick={()=>speak('Could you give me a hand?')}>{text('试听声音','Preview voice')}</button><button disabled={!voices.some(isNaturalVoice)} onClick={()=>{setVoiceURI('');try{localStorage.removeItem('clarity.englishVoice');}catch{}}}>{text('使用推荐自然声音','Use recommended natural voice')}</button><small>{voices.some(isNaturalVoice)?text('优先使用浏览器提供的自然英语音色，单词和例句使用相同设置。','Prefer the browser’s natural English voices for both words and examples.'):text('当前浏览器未提供标为自然的英语音色；系统声音可能较机械。可用 Edge 打开，检查是否提供 Online (Natural) 声音。','This browser has no English voice marked as natural. System speech may sound robotic. Edge may offer Online (Natural) voices.')}</small></div>}
+    <div className="english-voice-settings"><label>{text('朗读方式','Speech source')} <select value={speechEngine} onChange={e=>{stopSpeech();setAudioURL('');setSpeechError('');setPlayedVoice(null);setSpeechEngine(e.target.value as 'neural'|'browser');}}><option value="neural">{text('自然语音（本机模型）','Neural speech (local model)')}</option>{'speechSynthesis' in window&&<option value="browser">{text('浏览器语音（备用）','Browser speech (backup)')}</option>}</select></label>
+      {speechEngine==='neural'?<label>{text('声音','Voice')} <select value={neuralVoice} onChange={e=>{stopSpeech();setAudioURL('');setNeuralVoice(e.target.value as SpeechVoice);try{localStorage.setItem('clarity.neuralVoice',e.target.value);}catch{}}}>{speechVoices.map(voice=><option key={voice.id} value={voice.id}>{zh?voice.zh:voice.name}</option>)}</select></label>:<label>{text('浏览器声音','Browser voice')} <select value={voices.some(voice=>voice.voiceURI===voiceURI)?voiceURI:''} onChange={e=>{stopSpeech();setVoiceURI(e.target.value);try{localStorage.setItem('clarity.englishVoice',e.target.value);}catch{}}}><option value="">{text('自动选择','Automatic')}</option>{voices.map(voice=><option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} · {voice.lang}</option>)}</select></label>}
+      <label>{text('语速','Speed')} <select value={speechRate} onChange={e=>setSpeechRate(Number(e.target.value))}><option value={.85}>{text('稍慢','Slower')}</option><option value={1}>{text('正常','Normal')}</option><option value={1.1}>{text('稍快','Faster')}</option></select></label><button onClick={()=>void speak('Could you give me a hand? I am trying to figure this out.','preview')}>{text('试听声音','Preview voice')}</button>
+      <small>{speechEngine==='neural'?text('AI 合成语音 · 免费本机生成。新音频需要电脑保持在线；已生成的音频保存在私人空间，可重复播放。','AI-generated speech · Free local generation. Keep your computer online for new clips; saved clips can be replayed from your private workspace.'):voices.some(isNaturalVoice)?text('使用浏览器提供的英语声音。','Uses English voices supplied by your browser.'):text('当前浏览器没有自然英语音色，备用声音可能较机械。','This browser has no natural English voice; backup speech may sound robotic.')}</small>
+    </div>
+      <div className="english-neural-player" hidden={speechEngine!=='neural'||!audioURL}><p>{audioLabel} <small>· Kokoro · {audioCached?text('已缓存','Cached'):text('新生成','New clip')}</small></p><audio ref={audioRef} controls preload="none" aria-label={text('自然语音播放器','Neural speech player')} onPlaying={()=>setSpeechState('speaking')} onPause={()=>setSpeechState(state=>state==='speaking'?'idle':state)} onEnded={()=>setSpeechState('idle')} onError={()=>{if(audioRef.current?.getAttribute('src')){setSpeechState('error');setSpeechError(text('音频加载失败，请重新点击朗读按钮。','Audio could not load. Tap the reading button again.'));}}}/></div>
+      {playBlocked&&<p role="status">{text('音频已准备好，请点击播放器的播放按钮。','Audio is ready. Tap Play in the audio player.')}</p>}
       {playedVoice&&<p className="english-voice-status" role="status">{text('上次实际使用：','Last voice used: ')}{playedVoice.voice?.name??text('浏览器默认英语声音','Browser default English voice')}{playedVoice.fallback&&text('（前一个音色不可用，已切换）',' (the previous voice was unavailable)')}</p>}
-      {(speechState==='loading'||speechState==='speaking')&&<button className="secondary" onClick={()=>speaker.current?.stop()}>{text('停止朗读','Stop reading')}</button>}
-      {speechState==='error'&&<p role="alert">{text('朗读未能播放，请尝试选择其他声音，并检查浏览器标签页是否静音。','Speech could not play. Try another voice and check whether this tab is muted.')} ({speechError})</p>}
-      {(speechState==='loading'||speechState==='speaking')&&<p role="status">{speechState==='loading'?text('正在启动朗读…','Starting speech…'):text('正在朗读…','Speaking…')}</p>}
+      {(speechState==='loading'||speechState==='speaking')&&<button className="secondary" onClick={stopSpeech}>{text('停止朗读','Stop reading')}</button>}
+      {speechState==='error'&&<p role="alert">{speechError}</p>}
+      {(speechState==='loading'||speechState==='speaking')&&<p role="status">{speechState==='loading'?(speechEngine==='neural'?text('正在准备自然语音，首次生成需要稍等…','Preparing neural speech; the first generation may take a moment…'):text('正在启动朗读…','Starting speech…')):text('正在朗读…','Speaking…')}</p>}
     <div className="english-library">
       <aside className="english-card-list" aria-label={text('已保存的英语卡片','Saved English cards')}>
         <label className="english-filter"><Search size={16}/><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder={text('搜索已存的卡片','Search saved cards')} aria-label={text('搜索已存的卡片','Search saved cards')}/></label>
@@ -118,12 +150,12 @@ export default function EnglishNotebook(){
       </aside>
       {active?<article className="english-detail" key={active.id}>
         <div className="english-detail-top"><span className="english-kicker">{active.kind==='word'?text('一个单词，一点进步','ONE WORD, ONE SMALL STEP'):text('一句表达，多一种说法','ONE MORE WAY TO SAY IT')}</span><div><button className="icon-button" disabled={editing} onClick={()=>void favorite(active)} aria-label={active.favorite?text('取消收藏','Unstar card'):text('收藏卡片','Star card')} aria-pressed={active.favorite}><Star size={19} fill={active.favorite?'currentColor':'none'}/></button><button className="icon-button" disabled={editing} onClick={()=>void remove(active)} aria-label={text('删除卡片','Delete card')}><Trash2 size={17}/></button></div></div>
-        <div className="english-term"><h2 lang="en">#{displayNumbers.get(active.id)} · {active.term}</h2>{'speechSynthesis' in window&&<button className="english-audio" aria-label={text('朗读表达','Read expression aloud')} onClick={()=>speak(active.term)}><Headphones size={19}/></button>}</div>
+        <div className="english-term"><h2 lang="en">#{displayNumbers.get(active.id)} · {active.term}</h2><button className="english-audio" aria-label={text('朗读表达','Read expression aloud')} onClick={()=>void speak(active.term)}><Headphones size={19}/></button></div>
         {active.pronunciation&&<p className="english-pronunciation" lang="en">{active.pronunciation}</p>}
         <p className="english-meaning">{active.meaning}</p>
         {active.context&&<blockquote className="english-original"><span>{text('你看到的原句','Your context')}</span>{active.context}</blockquote>}
         <section className="english-usage"><h3>{text('什么时候用','When to use it')}</h3><p>{active.usage}</p></section>
-        <section className="english-examples"><h3>{text('放进句子里','In a sentence')}</h3>{active.examples.map((example,i)=><div key={i}><span className="english-example-number">0{i+1}</span><div><p lang="en">{example.english}</p><span>{example.chinese}</span></div>{'speechSynthesis' in window&&<button className="english-audio" aria-label={text(`朗读例句 ${i+1}`,`Read example ${i+1} aloud`)} onClick={()=>speak(example.english)}><Headphones size={16}/></button>}</div>)}</section>
+        <section className="english-examples"><h3>{text('放进句子里','In a sentence')}</h3>{active.examples.map((example,i)=><div key={i}><span className="english-example-number">0{i+1}</span><div><p lang="en">{example.english}</p><span>{example.chinese}</span></div><button className="english-audio" aria-label={text(`朗读例句 ${i+1}`,`Read example ${i+1} aloud`)} onClick={()=>void speak(example.english,'example',i)}><Headphones size={16}/></button></div>)}</section>
         <section className="english-pitfall"><h3>{text('顺手记住这一点','One thing to remember')}</h3><p>{active.pitfall}</p></section>
         {active.related.length>0&&<section className="english-related"><h3>{text('顺便认识','You might also use')}</h3><div>{active.related.map(item=><button key={item.term} disabled={working} onClick={()=>{setContext('');void lookup(item.term,'');}}><strong lang="en">{item.term}</strong><span>{item.meaning}</span><ArrowUpRight size={14}/></button>)}</div></section>}
         <footer className="english-detail-footer"><Check size={14}/>{text('已保存在本机','Saved on this computer')}<span>AI {text('整理','notes')} · {new Date(active.createdAt).toLocaleDateString(zh?'zh-CN':'en-NZ')}</span></footer>
