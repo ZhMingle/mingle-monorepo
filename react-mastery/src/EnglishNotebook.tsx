@@ -9,6 +9,10 @@ import type {VoiceInfo} from './english-speech.ts';
 import {speechVoices,type SpeechVoice,type SpeechClip} from '../shared/english-audio.ts';
 import './english-notebook.css';
 
+export function EnglishNotebookHeading(){
+  const {language}=useLanguage();
+  return <div className="english-page-title"><span className="eyebrow">A LITTLE ENGLISH, EVERY DAY</span><h1>{language==='zh'?'把遇到的英语，变成自己的。':'Make everyday English your own.'}<span className="heading-dot">.</span></h1><p>{language==='zh'?'查一个词，记住一种用法。AI 帮你整理，你只管慢慢积累。':'Look up a word or sentence. Keep a useful note for next time.'}</p></div>;
+}
 export default function EnglishNotebook(){
   const {language}=useLanguage();
   const zh=language==='zh';
@@ -16,7 +20,6 @@ export default function EnglishNotebook(){
   const [cards,setCards]=useState<EnglishCard[]>([]);
   const [selected,setSelected]=useState('');
   const [query,setQuery]=useState('');
-  const [context,setContext]=useState('');
   const [filter,setFilter]=useState('');
   const [tab,setTab]=useState<'all'|'word'|'expression'|'favorite'>('all');
   const [loading,setLoading]=useState(true);
@@ -65,10 +68,10 @@ export default function EnglishNotebook(){
   const visible=orderedCards.filter(c=>(tab==='all'||(tab==='favorite'?c.favorite:c.kind===tab))&&[String(displayNumbers.get(c.id)),c.term,c.query,c.meaning,c.usage,c.context,...c.examples.flatMap(e=>[e.english,e.chinese])].join(' ').toLocaleLowerCase().includes(filter.toLocaleLowerCase().trim()));
   const today=new Date().toDateString();
   const todayCount=cards.filter(c=>new Date(c.createdAt).toDateString()===today).length;
-  async function lookup(value=query,lookupContext=context,retry=false){
+  async function lookup(value=query,retry=false){
     if(loading||running.current||!value.trim())return;
     let items:ReturnType<typeof englishBatchInput>;
-    try{items=englishBatchInput(value,lookupContext);}catch(e){setError((e as Error).message);return;}
+    try{items=englishBatchInput(value);}catch(e){setError((e as Error).message);return;}
     running.current=true;setWorking(true);setError('');setNotice('');
     if(retry)setBatch(old=>old.map(item=>item.query===items[0].query?{...item,status:'pending',error:undefined}:item));
     else{setQuery(value);setBatch(items.map(item=>({...item,status:'pending'})));}
@@ -115,19 +118,15 @@ export default function EnglishNotebook(){
     speaker.current.speak(value,voiceURI,speechRate);
   }
   return <div className="english-notebook">
-    <div className="page-heading"><div><span className="eyebrow">A LITTLE ENGLISH, EVERY DAY</span><h1>{text('把遇到的英语，变成自己的。','Make everyday English your own.')}<span className="heading-dot">.</span></h1><p>{text('查一个词，记住一种用法。AI 帮你整理，你只管慢慢积累。','Look up a word or expression. Keep a small, useful note for next time.')}</p></div><a className="secondary" href="/api/english/export"><ArrowDownToLine size={16}/>{text('导出卡片','Export cards')}</a></div>
     <section className="english-search-panel" aria-labelledby="english-search-title">
-      <span className="english-kicker"><Sparkles size={15}/>{text('今天遇到了什么？','What did you come across today?')}</span>
-      <h2 id="english-search-title">{text('一次输入多个词，分别生成卡片。','Add several words or phrases, one card for each.')}</h2>
+      <div className="english-search-heading"><div><span className="english-kicker"><Sparkles size={15}/>{text('今天遇到了什么？','What did you come across today?')}</span><h2 id="english-search-title">{text('单词、短语、原句，都能记下来。','Save words, phrases or whole sentences.')}</h2></div><a className="secondary" href="/api/english/export"><ArrowDownToLine size={16}/>{text('导出卡片','Export cards')}</a></div>
       <form onSubmit={e=>{e.preventDefault();void lookup();}}>
-        <div className="english-query"><textarea ref={queryInput} aria-label={text('批量输入单词或表达','Enter words or phrases')} maxLength={10000} rows={3} disabled={working} value={query} onChange={e=>setQuery(e.target.value)} placeholder={text('在这里输入单词或短语…','Enter words or phrases here…')} required/>{query&&<button type="button" className="english-clear" disabled={working} aria-label={text('清空输入','Clear input')} title={text('清空输入','Clear input')} onClick={()=>{setQuery('');setError('');setNotice('');queryInput.current?.focus();}}><X size={18}/></button>}</div>
-        <p>{text('每行一个，或用分号分隔；短语中的空格会保留。一次最多 50 项，重复项自动合并。','One per line, or separate with semicolons. Spaces inside phrases are kept. Up to 50 unique items.')}</p>
-        <div className="english-query-actions"><button type="submit" className="dark-button" disabled={loading||working||!query.trim()}>{working?<LoaderCircle className="spin" size={17}/>:<Sparkles size={17}/>} {working?text('正在生成…','Generating…'):text('生成并保存卡片','Generate & save cards')}</button></div>
-        <details className="english-context"><summary>{text('有原句？补充语境会更准确','Have a sentence? Add context for a better explanation')}</summary><label>{text('它出现在哪句话里？（选填）','Where did you see it? (optional)')}<textarea value={context} onChange={e=>setContext(e.target.value)} maxLength={500} rows={2} placeholder="I’m down for coffee after work."/></label></details>
+        <div className="english-entry-row"><div className="english-query"><textarea ref={queryInput} aria-label={text('输入单词、短语或英文原句','Enter words, phrases or English sentences')} aria-describedby="english-input-hint" maxLength={10000} rows={2} disabled={working} value={query} onChange={e=>setQuery(e.target.value)} placeholder={text('输入单词、短语或完整英文句子…','Enter a word, phrase or complete English sentence…')} required/>{query&&<button type="button" className="english-clear" disabled={working} aria-label={text('清空输入','Clear input')} title={text('清空输入','Clear input')} onClick={()=>{setQuery('');setError('');setNotice('');queryInput.current?.focus();}}><X size={18}/></button>}</div><button type="submit" className="dark-button english-generate-button" disabled={loading||working||!query.trim()}>{working?<LoaderCircle className="spin" size={17}/>:<Sparkles size={17}/>} {working?text('正在生成…','Generating…'):text('生成并保存卡片','Generate & save cards')}</button></div>
+        <p id="english-input-hint">{text('每行一项，最多 50 项，每项最多 300 字符；单词和短语也可用分号分隔。原句会保留为例句，并配上中文翻译。','One item per line, up to 50 items and 300 characters each. Semicolons also separate word lists. Original sentences become examples with Chinese translations.')}</p>
       </form>
       <div className="english-search-foot"><span>{text('英文或中文都能查 · 自动保存 · 再查直接打开','English or Chinese · Automatically saved · Reuse saved cards')}</span><span><strong>{todayCount}</strong> {text('张今日新卡片','new today')}<i/> <strong>{cards.length}</strong> {text('张积累','in your notebook')}</span></div>
     </section>
-    {batch.length>0&&<section className="english-batch" aria-label={text('生成进度','Generation progress')}><p role="status">{text('生成进度','Progress')}：{batch.filter(item=>item.status==='done'||item.status==='failed').length}/{batch.length} · {text('已保存／打开','Saved or opened')} {batch.filter(item=>item.status==='done').length}</p><ul>{batch.map(item=><li key={item.query}><strong>{item.query}</strong><span>{({pending:text('等待生成','Queued'),working:text('正在生成…','Generating…'),done:text('已保存／打开','Saved or opened'),failed:text('生成失败','Failed')})[item.status]}</span>{item.error&&<span role="alert">{item.error}</span>}{item.status==='failed'&&<button disabled={working} onClick={()=>void lookup(item.query,item.context,true)}>{text('重试此项','Retry this item')}</button>}</li>)}</ul></section>}
+    {batch.length>0&&<section className="english-batch" aria-label={text('生成进度','Generation progress')}><p role="status">{text('生成进度','Progress')}：{batch.filter(item=>item.status==='done'||item.status==='failed').length}/{batch.length} · {text('已保存／打开','Saved or opened')} {batch.filter(item=>item.status==='done').length}</p><ul>{batch.map(item=><li key={item.query}><strong>{item.query}</strong><span>{({pending:text('等待生成','Queued'),working:text('正在生成…','Generating…'),done:text('已保存／打开','Saved or opened'),failed:text('生成失败','Failed')})[item.status]}</span>{item.error&&<span role="alert">{item.error}</span>}{item.status==='failed'&&<button disabled={working} onClick={()=>void lookup(item.query,true)}>{text('重试此项','Retry this item')}</button>}</li>)}</ul></section>}
     {error&&<div className="error-banner" role="alert"><span>{error}</span>{loading?null:<button onClick={()=>void load()}>{text('刷新卡片库','Reload notebook')}</button>}</div>}
     {notice&&<p className="english-status" role="status"><Check size={16}/>{notice}</p>}
     <div className="english-library-heading"><h2><BookOpen size={20}/>{text('我的英语积累','My English notebook')}</h2><span>{text('少一点堆砌，多一点会用。','Small notes. Useful English.')}</span></div>
@@ -157,9 +156,9 @@ export default function EnglishNotebook(){
         <section className="english-usage"><h3>{text('什么时候用','When to use it')}</h3><p>{active.usage}</p></section>
         <section className="english-examples"><h3>{text('放进句子里','In a sentence')}</h3>{active.examples.map((example,i)=><div key={i}><span className="english-example-number">0{i+1}</span><div><p lang="en">{example.english}</p><span>{example.chinese}</span></div><button className="english-audio" aria-label={text(`朗读例句 ${i+1}`,`Read example ${i+1} aloud`)} onClick={()=>void speak(example.english,'example',i)}><Headphones size={16}/></button></div>)}</section>
         <section className="english-pitfall"><h3>{text('顺手记住这一点','One thing to remember')}</h3><p>{active.pitfall}</p></section>
-        {active.related.length>0&&<section className="english-related"><h3>{text('顺便认识','You might also use')}</h3><div>{active.related.map(item=><button key={item.term} disabled={working} onClick={()=>{setContext('');void lookup(item.term,'');}}><strong lang="en">{item.term}</strong><span>{item.meaning}</span><ArrowUpRight size={14}/></button>)}</div></section>}
+        {active.related.length>0&&<section className="english-related"><h3>{text('顺便认识','You might also use')}</h3><div>{active.related.map(item=><button key={item.term} disabled={working} onClick={()=>void lookup(item.term)}><strong lang="en">{item.term}</strong><span>{item.meaning}</span><ArrowUpRight size={14}/></button>)}</div></section>}
         <footer className="english-detail-footer"><Check size={14}/>{text('已保存在本机','Saved on this computer')}<span>AI {text('整理','notes')} · {new Date(active.createdAt).toLocaleDateString(zh?'zh-CN':'en-NZ')}</span></footer>
-      </article>:<div className="english-welcome"><span className="english-welcome-icon"><BookOpen size={32}/></span><span className="english-kicker">YOUR EVERYDAY WORDS</span><h2>{text('从今天遇到的那个词开始。','Start with a word from your day.')}</h2><p>{text('不必一次学很多。把看过却不会用的表达留在这里，下次遇到，就熟悉一点。','You don’t need a long word list. Save an expression you want to use, and get a little more familiar with it.')}</p><div>{['figure out','I’m down','take your time'].map(term=><button key={term} disabled={working} onClick={()=>{setContext('');void lookup(term,'');}}>{term}<ArrowUpRight size={14}/></button>)}</div><small>{text('每张卡片：简短意思 · 使用场景 · 两个例句 · 一个易错点','Each card: meaning · usage · two examples · one common pitfall')}</small></div>}
+      </article>:<div className="english-welcome"><span className="english-welcome-icon"><BookOpen size={32}/></span><span className="english-kicker">YOUR EVERYDAY WORDS</span><h2>{text('从今天遇到的那个词开始。','Start with a word from your day.')}</h2><p>{text('不必一次学很多。把看过却不会用的表达留在这里，下次遇到，就熟悉一点。','You don’t need a long word list. Save an expression you want to use, and get a little more familiar with it.')}</p><div>{['figure out','I’m down','take your time'].map(term=><button key={term} disabled={working} onClick={()=>void lookup(term)}>{term}<ArrowUpRight size={14}/></button>)}</div><small>{text('每张卡片：简短意思 · 使用场景 · 例句 · 一个易错点','Each card: meaning · usage · examples · one common pitfall')}</small></div>}
     </div>
   </div>;
 }

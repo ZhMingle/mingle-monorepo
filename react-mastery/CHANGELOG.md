@@ -1,3 +1,9 @@
+## 2026-11-17 — Compact notebook entry and source sentences
+
+- Move the notebook title and introduction into the workspace top bar. Keep the input and generate button side by side on desktop, stack them on phones, and remove the separate context field.
+- Accept words, expressions and full English sentences in the main input. Generate a useful card term and Chinese source translation, preserve the original as an example, and merge it into an existing card without losing examples, favorites or numbering.
+- Retain batch entry and cached lookup, allow 300 characters per item, and preserve semicolons inside sentences with closing punctuation.
+
 ## 2026-11-17 — Free local neural speech
 
 - Replace default notebook speech with real Kokoro CPU inference on the owner's computer, with US and British voices, preview, word/example reading, speed and mobile audio controls.

@@ -13,7 +13,8 @@ export const englishTermKey=(term:string)=>term.normalize('NFKC').trim().replace
 
 export function englishBatchInput(value:string,context=''){
   if(value.length>10000)throw new Error('一次输入最多 10000 个字符。');
-  const queries=value.split(/[\n;；]+/).map(query=>query.trim()).filter(Boolean);
+  // A punctuated sentence keeps its internal semicolons; word lists still split.
+  const queries=value.split(/\r?\n/).flatMap(line=>/[.!?…]["'’”)]?\s*$/.test(line)?[line]:line.split(/[;；]+/)).map(query=>query.trim()).filter(Boolean);
   if(!queries.length)throw new Error('请输入单词或表达，每行一个，或用分号分隔。');
   const unique=new Map<string,ReturnType<typeof englishInput>>();
   for(const query of queries){const item=englishInput({query,context});unique.set(item.key,item);}
@@ -22,7 +23,7 @@ export function englishBatchInput(value:string,context=''){
 }
 
 export function englishInput(input:Record<string,unknown>){
-  if(typeof input.query!=='string'||!input.query.trim()||input.query.length>160)throw new Error('请输入 1–160 个字符的单词或表达。');
+  if(typeof input.query!=='string'||!input.query.trim()||input.query.length>300)throw new Error('每项请输入 1–300 个字符的单词、短语或英文原句。');
   if(input.context!==undefined&&(typeof input.context!=='string'||input.context.length>500))throw new Error('语境最多 500 个字符。');
   const query=input.query.trim().replace(/\s+/g,' ');
   const context=((input.context??'') as string).trim();
