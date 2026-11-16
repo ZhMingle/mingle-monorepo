@@ -1,5 +1,5 @@
 import {useEffect,useState,useRef} from 'react';
-import {ArrowDownToLine,ArrowUpRight,BookOpen,Check,Headphones,LoaderCircle,Search,Sparkles,Star,Trash2,X} from 'lucide-react';
+import {ArrowDownToLine,ArrowUpRight,BookOpen,Check,LoaderCircle,Search,Sparkles,Star,Maximize2,X} from 'lucide-react';
 import {request} from './api.ts';
 import {useLanguage} from './language.tsx';
 import type {EnglishCard} from '../shared/english.ts';
@@ -7,6 +7,8 @@ import {englishBatchInput} from '../shared/english.ts';
 import {englishVoices,isNaturalVoice,createEnglishSpeaker} from './english-speech.ts';
 import type {VoiceInfo} from './english-speech.ts';
 import {speechVoices,type SpeechVoice,type SpeechClip} from '../shared/english-audio.ts';
+import EnglishCardDetail from './EnglishCardDetail.tsx';
+import EnglishCardWall from './EnglishCardWall.tsx';
 import './english-notebook.css';
 
 export function EnglishNotebookHeading(){
@@ -19,6 +21,23 @@ export default function EnglishNotebook(){
   const text=(cn:string,en:string)=>zh?cn:en;
   const [cards,setCards]=useState<EnglishCard[]>([]);
   const [selected,setSelected]=useState('');
+  const [wallOpen,setWallOpen]=useState(false);
+  const wallEntry=useRef<HTMLButtonElement>(null);
+  const cardList=useRef<HTMLDivElement>(null);
+  const returnPosition=useRef({x:0,y:0,list:0});
+  function resetPlayback(){stopSpeech();setAudioURL('');setPlayBlocked(false);setSpeechError('');setPlayedVoice(null);}
+  function enterWall(){
+    returnPosition.current={x:window.scrollX,y:window.scrollY,list:cardList.current?.scrollTop??0};
+    resetPlayback();setWallOpen(true);
+  }
+  function exitWall(){
+    resetPlayback();setWallOpen(false);
+    requestAnimationFrame(()=>{
+      wallEntry.current?.focus({preventScroll:true});
+      if(cardList.current)cardList.current.scrollTop=returnPosition.current.list;
+      window.scrollTo(returnPosition.current.x,returnPosition.current.y);
+    });
+  }
   const [query,setQuery]=useState('');
   const [filter,setFilter]=useState('');
   const [tab,setTab]=useState<'all'|'word'|'expression'|'favorite'>('all');
@@ -95,17 +114,17 @@ export default function EnglishNotebook(){
   }
   async function remove(card:EnglishCard){
     if(!window.confirm(text(`删除“${card.term}”这张卡片？`,`Delete the card for “${card.term}”?`)))return;
-    setEditing(true);setError('');
-    try{await request('english/delete',{id:card.id});const next=cards.filter(c=>c.id!==card.id);setCards(next);setSelected(next[0]?.id??'');}
+    resetPlayback();setEditing(true);setError('');
+    try{await request('english/delete',{id:card.id});const next=cards.filter(c=>c.id!==card.id);setCards(next);setSelected(id=>id===card.id?next[0]?.id??'':id);}
     catch(e){setError((e as Error).message);}finally{setEditing(false);}
   }
-  async function speak(value:string,part:'preview'|'term'|'example'='term',index?:number){
+  async function speak(value:string,part:'preview'|'term'|'example'='term',index?:number,cardId=active?.id){
     stopSpeech();setSpeechError('');setPlayBlocked(false);setPlayedVoice(null);
     if(speechEngine==='neural'){
       const generation=playbackGeneration.current,controller=new AbortController();audioRequest.current=controller;
       setSpeechState('loading');setAudioURL('');setAudioLabel(value);
       try{
-        const clip=await request<SpeechClip>('english/speech',{cardId:active?.id,part,index,voice:neuralVoice},controller.signal);
+        const clip=await request<SpeechClip>('english/speech',{cardId,part,index,voice:neuralVoice},controller.signal);
         if(playbackGeneration.current!==generation)return;
         const audio=audioRef.current;if(!audio)return;
         setAudioURL(clip.url);setAudioCached(clip.cached);audio.src=clip.url;audio.playbackRate=speechRate;
@@ -117,6 +136,18 @@ export default function EnglishNotebook(){
     speaker.current??=createEnglishSpeaker(window.speechSynthesis,value=>new SpeechSynthesisUtterance(value),(state,error)=>{setSpeechState(state);setSpeechError(error||'');},(voice,fallback)=>setPlayedVoice({voice,fallback}));
     speaker.current.speak(value,voiceURI,speechRate);
   }
+  const readCard=(card:EnglishCard,part:'term'|'example',index?:number)=>void speak(part==='term'?card.term:card.examples[index!].english,part,index,card.id);
+  const voiceSettings=(<div className="english-voice-settings"><label>{text('朗读方式','Speech source')} <select value={speechEngine} onChange={e=>{stopSpeech();setAudioURL('');setSpeechError('');setPlayedVoice(null);setSpeechEngine(e.target.value as 'neural'|'browser');}}><option value="neural">{text('自然语音（本机模型）','Neural speech (local model)')}</option>{'speechSynthesis' in window&&<option value="browser">{text('浏览器语音（备用）','Browser speech (backup)')}</option>}</select></label>
+      {speechEngine==='neural'?<label>{text('声音','Voice')} <select value={neuralVoice} onChange={e=>{stopSpeech();setAudioURL('');setNeuralVoice(e.target.value as SpeechVoice);try{localStorage.setItem('clarity.neuralVoice',e.target.value);}catch{}}}>{speechVoices.map(voice=><option key={voice.id} value={voice.id}>{zh?voice.zh:voice.name}</option>)}</select></label>:<label>{text('浏览器声音','Browser voice')} <select value={voices.some(voice=>voice.voiceURI===voiceURI)?voiceURI:''} onChange={e=>{stopSpeech();setVoiceURI(e.target.value);try{localStorage.setItem('clarity.englishVoice',e.target.value);}catch{}}}><option value="">{text('自动选择','Automatic')}</option>{voices.map(voice=><option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} · {voice.lang}</option>)}</select></label>}
+      <label>{text('语速','Speed')} <select value={speechRate} onChange={e=>setSpeechRate(Number(e.target.value))}><option value={.85}>{text('稍慢','Slower')}</option><option value={1}>{text('正常','Normal')}</option><option value={1.1}>{text('稍快','Faster')}</option></select></label><button onClick={()=>void speak('Could you give me a hand? I am trying to figure this out.','preview')}>{text('试听声音','Preview voice')}</button>
+      {speechEngine==='browser'&&<small>{voices.some(isNaturalVoice)?text('使用浏览器提供的英语声音。','Uses English voices supplied by your browser.'):text('当前浏览器没有自然英语音色，备用声音可能较机械。','This browser has no natural English voice; backup speech may sound robotic.')}</small>}
+    </div>);
+  const playback=(<><div className="english-neural-player" hidden={speechEngine!=='neural'||!audioURL}><p>{audioLabel} <small>· Kokoro · {audioCached?text('已缓存','Cached'):text('新生成','New clip')}</small></p><audio ref={audioRef} controls preload="none" aria-label={text('自然语音播放器','Neural speech player')} onPlaying={()=>setSpeechState('speaking')} onPause={()=>setSpeechState(state=>state==='speaking'?'idle':state)} onEnded={()=>setSpeechState('idle')} onError={()=>{if(audioRef.current?.getAttribute('src')){setSpeechState('error');setSpeechError(text('音频加载失败，请重新点击朗读按钮。','Audio could not load. Tap the reading button again.'));}}}/></div>
+      {playBlocked&&<p role="status">{text('音频已准备好，请点击播放器的播放按钮。','Audio is ready. Tap Play in the audio player.')}</p>}
+      {playedVoice&&<p className="english-voice-status" role="status">{text('上次实际使用：','Last voice used: ')}{playedVoice.voice?.name??text('浏览器默认英语声音','Browser default English voice')}{playedVoice.fallback&&text('（前一个音色不可用，已切换）',' (the previous voice was unavailable)')}</p>}
+      {(speechState==='loading'||speechState==='speaking')&&<button className="secondary" onClick={stopSpeech}>{text('停止朗读','Stop reading')}</button>}
+      {speechState==='error'&&<p role="alert">{speechError}</p>}
+      {(speechState==='loading'||speechState==='speaking')&&<p role="status">{speechState==='loading'?(speechEngine==='neural'?text('正在准备自然语音，首次生成需要稍等…','Preparing neural speech; the first generation may take a moment…'):text('正在启动朗读…','Starting speech…')):text('正在朗读…','Speaking…')}</p>}</>);
   return <div className="english-notebook">
     <section className="english-search-panel" aria-labelledby="english-search-title">
       <div className="english-search-heading"><div><span className="english-kicker"><Sparkles size={15}/>{text('今天遇到了什么？','What did you come across today?')}</span><h2 id="english-search-title">{text('单词、短语、原句，都能记下来。','Save words, phrases or whole sentences.')}</h2></div><a className="secondary" href="/api/english/export"><ArrowDownToLine size={16}/>{text('导出卡片','Export cards')}</a></div>
@@ -128,36 +159,16 @@ export default function EnglishNotebook(){
     {batch.length>0&&<section className="english-batch" aria-label={text('生成进度','Generation progress')}><p role="status">{text('生成进度','Progress')}：{batch.filter(item=>item.status==='done'||item.status==='failed').length}/{batch.length} · {text('已保存／打开','Saved or opened')} {batch.filter(item=>item.status==='done').length}</p><ul>{batch.map(item=><li key={item.query}><strong>{item.query}</strong><span>{({pending:text('等待生成','Queued'),working:text('正在生成…','Generating…'),done:text('已保存／打开','Saved or opened'),failed:text('生成失败','Failed')})[item.status]}</span>{item.error&&<span role="alert">{item.error}</span>}{item.status==='failed'&&<button disabled={working} onClick={()=>void lookup(item.query,true)}>{text('重试此项','Retry this item')}</button>}</li>)}</ul></section>}
     {error&&<div className="error-banner" role="alert"><span>{error}</span>{loading?null:<button onClick={()=>void load()}>{text('刷新卡片库','Reload notebook')}</button>}</div>}
     {notice&&<p className="english-status" role="status"><Check size={16}/>{notice}</p>}
-    <div className="english-library-heading"><h2><BookOpen size={20}/>{text('我的英语积累','My English notebook')}</h2></div>
-    <div className="english-voice-settings"><label>{text('朗读方式','Speech source')} <select value={speechEngine} onChange={e=>{stopSpeech();setAudioURL('');setSpeechError('');setPlayedVoice(null);setSpeechEngine(e.target.value as 'neural'|'browser');}}><option value="neural">{text('自然语音（本机模型）','Neural speech (local model)')}</option>{'speechSynthesis' in window&&<option value="browser">{text('浏览器语音（备用）','Browser speech (backup)')}</option>}</select></label>
-      {speechEngine==='neural'?<label>{text('声音','Voice')} <select value={neuralVoice} onChange={e=>{stopSpeech();setAudioURL('');setNeuralVoice(e.target.value as SpeechVoice);try{localStorage.setItem('clarity.neuralVoice',e.target.value);}catch{}}}>{speechVoices.map(voice=><option key={voice.id} value={voice.id}>{zh?voice.zh:voice.name}</option>)}</select></label>:<label>{text('浏览器声音','Browser voice')} <select value={voices.some(voice=>voice.voiceURI===voiceURI)?voiceURI:''} onChange={e=>{stopSpeech();setVoiceURI(e.target.value);try{localStorage.setItem('clarity.englishVoice',e.target.value);}catch{}}}><option value="">{text('自动选择','Automatic')}</option>{voices.map(voice=><option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} · {voice.lang}</option>)}</select></label>}
-      <label>{text('语速','Speed')} <select value={speechRate} onChange={e=>setSpeechRate(Number(e.target.value))}><option value={.85}>{text('稍慢','Slower')}</option><option value={1}>{text('正常','Normal')}</option><option value={1.1}>{text('稍快','Faster')}</option></select></label><button onClick={()=>void speak('Could you give me a hand? I am trying to figure this out.','preview')}>{text('试听声音','Preview voice')}</button>
-      {speechEngine==='browser'&&<small>{voices.some(isNaturalVoice)?text('使用浏览器提供的英语声音。','Uses English voices supplied by your browser.'):text('当前浏览器没有自然英语音色，备用声音可能较机械。','This browser has no natural English voice; backup speech may sound robotic.')}</small>}
-    </div>
-      <div className="english-neural-player" hidden={speechEngine!=='neural'||!audioURL}><p>{audioLabel} <small>· Kokoro · {audioCached?text('已缓存','Cached'):text('新生成','New clip')}</small></p><audio ref={audioRef} controls preload="none" aria-label={text('自然语音播放器','Neural speech player')} onPlaying={()=>setSpeechState('speaking')} onPause={()=>setSpeechState(state=>state==='speaking'?'idle':state)} onEnded={()=>setSpeechState('idle')} onError={()=>{if(audioRef.current?.getAttribute('src')){setSpeechState('error');setSpeechError(text('音频加载失败，请重新点击朗读按钮。','Audio could not load. Tap the reading button again.'));}}}/></div>
-      {playBlocked&&<p role="status">{text('音频已准备好，请点击播放器的播放按钮。','Audio is ready. Tap Play in the audio player.')}</p>}
-      {playedVoice&&<p className="english-voice-status" role="status">{text('上次实际使用：','Last voice used: ')}{playedVoice.voice?.name??text('浏览器默认英语声音','Browser default English voice')}{playedVoice.fallback&&text('（前一个音色不可用，已切换）',' (the previous voice was unavailable)')}</p>}
-      {(speechState==='loading'||speechState==='speaking')&&<button className="secondary" onClick={stopSpeech}>{text('停止朗读','Stop reading')}</button>}
-      {speechState==='error'&&<p role="alert">{speechError}</p>}
-      {(speechState==='loading'||speechState==='speaking')&&<p role="status">{speechState==='loading'?(speechEngine==='neural'?text('正在准备自然语音，首次生成需要稍等…','Preparing neural speech; the first generation may take a moment…'):text('正在启动朗读…','Starting speech…')):text('正在朗读…','Speaking…')}</p>}
+    <div className="english-library-heading"><h2><BookOpen size={20}/>{text('我的英语积累','My English notebook')}</h2><button ref={wallEntry} className="secondary" onClick={enterWall}><Maximize2 size={17}/>{text('全屏卡片','Full-screen cards')}</button></div>
+    {!wallOpen&&<>{voiceSettings}{playback}</>}
     <div className="english-library">
       <aside className="english-card-list" aria-label={text('已保存的英语卡片','Saved English cards')}>
         <label className="english-filter"><Search size={16}/><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder={text('搜索已存的卡片','Search saved cards')} aria-label={text('搜索已存的卡片','Search saved cards')}/></label>
         <div className="english-tabs" role="group" aria-label={text('筛选卡片','Filter cards')}>{(['all','word','expression','favorite'] as const).map(id=><button key={id} aria-pressed={tab===id} className={tab===id?'active':''} onClick={()=>setTab(id)}>{({all:text('全部','All'),word:text('单词','Words'),expression:text('表达','Phrases'),favorite:text('收藏','Starred')})[id]}</button>)}</div>
-        <div className="english-card-scroll">{loading?<p role="status" className="english-list-empty">{text('正在读取卡片…','Loading cards…')}</p>:visible.length?visible.map(card=><button className={`english-card-item ${selected===card.id?'active':''}`} key={card.id} aria-pressed={selected===card.id} onClick={()=>{setSelected(card.id);setNotice('');}}><span><strong lang="en">#{displayNumbers.get(card.id)} · {card.term}</strong>{card.favorite&&<Star size={14} fill="currentColor"/>}</span><p>{card.meaning}</p><small>{card.kind==='word'?text('单词','Word'):text('表达','Expression')} · {new Date(card.createdAt).toLocaleDateString(zh?'zh-CN':'en-NZ',{month:'short',day:'numeric'})}</small></button>):<p className="english-list-empty">{cards.length?text('没有符合筛选条件的卡片。','No matching cards.'):text('查过的词和表达会自动出现在这里。','Your words and expressions will appear here.')}</p>}</div>
+        <div className="english-card-scroll" ref={cardList}>{loading?<p role="status" className="english-list-empty">{text('正在读取卡片…','Loading cards…')}</p>:visible.length?visible.map(card=><button className={`english-card-item ${selected===card.id?'active':''}`} key={card.id} aria-pressed={selected===card.id} onClick={()=>{setSelected(card.id);setNotice('');}}><span><strong lang="en">#{displayNumbers.get(card.id)} · {card.term}</strong>{card.favorite&&<Star size={14} fill="currentColor"/>}</span><p>{card.meaning}</p><small>{card.kind==='word'?text('单词','Word'):text('表达','Expression')} · {new Date(card.createdAt).toLocaleDateString(zh?'zh-CN':'en-NZ',{month:'short',day:'numeric'})}</small></button>):<p className="english-list-empty">{cards.length?text('没有符合筛选条件的卡片。','No matching cards.'):text('查过的词和表达会自动出现在这里。','Your words and expressions will appear here.')}</p>}</div>
       </aside>
-      {active?<article className="english-detail" key={active.id}>
-        <div className="english-detail-top"><span className="english-kicker">{active.kind==='word'?text('一个单词，一点进步','ONE WORD, ONE SMALL STEP'):text('一句表达，多一种说法','ONE MORE WAY TO SAY IT')}</span><div><button className="icon-button" disabled={editing} onClick={()=>void favorite(active)} aria-label={active.favorite?text('取消收藏','Unstar card'):text('收藏卡片','Star card')} aria-pressed={active.favorite}><Star size={19} fill={active.favorite?'currentColor':'none'}/></button><button className="icon-button" disabled={editing} onClick={()=>void remove(active)} aria-label={text('删除卡片','Delete card')}><Trash2 size={17}/></button></div></div>
-        <div className="english-term"><h2 lang="en">#{displayNumbers.get(active.id)} · {active.term}</h2><button className="english-audio" aria-label={text('朗读表达','Read expression aloud')} onClick={()=>void speak(active.term)}><Headphones size={19}/></button></div>
-        {active.pronunciation&&<p className="english-pronunciation" lang="en">{active.pronunciation}</p>}
-        <p className="english-meaning">{active.meaning}</p>
-        {active.context&&<blockquote className="english-original"><span>{text('你看到的原句','Your context')}</span>{active.context}</blockquote>}
-        <section className="english-usage"><h3>{text('什么时候用','When to use it')}</h3><p>{active.usage}</p></section>
-        <section className="english-examples"><h3>{text('放进句子里','In a sentence')}</h3>{active.examples.map((example,i)=><div key={i}><span className="english-example-number">0{i+1}</span><div><p lang="en">{example.english}</p><span>{example.chinese}</span></div><button className="english-audio" aria-label={text(`朗读例句 ${i+1}`,`Read example ${i+1} aloud`)} onClick={()=>void speak(example.english,'example',i)}><Headphones size={16}/></button></div>)}</section>
-        <section className="english-pitfall"><h3>{text('顺手记住这一点','One thing to remember')}</h3><p>{active.pitfall}</p></section>
-        {active.related.length>0&&<section className="english-related"><h3>{text('顺便认识','You might also use')}</h3><div>{active.related.map(item=><button key={item.term} disabled={working} onClick={()=>void lookup(item.term)}><strong lang="en">{item.term}</strong><span>{item.meaning}</span><ArrowUpRight size={14}/></button>)}</div></section>}
-        <footer className="english-detail-footer"><Check size={14}/>{text('已保存在本机','Saved on this computer')}<span>AI {text('整理','notes')} · {new Date(active.createdAt).toLocaleDateString(zh?'zh-CN':'en-NZ')}</span></footer>
-      </article>:<div className="english-welcome"><span className="english-welcome-icon"><BookOpen size={32}/></span><span className="english-kicker">YOUR EVERYDAY WORDS</span><h2>{text('从今天遇到的那个词开始。','Start with a word from your day.')}</h2><p>{text('不必一次学很多。把看过却不会用的表达留在这里，下次遇到，就熟悉一点。','You don’t need a long word list. Save an expression you want to use, and get a little more familiar with it.')}</p><div>{['figure out','I’m down','take your time'].map(term=><button key={term} disabled={working} onClick={()=>void lookup(term)}>{term}<ArrowUpRight size={14}/></button>)}</div><small>{text('每张卡片：简短意思 · 使用场景 · 例句 · 一个易错点','Each card: meaning · usage · examples · one common pitfall')}</small></div>}
+      {active?<EnglishCardDetail card={active} number={displayNumbers.get(active.id)} editing={editing} working={working} onFavorite={card=>void favorite(card)} onRemove={card=>void remove(card)} onSpeak={readCard} onLookup={term=>void lookup(term)}/>:<div className="english-welcome"><span className="english-welcome-icon"><BookOpen size={32}/></span><span className="english-kicker">YOUR EVERYDAY WORDS</span><h2>{text('从今天遇到的那个词开始。','Start with a word from your day.')}</h2><p>{text('不必一次学很多。把看过却不会用的表达留在这里，下次遇到，就熟悉一点。','You don’t need a long word list. Save an expression you want to use, and get a little more familiar with it.')}</p><div>{['figure out','I’m down','take your time'].map(term=><button key={term} disabled={working} onClick={()=>void lookup(term)}>{term}<ArrowUpRight size={14}/></button>)}</div><small>{text('每张卡片：简短意思 · 使用场景 · 例句 · 一个易错点','Each card: meaning · usage · examples · one common pitfall')}</small></div>}
     </div>
+    {wallOpen&&<EnglishCardWall cards={cards} visible={visible} numbers={displayNumbers} filter={filter} onFilter={setFilter} tab={tab} onTab={setTab} loading={loading} editing={editing} working={working} error={error} onReload={()=>void load()} onExit={exitWall} onResetPlayback={resetPlayback} voiceSettings={voiceSettings} playback={playback} onFavorite={card=>void favorite(card)} onRemove={card=>void remove(card)} onSpeak={readCard} onLookup={term=>{exitWall();void lookup(term);}}/>}
   </div>;
 }

@@ -1,3 +1,9 @@
+## 2026-11-17 — Full-screen English card wall
+
+- Add a full-screen cards entry beside the notebook heading, with a responsive grid that fills the browser viewport, shared search/category filters, favorite actions and per-card speech.
+- Open complete card details over the grid. Esc closes details first and then exits the wall; native modal focus handling and scroll locks keep the background inactive.
+- Preserve the notebook selection, search, filters, reading settings and prior scroll position when returning. Reuse the existing card details and protected audio routes; no learner-data migration is needed.
+
 ## 2026-11-17 — Trim notebook supporting copy
 
 - Remove the six highlighted captions from the notebook header, entry panel, library and neural voice settings. Compact the title bar and retain right-aligned card counts.
