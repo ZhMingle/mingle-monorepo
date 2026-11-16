@@ -1,3 +1,7 @@
+## 2026-11-17 — Trim notebook supporting copy
+
+- Remove the six highlighted captions from the notebook header, entry panel, library and neural voice settings. Compact the title bar and retain right-aligned card counts.
+
 ## 2026-11-17 — Compact notebook entry and source sentences
 
 - Move the notebook title and introduction into the workspace top bar. Keep the input and generate button side by side on desktop, stack them on phones, and remove the separate context field.
