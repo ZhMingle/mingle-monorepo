@@ -1,3 +1,8 @@
+## 2026-11-17 — Reveal meanings on hover
+
+- Hide full-screen card meanings until mouse hover or keyboard focus on desktop; retain visible meanings for touch devices and phone layouts without changing card dimensions.
+- Remove the hash prefix from card numbers in the wall, notebook list and details. Keep stored identifiers, numbering and numeric search unchanged.
+
 ## 2026-11-17 — Compact full-screen cards
 
 - Match full-screen tiles to the reference list-card size: 253 × 132 CSS pixels on desktop, with more columns on wider screens and fluid width on phones.

@@ -7,7 +7,7 @@ export default function EnglishCardDetail({card,number,editing,working,headingId
   const {language}=useLanguage();const zh=language==='zh';const text=(cn:string,en:string)=>zh?cn:en;
   return <article className="english-detail">
     <div className="english-detail-top"><span className="english-kicker">{card.kind==='word'?text('一个单词，一点进步','ONE WORD, ONE SMALL STEP'):text('一句表达，多一种说法','ONE MORE WAY TO SAY IT')}</span><div><button className="icon-button" disabled={editing} onClick={()=>onFavorite(card)} aria-label={card.favorite?text('取消收藏','Unstar card'):text('收藏卡片','Star card')} aria-pressed={card.favorite}><Star size={19} fill={card.favorite?'currentColor':'none'}/></button><button className="icon-button" disabled={editing} onClick={()=>onRemove(card)} aria-label={text('删除卡片','Delete card')}><Trash2 size={17}/></button></div></div>
-    <div className="english-term"><h2 id={headingId} lang="en">#{number} · {card.term}</h2><button className="english-audio" aria-label={text('朗读表达','Read expression aloud')} onClick={()=>onSpeak(card,'term')}><Headphones size={19}/></button></div>
+    <div className="english-term"><h2 id={headingId} lang="en">{number} · {card.term}</h2><button className="english-audio" aria-label={text('朗读表达','Read expression aloud')} onClick={()=>onSpeak(card,'term')}><Headphones size={19}/></button></div>
     {card.pronunciation&&<p className="english-pronunciation" lang="en">{card.pronunciation}</p>}
     <p className="english-meaning">{card.meaning}</p>
     {card.context&&<blockquote className="english-original"><span>{text('你看到的原句','Your context')}</span>{card.context}</blockquote>}

@@ -16,3 +16,10 @@
 @media(max-width:700px){.english-wall-heading{padding:14px;gap:10px}.english-wall-heading>div{display:block}.english-wall-heading h2{font-size:18px;gap:7px}.english-wall-heading span{display:block;margin-top:5px;font-size:12px}.english-wall-heading>button{font-size:13px;padding:9px 11px}.english-wall-toolbar{padding:12px 14px;gap:10px}.english-wall-toolbar>.english-filter{min-width:0;max-width:none;flex-basis:100%}.english-wall-toolbar .english-tabs{min-width:0;flex:1}.english-wall-toolbar .english-tabs button{padding:9px 8px;font-size:13px}.english-wall-voices>summary{font-size:13px;padding:8px}.english-wall-voices[open]{max-height:34dvh;overflow:auto}.english-wall-grid{padding:16px 14px 24px;gap:14px}.english-wall-feedback{padding:0 14px}.english-wall-detail{width:100vw;height:100dvh;max-height:100dvh;max-width:none;border:0;border-radius:0}.english-wall-detail-content{padding:12px}.english-wall-detail-content>.english-detail{padding:12px}.english-wall-detail-bar{padding:10px 14px}}
 
 @media(max-width:560px){.english-wall-grid{grid-template-columns:minmax(0,1fr);gap:12px;grid-auto-rows:132px}}
+
+/* Keep the compact layout still while revealing meanings for mouse/keyboard review. */
+@media(min-width:701px) and (hover:hover) and (pointer:fine){
+  .english-tile-meaning{visibility:hidden;opacity:0}
+  .english-tile:hover .english-tile-meaning,.english-tile-open:focus-visible .english-tile-meaning{visibility:visible;opacity:1}
+  .english-tile:has(:focus-visible) .english-tile-meaning{visibility:visible;opacity:1}
+}
