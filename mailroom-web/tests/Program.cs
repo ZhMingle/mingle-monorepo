@@ -128,6 +128,7 @@ await using (var service = new MailService(fixture.Open))
     Check(!loaded.CanTrash, "不支持可追踪移动时只读整理");
     try { await service.Move(new([loaded.Mails[0].Id], true, Guid.NewGuid().ToString()), CancellationToken.None); throw new Exception("unsafe move accepted"); } catch (UserError) { passed.Add("阻止不安全的整箱移动回退"); }
 }
+await OAuthTests.Run(Check);
 Console.WriteLine($"PASS: {passed.Count} checks");
 foreach (var name in passed) Console.WriteLine("  " + name);
 static bool RegexCommand(string line, string command) => line[(line.IndexOf(' ') + 1)..].StartsWith(command, StringComparison.Ordinal);

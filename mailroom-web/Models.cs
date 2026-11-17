@@ -57,6 +57,7 @@ internal static partial class Classifier
 
 internal interface IMailService : IAsyncDisposable
 {
+    Task<MailState> ConnectOAuth(OAuthGrant grant, int limit, CancellationToken ct) => throw new UserError("此连接不支持官方登录。");
     Task<MailState> State();
     Task<MailState> Connect(ConnectRequest request, CancellationToken ct);
     Task<MailState> Refresh(int limit, CancellationToken ct);

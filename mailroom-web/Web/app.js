@@ -13,6 +13,7 @@ let token = '';
 
 let state = { connected: false, email: '', provider: '', limit: 500, total: 0, mails: [], canTrash: false, canUndo: false };
 let providers = [];
+let oauthProviders = [];
 let demo = false;
 let busy = false;
 let uncertain = false;
@@ -254,8 +255,8 @@ function providerHelp() {
 function settings() {
   if (busy || !token) return;
   if (state.connected && !demo) {
-    const provider = providers.find(item => item.id === state.provider);
-    modal(`<small>只连接你自己的邮箱</small><h2 id="dialog-title">你的邮箱，已连接。</h2><div class="connected-card"><span class="avatar">✓</span><div><b>${esc(state.email)}</b><small>${esc(provider?.name || state.provider)} · ${esc(state.trashFolder || '未发现可用垃圾箱')}</small></div></div><p>服务通过加密连接访问邮箱；授权码和邮件信息仅用于本次会话，不写入数据库。断开连接或 20 分钟无操作后清除。</p><p>本次垃圾箱与撤销记录也会在断开或会话结束时清空；已经移动的邮件仍保留在邮箱对应文件夹中。</p><button id="disconnect" class="secondary">断开这个邮箱</button><p id="auth-error" class="error" role="alert"></p>`);
+    const provider = [...oauthProviders, ...providers].find(item => item.id === state.provider);
+    modal(`<small>只连接你自己的邮箱</small><h2 id="dialog-title">你的邮箱，已连接。</h2><div class="connected-card"><span class="avatar">✓</span><div><b>${esc(state.email)}</b><small>${esc(provider?.name || state.provider)} · ${esc(state.trashFolder || '未发现可用垃圾箱')}</small></div></div><p>服务通过加密连接访问邮箱；登录凭证和邮件信息仅用于本次会话，不写入数据库。断开连接或 20 分钟无操作后清除。</p><p>本次垃圾箱与撤销记录也会在断开或会话结束时清空；已经移动的邮件仍保留在邮箱对应文件夹中。</p><button id="disconnect" class="secondary">断开这个邮箱</button><p id="auth-error" class="error" role="alert"></p>`);
     $('#disconnect').onclick = async () => {
       const success = await runTask('正在断开邮箱…', async () => {
         applyState(await api('disconnect', {}));
@@ -271,10 +272,18 @@ function settings() {
     };
     return;
   }
-  modal(`<small>从这里，开始变轻。</small><h2 id="dialog-title">连接你自己的邮箱</h2><p>选好邮箱，输入邮箱地址和专用授权码即可。无需配置开发者账号，也不用安装其他软件。</p><form id="connection-form"><label class="field-label" for="provider">邮箱类型</label><select id="provider" class="field-select" required>${providers.map(item => `<option value="${esc(item.id)}">${esc(item.name)}</option>`).join('')}</select><div class="provider-guide"><p id="provider-tip"></p><a id="provider-help" href="#" target="_blank" rel="noopener noreferrer">查看官方连接说明 ↗</a></div><label class="field-label" for="mail-address">邮箱地址</label><input id="mail-address" name="username" type="email" autocomplete="username" placeholder="例如：123456@qq.com" required maxlength="254"><label class="field-label" for="mail-password">授权码／应用专用密码</label><input id="mail-password" name="password" type="password" autocomplete="off" placeholder="输入邮箱生成的专用授权码" required maxlength="512"><div id="custom-fields" hidden><label class="field-label" for="imap-host">IMAP 服务器</label><input id="imap-host" type="text" placeholder="例如：imap.example.com" autocomplete="off" maxlength="253"><div class="form-row"><div><label class="field-label" for="imap-port">端口</label><input id="imap-port" type="number" min="1" max="65535" value="993" required></div><div><label class="field-label" for="imap-security">连接加密</label><select id="imap-security" class="field-select"><option value="ssl">SSL/TLS</option><option value="starttls">STARTTLS</option></select></div></div></div><small class="credential-note">连接时授权码会通过 HTTPS 发送到拾邮服务器，仅用于本次会话。请使用专门为此工具生成的授权码，使用完毕后主动断开。</small><p id="auth-error" class="error" role="alert"></p><div class="dialog-actions"><button id="authorize" type="submit" class="primary">连接并整理邮件 →</button><button id="try-demo" type="button" class="text-button">先体验演示</button></div></form>`);
+  modal(`<small>从这里，开始变轻。</small><h2 id="dialog-title">连接你自己的邮箱</h2><p>Gmail 和 Outlook 使用官方登录；QQ、网易等邮箱使用邮箱授权码。</p><div class="oauth-options">${oauthProviders.map(item => `<button type="button" data-oauth="${esc(item.id)}" ${item.ready ? '' : 'disabled'}><strong>${esc(item.name)}</strong><span>${item.ready ? '使用官方账号登录 →' : '官方登录尚未开放'}</span></button>`).join('')}</div><h3>QQ、网易及其他邮箱</h3><form id="connection-form"><label class="field-label" for="provider">邮箱类型</label><select id="provider" class="field-select" required>${providers.map(item => `<option value="${esc(item.id)}">${esc(item.name)}</option>`).join('')}</select><div class="provider-guide"><p id="provider-tip"></p><a id="provider-help" href="#" target="_blank" rel="noopener noreferrer">查看官方连接说明 ↗</a></div><label class="field-label" for="mail-address">邮箱地址</label><input id="mail-address" name="username" type="email" autocomplete="username" placeholder="例如：123456@qq.com" required maxlength="254"><label class="field-label" for="mail-password">授权码／应用专用密码</label><input id="mail-password" name="password" type="password" autocomplete="off" placeholder="输入邮箱生成的专用授权码" required maxlength="512"><div id="custom-fields" hidden><label class="field-label" for="imap-host">IMAP 服务器</label><input id="imap-host" type="text" placeholder="例如：imap.example.com" autocomplete="off" maxlength="253"><div class="form-row"><div><label class="field-label" for="imap-port">端口</label><input id="imap-port" type="number" min="1" max="65535" value="993" required></div><div><label class="field-label" for="imap-security">连接加密</label><select id="imap-security" class="field-select"><option value="ssl">SSL/TLS</option><option value="starttls">STARTTLS</option></select></div></div></div><small class="credential-note">连接时授权码会通过 HTTPS 发送到拾邮服务器，仅用于本次会话。请使用专门为此工具生成的授权码，使用完毕后主动断开。</small><p id="auth-error" class="error" role="alert"></p><div class="dialog-actions"><button id="authorize" type="submit" class="primary">连接并整理邮件 →</button><button id="try-demo" type="button" class="text-button">先体验演示</button></div></form>`);
   providerHelp();
   $('#provider').onchange = providerHelp;
   $('#try-demo').onclick = startDemo;
+  for (const button of document.querySelectorAll('[data-oauth]')) button.onclick = async () => {
+    await runTask('正在打开邮箱官方登录页面…', async () => {
+      const result = await api('oauth/start', { provider: button.dataset.oauth, limit: Number($('#limit').value) });
+      const target = new URL(result.url);
+      if (target.protocol !== 'https:' || !['accounts.google.com', 'login.microsoftonline.com'].includes(target.hostname)) throw new Error('登录地址无效，请稍后再试。');
+      location.assign(target.href);
+    });
+  };
   $('#connection-form').onsubmit = async event => {
     event.preventDefault();
     if (busy) return;
@@ -359,6 +368,9 @@ async function initialize() {
     if (!response.ok || !result.token || !Array.isArray(result.providers)) throw new Error(result.message || '邮件空间暂时无法打开，请稍后重试。');
     token = result.token;
     providers = result.providers;
+    oauthProviders = Array.isArray(result.oauth) ? result.oauth : [];
+    if (result.notice) toast(result.notice);
+    if (location.hash === '#oauth-expired') { toast('登录已过期，请重新选择邮箱并点击官方登录。'); history.replaceState(null, '', '/'); }
     applyState(result.state);
   });
   if (!state.connected && providers.length) settings();

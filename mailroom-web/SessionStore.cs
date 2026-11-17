@@ -23,6 +23,7 @@ internal sealed class SessionStore : IAsyncDisposable
         public DateTimeOffset Created { get; } = now;
         public DateTimeOffset LastUsed { get; set; } = now;
         public int Active { get; set; }
+        public string OAuthNotice { get; set; } = "";
     }
     public sealed class Lease : IDisposable
     {

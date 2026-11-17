@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY Mailroom.csproj NuGet.Config ./
 RUN dotnet restore Mailroom.csproj --configfile NuGet.Config
-COPY Models.cs MailService.cs NetworkPolicy.cs SessionStore.cs Program.cs ./
+COPY Models.cs MailService.cs ApiMailService.cs MailboxService.cs OAuth.cs NetworkPolicy.cs SessionStore.cs Program.cs ./
 COPY Web/ ./Web/
 RUN dotnet publish Mailroom.csproj -c Release --no-restore -o /out
 

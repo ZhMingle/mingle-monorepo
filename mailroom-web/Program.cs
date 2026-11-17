@@ -22,16 +22,19 @@ internal static class Program
 internal static class WebHost
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { MaxDepth = 16 };
-    internal static WebApplication Build(SessionStore? testSessions = null, bool? allowHttp = null, string? url = null)
+    internal static WebApplication Build(SessionStore? testSessions = null, bool? allowHttp = null, string? url = null, OAuthClient? testOAuth = null)
     {
         var localHttp = allowHttp ?? Environment.GetEnvironmentVariable("MAILROOM_ALLOW_HTTP") == "1";
         var cookieName = localHttp ? "mailroom_session" : "__Host-mailroom_session";
         var configuredOrigin = Environment.GetEnvironmentVariable("PUBLIC_ORIGIN")?.TrimEnd('/');
+        var oauth = testOAuth ?? new OAuthClient(configuredOrigin);
+        var flows = new OAuthFlows();
+        var oauthCookie = localHttp ? "mailroom_oauth" : "__Host-mailroom_oauth";
         var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions { Args = [], ContentRootPath = AppContext.BaseDirectory });
         builder.Logging.ClearProviders(); // Never log mailbox requests, credentials or provider replies.
         builder.WebHost.ConfigureKestrel(options => { options.AddServerHeader = false; options.Limits.MaxRequestBodySize = 131072; options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(10); });
         builder.WebHost.UseUrls(url ?? "http://0.0.0.0:" + (Environment.GetEnvironmentVariable("PORT") ?? "8080"));
-        builder.Services.AddSingleton(testSessions ?? new SessionStore());
+        builder.Services.AddSingleton(testSessions ?? new SessionStore(factory: () => new MailboxService(oauth)));
         builder.Services.AddSingleton<RateLimiterRegistry>();
         builder.Services.AddHostedService<SessionCleanup>();
         builder.Services.AddRateLimiter(options =>
@@ -86,13 +89,35 @@ internal static class WebHost
             }
         });
         app.UseRateLimiter();
-        app.MapGet("/health", () => Results.Json(new { status = "ok", version = "1.0.0" }));
+        app.MapGet("/health", () => Results.Json(new { status = "ok", version = "1.1.0" }));
         var sessions = app.Services.GetRequiredService<SessionStore>();
         app.MapGet("/api/session", async (HttpContext context) =>
         {
             using var session = sessions.Acquire(context.Request.Cookies[cookieName], true)!;
             context.Response.Cookies.Append(cookieName, session.Entry.Id, new CookieOptions { HttpOnly = true, Secure = !localHttp, SameSite = SameSiteMode.Strict, Path = "/", MaxAge = TimeSpan.FromHours(8), IsEssential = true });
-            return Results.Json(new { token = session.Entry.Token, state = await session.Service.State(), providers = Providers.All });
+            var notice = session.Entry.OAuthNotice; session.Entry.OAuthNotice = "";
+            return Results.Json(new { token = session.Entry.Token, state = await session.Service.State(), providers = Providers.All, oauth = oauth.Availability(), notice });
+        }).RequireRateLimiting("bootstrap");
+        app.MapGet("/oauth/callback/{provider}", async (HttpContext context, string provider) =>
+        {
+            OAuthFlows.Pending flow;
+            try { flow = flows.Consume(context.Request.Query["state"].ToString(), provider, context.Request.Cookies[oauthCookie] ?? ""); }
+            catch (UserError) { context.Response.Redirect("/#oauth-expired"); return; }
+            context.Response.Cookies.Delete(oauthCookie, new CookieOptions { Secure = !localHttp, HttpOnly = true, SameSite = SameSiteMode.Lax, Path = "/" });
+            using var lease = sessions.Acquire(flow.SessionId, false);
+            if (lease == null) { context.Response.Redirect("/#oauth-expired"); return; }
+            context.Response.Cookies.Append(cookieName, lease.Entry.Id, new CookieOptions { HttpOnly = true, Secure = !localHttp, SameSite = SameSiteMode.Strict, Path = "/", MaxAge = TimeSpan.FromHours(8), IsEssential = true });
+            try
+            {
+                var code = context.Request.Query["code"].ToString();
+                if (context.Request.Query.ContainsKey("error") || code.Length is < 1 or > 10000) throw new UserError("你没有完成邮箱授权，可以再次点击官方登录。");
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted); timeout.CancelAfter(TimeSpan.FromMinutes(2));
+                var grant = await oauth.Exchange(oauth.Provider(provider), code, flow.Verifier, timeout.Token);
+                await lease.Service.ConnectOAuth(grant, flow.Limit, timeout.Token);
+                lease.Entry.OAuthNotice = "邮箱已通过官方授权连接，邮件已整理。";
+            }
+            catch (Exception error) { lease.Entry.OAuthNotice = error is UserError ? error.Message : "邮箱授权或读取没有完成，请重新连接；没有自动清理邮件。"; }
+            context.Response.Redirect("/");
         }).RequireRateLimiting("bootstrap");
         app.MapMethods("/api/{**path}", ["GET", "POST"], async (HttpContext context, string path) =>
         {
@@ -108,11 +133,18 @@ internal static class WebHost
                 result = path switch { "state" => await service.State(), _ => throw new UserError("此接口不存在。") };
             else
             {
-                if (path == "connect")
+                if (path is "connect" or "oauth/start")
                 {
                     // Connection attempts also have a small per-session budget.
                     var limiter = context.RequestServices.GetRequiredService<RateLimiterRegistry>();
                     if (!limiter.TryConnect(lease.Entry.Id)) { await Fail(context, 429, "rate_limited", "连接尝试较频繁，请五分钟后再试。"); return; }
+                }
+                if (path == "oauth/start")
+                {
+                    var request = await Read<OAuthStart>(context); var provider = oauth.Provider(request.Provider);
+                    var (state, flow) = flows.Start(lease.Entry.Id, provider.Id, request.Limit);
+                    context.Response.Cookies.Append(oauthCookie, flow.Proof, new CookieOptions { Secure = !localHttp, HttpOnly = true, SameSite = SameSiteMode.Lax, Path = "/", MaxAge = TimeSpan.FromMinutes(10), IsEssential = true });
+                    await context.Response.WriteAsJsonAsync(new { url = oauth.Authorize(provider, state, flow.Verifier) }, ct); return;
                 }
                 result = path switch
                 {
@@ -130,7 +162,7 @@ internal static class WebHost
         app.MapGet("/{**path}", (string? path) =>
         {
             var asset = string.IsNullOrEmpty(path) ? "index.html" : path;
-            var type = asset switch { "index.html" => "text/html; charset=utf-8", "app.js" => "application/javascript; charset=utf-8", "style.css" => "text/css; charset=utf-8", _ => null };
+            var type = asset switch { "index.html" or "privacy.html" => "text/html; charset=utf-8", "app.js" => "application/javascript; charset=utf-8", "style.css" => "text/css; charset=utf-8", _ => null };
             if (type == null) return Results.NotFound();
             var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Mailroom.Web." + asset);
             return stream == null ? Results.NotFound() : Results.Stream(stream, type);
