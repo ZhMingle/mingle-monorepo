@@ -117,6 +117,7 @@ export default function EnglishNotebook(){
           if(remind&&cached&&[card.term,card.query].some(value=>englishTermKey(value)===englishTermKey(item.query)))reminders.push(card);
         }catch(e){update('failed',(e as Error).message);}
       }
+      if(completed===items.length)setQuery(current=>current===value?'':current);
       setNotice(text(`已保存／打开 ${completed} 张卡片，失败项可单独重试。`,`Saved or opened ${completed} cards. Failed items can be retried individually.`));
     }finally{running.current=false;setWorking(false);}
     if(reminders.length&&mounted.current)ensurePlayer().sequence(reminders.map(card=>({key:playbackKey(card.id,'term'),cardId:card.id,part:'reminder',text:card.term,label:card.term})),speechOptions());

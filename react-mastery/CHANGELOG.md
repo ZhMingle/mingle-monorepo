@@ -1,3 +1,7 @@
+## 2026-11-17 — Clear successful notebook input
+
+- Clear the submitted input once every item has been saved or reopened successfully. Keep failed submissions and any unrelated draft intact for retry.
+
 ## 2026-11-17 — Chunk learning, memory cues and card review
 
 - Present everyday reusable chunks as card titles, retain the core lookup term and its contextual part of speech, and generate picture associations plus optional sound/morpheme cues. Link to a dictionary for etymology instead of inventing historical claims.
