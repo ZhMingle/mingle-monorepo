@@ -28,6 +28,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
   const [current,setCurrent]=useState<StudyKind>('choice');const [draft,setDraft]=useState<StudyDraft>({keywords:{},choice:-1,code:''});
   const [revealedReference,setRevealedReference]=useState<{id:string;kind:StudyKind}|null>(null);
   const [busy,setBusy]=useState('');const [error,setError]=useState('');const [savedCode,setSavedCode]=useState<{id:string;code:string}|null>(null);
+  const [nextPreparation,setNextPreparation]=useState<'preparing'|'ready'|'error'>('preparing');const [prepareRetry,setPrepareRetry]=useState(0);
   const live=useRef(true);const saving=useRef<Promise<unknown>>(Promise.resolve());
   const savedDraft=useRef('');
 
@@ -86,13 +87,14 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
     // Prepare the adjacent lesson AND its display language. A transient failure
     // must not silently abandon preparation for the rest of this topic.
     let active=true;let timer:ReturnType<typeof setTimeout>|undefined;
+    setNextPreparation('preparing');
     async function prepare(attempt=0){
-      try{await request('study/prefetch',{topicId:topic.id});}
-      catch{if(active&&attempt<2)timer=setTimeout(()=>void prepare(attempt+1),5000*(attempt+1));}
+      try{await request('study/prefetch',{topicId:topic.id});if(active)setNextPreparation('ready');}
+      catch{if(active&&attempt<2)timer=setTimeout(()=>void prepare(attempt+1),5000*(attempt+1));else if(active)setNextPreparation('error');}
     }
     void prepare();
     return()=>{active=false;if(timer)clearTimeout(timer);};
-  },[rawPayload?.session.id,topic.id,language]);
+  },[rawPayload?.session.id,topic.id,language,prepareRetry]);
   async function action(name:'new'|'answer'|'reference'|'load',answerDraft:StudyDraft=draft){
     if(busy)return;setBusy(name);setError('');
     try{
@@ -130,6 +132,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
   const attempts=session?.attempts.filter(a=>a.kind===current)??[];const latest=attempts.at(-1);
   const canSubmit=current==='choice'?draft.choice>=0:draft.code.trim().length>=4;
   return <div className="practice-workspace"><TopicDirectory docked path={path} current={topic.id} progress={progress} disabled={!!busy} onNavigate={id=>void openTopic(id)}/><section className="topic-practice mixed-practice">
+    {session&&journey.next&&<div className="tp-next-preparation" role="status"><span>{nextPreparation==='ready'?say('Next topic and display languages are ready.','下一知识点和显示语言已备好。'):nextPreparation==='error'?say('Next-topic preparation failed. Retry when ready.','下一知识点准备未完成，请重试。'):say('Preparing the next topic in the background…','正在后台准备下一知识点…')}</span>{nextPreparation==='error'&&<button onClick={()=>setPrepareRetry(value=>value+1)}>{say('Retry preparation','重试准备')}</button>}</div>}
     <nav className="topic-journey" aria-label={say('Topic navigation','知识点导航')}>
       <a href={`#roadmap/${pathId}`}>← {say('Back to path','返回路线')}</a>
       <h1 title={topic.title[language]}>{topic.title[language]}</h1>

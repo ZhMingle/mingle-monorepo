@@ -51,6 +51,7 @@ function isResponse(value:unknown):boolean {
   return (value as {session?:{lesson?:{coding?:{format?:string}}}})?.session?.lesson?.coding?.format==='response';
 }
 function visit(value:unknown,path:string[],map:(text:string)=>string,response=false):unknown {
+  if(path.at(-1)==='preparedPresentations')return value;
   if(typeof value==='string'){
     const key=path.at(-1)!;
     const inDraft=path.includes('draft')||path.includes('drafts');
@@ -67,3 +68,6 @@ function visit(value:unknown,path:string[],map:(text:string)=>string,response=fa
 export function present<T>(value:T,translations:Record<string,string>):T {
   return visit(value,[],text=>translations[text]??text,isResponse(value)) as T;
 }
+export type PresentationLanguage='en'|'zh';
+export type PresentationTranslations=Record<string,string>;
+export type PreparedPresentations={version:'prepared-presentation-v1';translations:Partial<Record<PresentationLanguage,PresentationTranslations>>};

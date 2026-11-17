@@ -1,3 +1,10 @@
+## 2026-11-17 — Deliver prepared lessons with ready display text
+
+- Include cached display-language maps in study responses and seed the browser synchronously, removing the second translation round trip when opening a prepared topic.
+- Cache unchanged prose separately, reuse old complete lesson caches after feedback is added, and translate only new text. Cache freshly generated native-language prose directly; opening Chinese does not wait for unfinished English preparation.
+- Keep next-topic preparation active across stage boundaries, show its actual ready/failure status and allow retry. Preserve drafts, answers and progress; preparation alone does not start a topic.
+- Use an arrow pointer and hide insertion carets on read-only question headings while keeping text selection, code editing and answer inputs available.
+
 ## 2026-11-17 — Clear successful notebook input
 
 - Clear the submitted input once every item has been saved or reopened successfully. Keep failed submissions and any unrelated draft intact for retry.

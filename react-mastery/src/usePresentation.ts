@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react';
 import { presentationStrings,presentationIdentifiers, present } from '../shared/presentation.ts';
 import { request } from './api.ts';
 import {PresentationCache} from './presentation-cache.ts';
+import type {PreparedPresentations} from '../shared/presentation.ts';
 
 const presentations=new PresentationCache((texts,language,identifiers,background)=>request<Record<string,string>>('presentation',{texts,language,identifiers,background}));
 export function usePresentation<T>(payload:T|null,language:'en'|'zh'){
+  const prepared=(payload as {preparedPresentations?:PreparedPresentations}|null)?.preparedPresentations;
+  if(prepared?.version==='prepared-presentation-v1')for(const target of ['zh','en'] as const){const translations=prepared.translations[target];if(translations)presentations.seed(payload,target,translations);}
   const texts=presentationStrings(payload);
   const identifiers=presentationIdentifiers(payload);
   const key=JSON.stringify([language,texts,identifiers]);
@@ -25,5 +28,5 @@ export function usePresentation<T>(payload:T|null,language:'en'|'zh'){
   const translations=presentations.get(payload,language);
   const translating=!!payload&&texts.length>0&&!translations&&failure?.key!==key;
   const switchingLanguage=translating&&(languageChange.language!==language||languageChange.key===key);
-  return {view:payload&&translations?present(payload,translations):payload,translating,switchingLanguage,translationError:failure?.key===key?failure.message:'',retryTranslation:()=>{setFailure(null);setRetry(v=>v+1);}};
+  return {view:payload&&translations?present(payload,translations):payload,translating,switchingLanguage,translationError:!translations&&failure?.key===key?failure.message:'',retryTranslation:()=>{setFailure(null);setRetry(v=>v+1);}};
 }

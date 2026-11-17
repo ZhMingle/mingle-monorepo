@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import { mkdtempSync,rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import {createHash} from 'node:crypto';
+import {writingStyleVersion} from '../server/writing-style.ts';
 import { present,presentationStrings,presentationIdentifiers,presentationBatches } from '../shared/presentation.ts';
 const scratch=mkdtempSync(join(tmpdir(),'clarity-translation-'));process.env.DATA_DIR=scratch;
-const {translatePresentation}=await import('../server/presentation.ts');
+const {translatePresentation,preparePresentation}=await import('../server/presentation.ts');
 const {db}=await import('../server/store.ts');
 after(()=>{db.close();rmSync(scratch,{recursive:true,force:true});});
 test('background and visible presentation requests share deterministic bounded batches',()=>{
@@ -15,6 +17,23 @@ test('background and visible presentation requests share deterministic bounded b
   assert.deepEqual(batches.map(batch=>batch.length),[100,100,5]);
   assert.deepEqual(batches.flat(),texts);
   assert.deepEqual(presentationBatches(['a'.repeat(30000),'b'.repeat(30000),'c']),[['a'.repeat(30000)],['b'.repeat(30000),'c']]);
+});
+
+test('feedback translates incrementally without invalidating the already prepared lesson',async()=>{
+  const lesson={session:{lesson:{overview:'A stable cached lesson.',coding:{starter:'function StableCase() {}'}}}};
+  const batches:string[][]=[];const run=async<T>(prompt:string):Promise<T>=>{const source=JSON.parse(prompt.slice(prompt.lastIndexOf('\n')+1)) as string[];batches.push(source);return {translations:source.map(text=>'中文 '+text)} as T;};
+  await preparePresentation(lesson,'zh',run,{onlyRequested:true});
+  await preparePresentation({...lesson,attempts:[{feedback:'A newly saved explanation.'}]},'zh',run,{onlyRequested:true});
+  assert.deepEqual(batches,[['A stable cached lesson.'],['A newly saved explanation.']]);
+});
+
+test('old durable lesson batches remain reusable after feedback is added',async()=>{
+  const payload={session:{lesson:{overview:'An old durable lesson batch.',coding:{starter:'function LegacyCached() {}'}}}};
+  const texts=presentationStrings(payload),identifiers=presentationIdentifiers(payload);
+  const key=createHash('sha256').update(JSON.stringify(['whole-sentence-v1',writingStyleVersion,'zh',texts,identifiers])).digest('hex');
+  db.prepare('INSERT INTO presentation_translations VALUES(?,?)').run(key,JSON.stringify({[texts[0]]:'旧题目的中文。'}));
+  const requested:string[][]=[];await preparePresentation({...payload,attempts:[{feedback:'New legacy feedback.'}]},'zh',async<T>(prompt:string)=>{const source=JSON.parse(prompt.slice(prompt.lastIndexOf('\n')+1));requested.push(source);return {translations:source.map((text:string)=>'中文 '+text)} as T;},{onlyRequested:true});
+  assert.deepEqual(requested,[['New legacy feedback.']]);
 });
 test('translation uses authored component names without reading learner code',()=>{
   const payload={session:{lesson:{coding:{starter:'export default function NameEditor() {}\nfunction save() {}'}},draft:{code:'function LearnerSecret() {}'},attempts:[{input:'function PrivateSubmission() {}'}]}};

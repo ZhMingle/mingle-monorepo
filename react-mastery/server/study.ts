@@ -10,7 +10,7 @@ import { aliasMatches, completedKinds, englishKeyword, publicStudy, studyKinds, 
 import type { BlankResult, StudyDraft, StudyKind, StudyPayload, StudySession } from '../shared/study.ts';
 import { learningOverview } from '../shared/learning-progress.ts';
 import { sessionList } from './store.ts';
-import { preparePresentation } from './presentation.ts';
+import { preparePresentation,cacheGeneratedPresentation,withPreparedPresentations } from './presentation.ts';
 import { performanceGuidance, responseLessonPrompt, responseReviewPrompt } from './study-prompts.ts';
 import { validateResponseLesson } from '../shared/study.ts';
 
@@ -50,10 +50,12 @@ export function studyOverview(){
 }
 export async function openStudy(topicId:string,language:'en'|'zh',run:typeof runStructured=runStructured){
   const payload=await studyAction('open',{topicId},language,run);
+  // Do not hand the browser a lesson which needs another AI translation request.
+  await preparePresentation(payload,language,run,{onlyRequested:true,foreground:true});
   // Start before the browser has rendered this topic. The client also retries
   // this idempotent request if a transient connection or AI failure occurs.
   void studyAction('prefetch',{topicId},language,run).catch(()=>{});
-  return payload;
+  return withPreparedPresentations(payload);
 }
 function draftFor(s:StudySession,input:Record<string,unknown>):StudyDraft {
   const raw=input.keywords;
@@ -119,6 +121,7 @@ export async function studyAction(action:string,input:Record<string,unknown>,lan
       const s:StudySession={id:randomUUID(),topicId,language,version:studyVersion,createdAt:new Date().toISOString(),current:'choice',lesson,draft:{keywords:Object.fromEntries(lesson.keywords.map(b=>[b.id,''])),choice:-1,code:lesson.coding.starter},helped:[],attempts:[]};
       if(cacheOnly)db.prepare('INSERT INTO prepared_studies VALUES(?,?) ON CONFLICT(topic_id) DO UPDATE SET payload=excluded.payload').run(topicId,JSON.stringify(s));
       else saveStudy(s);
+      cacheGeneratedPresentation(publicStudy(s),language);
       return publicStudy(s);
     }finally{active.delete(key);}
   }

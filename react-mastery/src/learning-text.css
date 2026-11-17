@@ -1,4 +1,6 @@
 .learning-text { min-width:0; line-height:1.75; overflow-wrap:anywhere; }
+/* Question headings are readable/selectable text, not editing surfaces. */
+h2.learning-text { cursor:default; caret-color:transparent; }
 .learning-text > :first-child { margin-top:0; }
 .learning-text > :last-child { margin-bottom:0; }
 .learning-text p { margin:.65rem 0; white-space:pre-wrap; }

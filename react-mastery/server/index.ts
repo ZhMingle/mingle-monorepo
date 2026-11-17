@@ -17,6 +17,7 @@ import { understandingAction, understandingPayload, understandingSessions } from
 import { topicAction, topicProgress } from './topic-practice.ts';
 import { studyAction, studyProgress, studyOverview, openStudy } from './study.ts';
 import { translatePresentation } from './presentation.ts';
+import {withPreparedPresentations} from './presentation.ts';
 import { runtimeVersion } from '../shared/runtime-version.ts';
 import { pathsVersion } from '../shared/paths.ts';
 import { tutorReply } from './tutor.ts';
@@ -117,7 +118,7 @@ const server = createServer(async (req, res) => {
       }
       if (url.pathname.startsWith('/api/study/')) {
         const action=url.pathname.slice('/api/study/'.length);const language=req.headers['x-clarity-language']==='zh'?'zh':'en';
-        send(res, 200, action==='open'?await openStudy(text(input.topicId,100),language):await studyAction(action,input,language)); return;
+        send(res, 200, action==='open'?await openStudy(text(input.topicId,100),language):withPreparedPresentations(await studyAction(action,input,language))); return;
       }
       if (url.pathname === '/api/topic/progress') {
         send(res, 200, topicProgress(text(input.pathId, 40))); return;

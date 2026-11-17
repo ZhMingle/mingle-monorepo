@@ -10,7 +10,8 @@ import {responseLesson} from './response-fixtures.ts';
 const scratch=mkdtempSync(join(tmpdir(),'clarity-study-test-'));process.env.DATA_DIR=scratch;
 const {db,exportData}=await import('../server/store.ts');
 const {studyAction,getStudy,saveStudy,studyProgress,openStudy}=await import('../server/study.ts');
-const {translatePresentation}=await import('../server/presentation.ts');
+const {translatePresentation,withPreparedPresentations}=await import('../server/presentation.ts');
+const {PresentationCache}=await import('../src/presentation-cache.ts');
 const {presentationStrings,presentationIdentifiers,presentationBatches}=await import('../shared/presentation.ts');
 after(()=>{db.close();for(const name of ['learning.sqlite','learning.sqlite-wal','learning.sqlite-shm'])rmSync(join(scratch,name),{force:true});rmdirSync(scratch);});
 const lesson:StudyLesson={overview:'Repeat-safe updates can set a value without mutating the input.',example:'const done = {...item, done: true};',pitfall:'Incrementing is not the same as setting.',keywords:[
@@ -243,6 +244,41 @@ test('opening a topic starts adjacent preparation before a browser prefetch requ
   assert.equal(studyProgress('java').topics[next].started,false);
   release();await studyAction('prefetch',{topicId:current},'zh',run);
   assert.equal(generations,1);
+});
+
+test('TypeScript stage-boundary prefetch transports ready Chinese without rewriting fresh Chinese or starting progress',async()=>{
+  const path=learningPaths.find(path=>path.id==='typescript')!;
+  const current=path.stages[0].topics.at(-1)!.id,next=path.stages[1].topics[0].id;
+  db.prepare('DELETE FROM study_sessions WHERE topic_id=?').run(next);db.prepare('DELETE FROM prepared_studies WHERE topic_id=?').run(next);
+  const native=structuredClone(lesson);native.overview='重复设置完成状态，不会改变原对象。';native.pitfall='注意区分累加和设置。';native.choice={...native.choice,scenario:'计数从零开始。',question:'重复执行有什么结果？',options:['保持不变。','继续增加。','只有周二不变。'],explanation:'每次执行都会继续增加。'};
+  native.coding={...native.coding,scenario:'实现标记完成的函数。',requirements:['返回新对象。','保留原对象。'],cases:native.coding.cases.map(item=>({...item,expected:'返回新对象，原对象保持不变。'}))};
+  let generations=0,translations=0;
+  const run=async<T>(prompt:string):Promise<T>=>{if(prompt.startsWith('Translate each')){translations++;return translated(prompt);}generations++;return native as T;};
+  await studyAction('prefetch',{topicId:current},'zh',run);
+  assert.equal(generations,1);assert.equal(translations,1,'only the alternate language needs translation');assert.equal(studyProgress('typescript').topics[next].started,false);
+  const noAI=async<T>():Promise<T>=>{throw Error('Prepared navigation must not regenerate');};
+  const payload=withPreparedPresentations(await studyAction('open',{topicId:next},'zh',noAI) as StudyPayload);
+  assert.equal(payload.preparedPresentations?.translations.zh?.[native.choice.question],native.choice.question);
+  let browserRequests=0;const browser=new PresentationCache(async()=>{browserRequests++;throw Error('No browser translation round trip');});
+  browser.seed(payload,'zh',payload.preparedPresentations!.translations.zh!);assert.ok(browser.get(payload,'zh'));await browser.prepare(payload,'zh');assert.equal(browserRequests,0);
+  assert.equal(payload.session.draft.code,native.coding.starter);assert.deepEqual(payload.completed,[]);
+});
+
+test('opening prepared Chinese does not wait for an in-flight alternate language',async()=>{
+  const topics=learningPaths.find(path=>path.id==='typescript')!.stages.flatMap(stage=>stage.topics),current=topics[13].id,next=topics[14].id;
+  db.prepare('DELETE FROM study_sessions WHERE topic_id=?').run(next);db.prepare('DELETE FROM prepared_studies WHERE topic_id=?').run(next);
+  const native=structuredClone(lesson);native.overview='独立验证中文已准备好，英文仍在后台。';native.pitfall='中文题目无需等待英文。';native.choice={...native.choice,scenario:'查看这段代码。',question:'运行后会得到什么？',options:['结果一。','结果二。','结果三。'],explanation:'解释这段代码。'};
+  native.coding={...native.coding,scenario:'补全这段代码。',requirements:['返回新对象。','保留原对象。'],cases:native.coding.cases.map(item=>({...item,expected:'保留原对象并返回新对象。'}))};
+  let started!:()=>void,release!:()=>void;const translating=new Promise<void>(done=>started=done),alternate=new Promise<void>(done=>release=done);
+  const run=async<T>(prompt:string):Promise<T>=>{if(prompt.startsWith('Translate each')){started();await alternate;return translated(prompt);}return native as T;};
+  const prefetch=studyAction('prefetch',{topicId:current},'zh',run);await translating;
+  let selectedTranslations=0;
+  const visibleRun=async<T>(prompt:string):Promise<T>=>{if(prompt.startsWith('Translate each'))selectedTranslations++;throw Error('No additional visible generation is needed.');};
+  let timer:ReturnType<typeof setTimeout>|undefined;
+  const opened=await Promise.race([openStudy(next,'zh',visibleRun),new Promise<null>(done=>{timer=setTimeout(()=>done(null),250);})]);
+  clearTimeout(timer);release();await prefetch;
+  assert.ok(opened,'opening Chinese must resolve while English is still blocked');assert.equal(selectedTranslations,0);
+  assert.equal('preparedPresentations' in opened&&opened.preparedPresentations?.translations.zh?.[native.choice.question],native.choice.question);
 });
 test('task rules can be split into up to eight separate requirements',()=>{
   const expanded=structuredClone(lesson);
