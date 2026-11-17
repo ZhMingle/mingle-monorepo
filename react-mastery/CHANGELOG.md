@@ -1,3 +1,8 @@
+## 2026-11-17 — Compact full-screen cards
+
+- Match full-screen tiles to the reference list-card size: 253 × 132 CSS pixels on desktop, with more columns on wider screens and fluid width on phones.
+- Use compact titles, two-line meanings, dates and icon actions; complete examples and pronunciation remain available in card details.
+
 ## 2026-11-17 — Full-screen English card wall
 
 - Add a full-screen cards entry beside the notebook heading, with a responsive grid that fills the browser viewport, shared search/category filters, favorite actions and per-card speech.
