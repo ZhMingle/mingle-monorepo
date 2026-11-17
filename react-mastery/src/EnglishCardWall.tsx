@@ -1,17 +1,19 @@
 import {useState} from 'react';
 import type {ReactNode} from 'react';
-import {BookOpen,Headphones,Minimize2,Search,SlidersHorizontal,Star,X} from 'lucide-react';
+import {BookOpen,Minimize2,Search,SlidersHorizontal,Star,X} from 'lucide-react';
 import type {EnglishCard} from '../shared/english.ts';
 import {useLanguage} from './language.tsx';
 import NotebookDialog from './NotebookDialog.tsx';
 import EnglishCardDetail from './EnglishCardDetail.tsx';
 import type {EnglishDetailProps} from './EnglishCardDetail.tsx';
+import EnglishAudioButton from './EnglishAudioButton.tsx';
+import {playbackKey} from './english-playback.ts';
 import './english-card-wall.css';
 
-type WallProps=Pick<EnglishDetailProps,'editing'|'working'|'onFavorite'|'onRemove'|'onSpeak'|'onLookup'>&{
+type WallProps=Pick<EnglishDetailProps,'editing'|'working'|'playback'|'onFavorite'|'onRemove'|'onSpeak'|'onLookup'>&{
   cards:EnglishCard[];visible:EnglishCard[];numbers:Map<string,number>;filter:string;onFilter:(value:string)=>void;
   tab:'all'|'word'|'expression'|'favorite';onTab:(value:'all'|'word'|'expression'|'favorite')=>void;
-  loading:boolean;error:string;onReload:()=>void;onExit:()=>void;onResetPlayback:()=>void;voiceSettings:ReactNode;playback:ReactNode;
+  loading:boolean;error:string;onReload:()=>void;onExit:()=>void;onResetPlayback:()=>void;voiceSettings:ReactNode;playbackFeedback:ReactNode;
 };
 export default function EnglishCardWall(props:WallProps){
   const {language}=useLanguage();const text=(cn:string,en:string)=>language==='zh'?cn:en;
@@ -27,14 +29,14 @@ export default function EnglishCardWall(props:WallProps){
     </div>
     <div className="english-wall-feedback">
       {props.error&&<div className="error-banner" role="alert"><span>{props.error}</span><button onClick={props.onReload}>{text('刷新卡片库','Reload notebook')}</button></div>}
-      {!detail&&props.playback}
+      {!detail&&props.playbackFeedback}
     </div>
     <div className="english-wall-grid" aria-label={text('平铺英语卡片','English card grid')}>
-      {props.loading?<p role="status" className="english-wall-empty">{text('正在读取卡片…','Loading cards…')}</p>:props.visible.length?props.visible.map(card=><article className="english-tile" key={card.id}>
+      {props.loading?<p role="status" className="english-wall-empty">{text('正在读取卡片…','Loading cards…')}</p>:props.visible.length?props.visible.map(card=><article className="english-tile" key={card.id} data-audio-active={props.playback.key===playbackKey(card.id,'term')&&(props.playback.phase==='loading'||props.playback.phase==='speaking')}>
         <button className="english-tile-open" aria-label={text(`查看 ${card.term} 详情`,`View ${card.term} details`)} onClick={()=>{props.onResetPlayback();setDetailId(card.id);}}><h3 lang="en" title={card.term}><span className="english-tile-number">{props.numbers.get(card.id)} · </span>{card.term}</h3><p className="english-tile-meaning">{card.meaning}</p></button>
-        <div className="english-tile-actions"><small className="english-tile-meta">{card.kind==='word'?text('单词','Word'):text('表达','Phrase')} · {new Date(card.createdAt).toLocaleDateString(language==='zh'?'zh-CN':'en-NZ',{month:'short',day:'numeric'})}</small><div><button onClick={()=>props.onSpeak(card,'term')} aria-label={text(`朗读 ${card.term}`,`Read ${card.term} aloud`)} title={text('朗读','Listen')}><Headphones size={16}/></button><button disabled={props.editing} aria-pressed={card.favorite} aria-label={card.favorite?text(`取消收藏 ${card.term}`,`Unstar ${card.term}`):text(`收藏 ${card.term}`,`Star ${card.term}`)} title={card.favorite?text('取消收藏','Unstar'):text('收藏','Star')} onClick={()=>props.onFavorite(card)}><Star size={16} fill={card.favorite?'currentColor':'none'}/></button></div></div>
+        <div className="english-tile-actions"><small className="english-tile-meta">{card.kind==='word'?text('单词','Word'):text('表达','Phrase')} · {new Date(card.createdAt).toLocaleDateString(language==='zh'?'zh-CN':'en-NZ',{month:'short',day:'numeric'})}</small><div><EnglishAudioButton playback={props.playback} target={playbackKey(card.id,'term')} label={text(`朗读 ${card.term}`,`Read ${card.term} aloud`)} className="english-tile-audio" onClick={()=>props.onSpeak(card,'term')}/><button disabled={props.editing} aria-pressed={card.favorite} aria-label={card.favorite?text(`取消收藏 ${card.term}`,`Unstar ${card.term}`):text(`收藏 ${card.term}`,`Star ${card.term}`)} title={card.favorite?text('取消收藏','Unstar'):text('收藏','Star')} onClick={()=>props.onFavorite(card)}><Star size={16} fill={card.favorite?'currentColor':'none'}/></button></div></div>
       </article>):<div className="english-wall-empty"><BookOpen size={34}/><p>{props.cards.length?text('没有符合筛选条件的卡片。','No matching cards.'):text('生成卡片后，就可以在这里平铺浏览。','Add some cards to browse them here.')}</p>{(props.filter||props.tab!=='all')&&<button className="secondary" onClick={()=>{props.onFilter('');props.onTab('all');}}>{text('清除筛选','Clear filters')}</button>}</div>}
     </div>
-    {detail&&<NotebookDialog className="english-wall-detail" labelledBy="english-wall-detail-title" onDismiss={closeDetail}><div className="english-wall-detail-bar"><button className="secondary" data-dialog-focus onClick={closeDetail}><X size={18}/>{text('返回卡片墙','Back to cards')}</button></div><div className="english-wall-detail-content">{props.error&&<p role="alert">{props.error}</p>}{props.playback}<EnglishCardDetail card={detail} number={props.numbers.get(detail.id)} headingId="english-wall-detail-title" editing={props.editing} working={props.working} onFavorite={props.onFavorite} onRemove={props.onRemove} onSpeak={props.onSpeak} onLookup={props.onLookup}/></div></NotebookDialog>}
+    {detail&&<NotebookDialog className="english-wall-detail" labelledBy="english-wall-detail-title" onDismiss={closeDetail}><div className="english-wall-detail-bar"><button className="secondary" data-dialog-focus onClick={closeDetail}><X size={18}/>{text('返回卡片墙','Back to cards')}</button></div><div className="english-wall-detail-content">{props.error&&<p role="alert">{props.error}</p>}{props.playbackFeedback}<EnglishCardDetail playback={props.playback} card={detail} number={props.numbers.get(detail.id)} headingId="english-wall-detail-title" editing={props.editing} working={props.working} onFavorite={props.onFavorite} onRemove={props.onRemove} onSpeak={props.onSpeak} onLookup={props.onLookup}/></div></NotebookDialog>}
   </NotebookDialog>;
 }

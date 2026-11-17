@@ -22,6 +22,7 @@ import { pathsVersion } from '../shared/paths.ts';
 import { tutorReply } from './tutor.ts';
 import {topicImportance} from './topic-importance.ts';
 import {englishCards,lookupEnglish,updateEnglishCard,deleteEnglishCard} from './english.ts';
+import {englishReminder} from './english-reminder.ts';
 import {englishAudio,speechAudio,speechRange,speechStatus,speechHeartbeat,claimSpeechJob,completeSpeechJob} from './english-audio.ts';
 import type { LearningSession, RunReport, SessionMode, Stage } from '../shared/types.ts';
 
@@ -90,6 +91,7 @@ const server = createServer(async (req, res) => {
       if (!origins.has(req.headers.origin ?? '') || req.headers['x-clarity-request'] !== '1' || !req.headers['content-type']?.startsWith('application/json')) { send(res, 403, { error: 'Only requests from the local application are accepted' }); return; }
       const input = await body(req);
       if(url.pathname==='/api/english/speech'){send(res,200,await englishAudio(input));return;}
+      if(url.pathname==='/api/english/reminder'){send(res,200,await englishReminder(input));return;}
       if (url.pathname === '/api/topic-importance') { send(res, 200, await topicImportance(input)); return; }
       if (url.pathname === '/api/english/lookup') { send(res, 200, await lookupEnglish(input)); return; }
       if (url.pathname === '/api/english/update') { send(res, 200, {card:updateEnglishCard(input)}); return; }

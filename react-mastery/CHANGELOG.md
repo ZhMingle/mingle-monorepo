@@ -1,3 +1,12 @@
+## 2026-11-17 — Duplicate-word reminders and stable playback feedback
+
+- Re-entering a saved word opens the original card and reads a varied playful English reminder followed by its meaning. Cache a genuine AI translation of the saved sense; avoid consecutive repeated openings and retain bounded private message IDs.
+- Read batch reminders serially, allow cancellation, and reuse the selected local neural or browser voice. Preserve cards, favorites, numbering and learning progress; prevent arbitrary client-supplied reminder speech.
+
+- Remove the native player and inserted playback paragraphs/buttons. Keep audio outside the document layout and put preparation, speaking, completion and retry feedback on the original reading button.
+- Keep button and card dimensions fixed; use a floating notice only for failures or a required autoplay retry. The same button cancels preparation or stops speech.
+- Test real-event feedback, buffering, cancellation, stale responses, switching cards, autoplay retry, timeouts and browser-speech startup. Preserve the existing private audio cache and owner-only routes.
+
 ## 2026-11-17 — Reveal meanings on hover
 
 - Hide full-screen card meanings until mouse hover or keyboard focus on desktop; retain visible meanings for touch devices and phone layouts without changing card dimensions.
