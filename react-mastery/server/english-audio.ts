@@ -1,6 +1,7 @@
 import {createHash,randomUUID} from 'node:crypto';
 import {db} from './store.ts';
 import {englishCards} from './english.ts';
+import {englishTitle} from '../shared/english.ts';
 import {reminderText} from './english-reminder.ts';
 import {speechModel,speechPreview,validSpeechVoice,type SpeechVoice} from '../shared/english-audio.ts';
 
@@ -16,7 +17,7 @@ export function speechInput(input:Record<string,unknown>){
   const card=englishCards().find(card=>card.id===input.cardId);
   if(!card)throw fail('这张卡片不存在，请刷新列表。 / Card not found.',404);
   let text:string|undefined;
-  if(input.part==='term')text=card.term;
+  if(input.part==='term')text=englishTitle(card);
   else if(input.part==='reminder')text=reminderText(card,input.reminderId);
   else if(input.part==='example'&&Number.isInteger(input.index)&&Number(input.index)>=0)text=card.examples[Number(input.index)]?.english;
   if(!text?.trim()||text.length>300)throw fail('无效的朗读内容。 / Invalid speech selection.');

@@ -23,3 +23,4 @@
   .english-tile:hover .english-tile-meaning,.english-tile-open:focus-visible .english-tile-meaning{visibility:visible;opacity:1}
   .english-tile:has(:focus-visible) .english-tile-meaning{visibility:visible;opacity:1}
 }
+.english-tile h3{font-size:16px;line-height:21px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-height:42px;overflow:hidden}.english-tile-meaning{font-size:12px;line-height:18px;margin-top:4px}.english-wall-toolbar>.secondary{min-height:44px;display:flex;align-items:center;gap:7px}

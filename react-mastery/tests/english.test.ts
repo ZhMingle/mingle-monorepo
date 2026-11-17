@@ -28,7 +28,7 @@ test('batch members save independently, failed items retry and successes reuse s
   await lookupEnglish(items[0],async()=>{throw Error('Saved success must not regenerate');});
 });
 after(()=>{db.close();rmSync(scratch,{recursive:true,force:true});});
-const point={term:'figure out',kind:'expression',pronunciation:'',meaning:'想明白，弄清楚。',usage:'遇到问题、还在找答案时可以用。',examples:[{english:'I figured out how to fix it.',chinese:'我弄清楚怎么修好了。'},{english:'Let’s figure out where to eat.',chinese:'我们想想去哪儿吃。'}],pitfall:'figure out 强调想出答案，不只是知道一件事。',related:[{term:'work out',meaning:'想出办法'}],inputKind:'expression',sourceTranslation:''};
+const point={term:'figure out',kind:'expression',pronunciation:'',meaning:'想明白，弄清楚。',usage:'遇到问题、还在找答案时可以用。',examples:[{english:'I figured out how to fix it.',chinese:'我弄清楚怎么修好了。'},{english:'Let’s figure out where to eat.',chinese:'我们想想去哪儿吃。'}],pitfall:'figure out 强调想出答案，不只是知道一件事。',related:[{term:'work out',meaning:'想出办法'}],inputKind:'expression',sourceTranslation:'',sourceSentence:'',sourceCorrection:'',partOfSpeech:'v.',chunk:{english:'figure out a solution',chinese:'想出解决办法'},memory:{association:'想象把打结的耳机线理顺，终于弄明白解决办法。',sound:'',parts:''}};
 test('lookup deduplicates simultaneous requests and persists reusable cards without calling AI again',async()=>{
   let calls=0;const run=async<T>()=>{calls++;return structuredClone(point) as T;};
   const [a,b]=await Promise.all([lookupEnglish({query:'  figure   out  '},run),lookupEnglish({query:'FIGURE OUT'},run)]);
@@ -70,11 +70,12 @@ test('canonical titles reuse existing cards before AI; stable numbers are unique
   assert.equal(englishCards().find(card=>card.id===first.card.id)?.number,first.card.number);
 });
 
-test('sentence input preserves the original and translation alongside generated examples',async()=>{
+test('sentence input keeps the raw query but stores a corrected sentence and its translation',async()=>{
   const query="She don't live in the vicinity.";
-  const original={english:query,chinese:'她不住在这附近。'};
-  const {card}=await lookupEnglish({query},async<T>()=>({...structuredClone(point),term:'in the vicinity',inputKind:'sentence',sourceTranslation:original.chinese}) as T);
+  const original={english:"She doesn't live in the vicinity.",chinese:'她不住在这附近。'};
+  const {card}=await lookupEnglish({query},async<T>()=>({...structuredClone(point),term:'in the vicinity',inputKind:'sentence',sourceSentence:original.english,sourceCorrection:"She don't → She doesn't：第三人称单数。",sourceTranslation:original.chinese}) as T);
   assert.equal(card.term,'in the vicinity');assert.equal(card.query,query);
+  assert.equal(card.sources?.[0].input,query);assert.equal(card.sources?.[0].english,original.english);
   assert.deepEqual(card.examples,[original,...point.examples]);
   const reopened=await lookupEnglish({query},async()=>{throw Error('Saved sentence must not regenerate');});
   assert.equal(reopened.card.id,card.id);assert.equal(reopened.cached,true);
@@ -86,13 +87,14 @@ test('new sentences append to an existing word without losing examples, identity
   const before=updateEnglishCard({id:saved.card.id,favorite:true});const count=englishCards().length;
   const first='I look forward to meeting you';
   const second='We look forward to your visit.';
-  const generate=(query:string)=>lookupEnglish({query},async<T>()=>({...structuredClone(point),term:before.term,inputKind:'sentence',sourceTranslation:'我们期待相见。'}) as T);
+  const generate=(query:string)=>lookupEnglish({query},async<T>()=>({...structuredClone(point),term:before.term,inputKind:'sentence',sourceSentence:query,sourceTranslation:'我们期待相见。'}) as T);
   const [a,b]=await Promise.all([generate(first),generate(second)]);
   assert.equal(a.card.id,b.card.id);assert.equal(b.card.id,before.id);assert.equal(b.card.number,before.number);assert.equal(b.card.favorite,true);
   assert.equal(englishCards().length,count);
   const after=englishCards().find(card=>card.id===before.id)!;
   for(const example of [...before.examples,{english:first},{english:second}])assert.ok(after.examples.some(item=>item.english===example.english));
   assert.equal(after.usage,before.usage);assert.equal(after.createdAt,before.createdAt);
+  assert.ok(after.sources?.some(source=>source.input===first));assert.ok(after.sources?.some(source=>source.input===second));
   const replay=await lookupEnglish({query:first},async()=>{throw Error('Merged sentence must reuse the card');});
   assert.equal(replay.card.examples.filter(example=>example.english===first).length,1);
 });

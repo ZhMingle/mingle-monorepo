@@ -1,9 +1,9 @@
 import {useEffect,useState,useRef} from 'react';
-import {ArrowDownToLine,ArrowUpRight,BookOpen,Check,LoaderCircle,Search,Sparkles,Star,Maximize2,X} from 'lucide-react';
+import {ArrowDownToLine,ArrowUpRight,BookOpen,Check,LoaderCircle,Search,Sparkles,Star,Maximize2,X,GalleryHorizontalEnd} from 'lucide-react';
 import {request} from './api.ts';
 import {useLanguage} from './language.tsx';
 import type {EnglishCard} from '../shared/english.ts';
-import {englishBatchInput,englishTermKey} from '../shared/english.ts';
+import {englishBatchInput,englishTermKey,englishTitle,englishMeaning,hasEnglishLearning} from '../shared/english.ts';
 import {englishVoices,isNaturalVoice} from './english-speech.ts';
 import {createEnglishPlayback,idlePlayback,playbackKey} from './english-playback.ts';
 import type {PlaybackState} from './english-playback.ts';
@@ -11,6 +11,8 @@ import EnglishAudioButton,{EnglishPlaybackNotice} from './EnglishAudioButton.tsx
 import {speechVoices,type SpeechVoice,type SpeechClip} from '../shared/english-audio.ts';
 import EnglishCardDetail from './EnglishCardDetail.tsx';
 import EnglishCardWall from './EnglishCardWall.tsx';
+import EnglishReview from './EnglishReview.tsx';
+import type {SpeechSelection} from './english-playback.ts';
 import './english-notebook.css';
 
 export function EnglishNotebookHeading(){
@@ -24,10 +26,15 @@ export default function EnglishNotebook(){
   const [cards,setCards]=useState<EnglishCard[]>([]);
   const [selected,setSelected]=useState('');
   const [wallOpen,setWallOpen]=useState(false);
+  const [reviewOpen,setReviewOpen]=useState(false);
+  const [enriching,setEnriching]=useState(false),[enrichProgress,setEnrichProgress]=useState({done:0,total:0}),[enrichError,setEnrichError]=useState('');
+  const enrichingRun=useRef(false);
   const wallEntry=useRef<HTMLButtonElement>(null);
   const cardList=useRef<HTMLDivElement>(null);
   const returnPosition=useRef({x:0,y:0,list:0});
   function resetPlayback(){player.current?.stop();}
+  function enterReview(){resetPlayback();setReviewOpen(true);}
+  function exitReview(){resetPlayback();setReviewOpen(false);}
   function enterWall(){
     returnPosition.current={x:window.scrollX,y:window.scrollY,list:cardList.current?.scrollTop??0};
     resetPlayback();setWallOpen(true);
@@ -69,15 +76,26 @@ export default function EnglishNotebook(){
   },[]);
   async function load(){
     setLoading(true);setError('');
-    try{const result=await request<{cards:EnglishCard[]}>('english');setCards(result.cards);setSelected(id=>result.cards.some(c=>c.id===id)?id:result.cards[0]?.id??'');}
+    try{const result=await request<{cards:EnglishCard[]}>('english');setCards(result.cards);setSelected(id=>result.cards.some(c=>c.id===id)?id:result.cards[0]?.id??'');void enrichLibrary(result.cards);}
     catch(e){setError((e as Error).message);}finally{setLoading(false);}
   }
   useEffect(()=>{void load();},[]);
+  async function enrichLibrary(library=cards){
+    if(enrichingRun.current)return;
+    const missing=library.filter(card=>!hasEnglishLearning(card));if(!missing.length)return;
+    enrichingRun.current=true;setEnriching(true);setEnrichError('');setEnrichProgress({done:0,total:missing.length});
+    try{for(let index=0;index<missing.length&&mounted.current;index+=6){
+      const result=await request<{cards:EnglishCard[]}>('english/enrich',{ids:missing.slice(index,index+6).map(card=>card.id)});
+      if(!mounted.current)break;
+      setCards(old=>old.map(card=>{const enriched=result.cards.find(item=>item.id===card.id);return enriched?{...card,partOfSpeech:enriched.partOfSpeech,chunk:enriched.chunk,memory:enriched.memory}:card;}));
+      setEnrichProgress({done:Math.min(index+6,missing.length),total:missing.length});
+    }}catch(cause){if(mounted.current)setEnrichError((cause as Error).message);}finally{enrichingRun.current=false;if(mounted.current)setEnriching(false);}
+  }
   // Stored numbers preserve insertion order; visible ordinals close deletion gaps.
   const orderedCards=cards.toSorted((a,b)=>b.number-a.number);
   const displayNumbers=new Map(orderedCards.map((card,index)=>[card.id,orderedCards.length-index]));
   const active=cards.find(c=>c.id===selected);
-  const visible=orderedCards.filter(c=>(tab==='all'||(tab==='favorite'?c.favorite:c.kind===tab))&&[String(displayNumbers.get(c.id)),c.term,c.query,c.meaning,c.usage,c.context,...c.examples.flatMap(e=>[e.english,e.chinese])].join(' ').toLocaleLowerCase().includes(filter.toLocaleLowerCase().trim()));
+  const visible=orderedCards.filter(c=>(tab==='all'||(tab==='favorite'?c.favorite:c.kind===tab))&&[String(displayNumbers.get(c.id)),c.term,englishTitle(c),englishMeaning(c),c.partOfSpeech,c.query,c.meaning,c.usage,c.context,...c.examples.flatMap(e=>[e.english,e.chinese])].join(' ').toLocaleLowerCase().includes(filter.toLocaleLowerCase().trim()));
   const today=new Date().toDateString();
   const todayCount=cards.filter(c=>new Date(c.createdAt).toDateString()===today).length;
   async function lookup(value=query,retry=false,remind=true){
@@ -126,7 +144,8 @@ export default function EnglishNotebook(){
   function speak(value:string,part:'preview'|'term'|'example'='term',index?:number,cardId=active?.id){
     ensurePlayer().toggle({key:playbackKey(part==='preview'?undefined:cardId,part,index),text:value,cardId,part,index},{engine:speechEngine,voice:speechEngine==='neural'?neuralVoice:voiceURI,rate:speechRate});
   }
-  const readCard=(card:EnglishCard,part:'term'|'example',index?:number)=>void speak(part==='term'?card.term:card.examples[index!].english,part,index,card.id);
+  const readCard=(card:EnglishCard,part:'term'|'example',index?:number)=>void speak(part==='term'?englishTitle(card):card.examples[index!].english,part,index,card.id);
+  const reviewSequence=(items:SpeechSelection[])=>ensurePlayer().sequence(items,speechOptions());
   const voiceSettings=(<div className="english-voice-settings"><label>{text('朗读方式','Speech source')} <select value={speechEngine} onChange={e=>{resetPlayback();setSpeechEngine(e.target.value as 'neural'|'browser');}}><option value="neural">{text('自然语音（本机模型）','Neural speech (local model)')}</option>{'speechSynthesis' in window&&<option value="browser">{text('浏览器语音（备用）','Browser speech (backup)')}</option>}</select></label>
       {speechEngine==='neural'?<label>{text('声音','Voice')} <select value={neuralVoice} onChange={e=>{resetPlayback();setNeuralVoice(e.target.value as SpeechVoice);try{localStorage.setItem('clarity.neuralVoice',e.target.value);}catch{}}}>{speechVoices.map(voice=><option key={voice.id} value={voice.id}>{zh?voice.zh:voice.name}</option>)}</select></label>:<label>{text('浏览器声音','Browser voice')} <select value={voices.some(voice=>voice.voiceURI===voiceURI)?voiceURI:''} onChange={e=>{resetPlayback();setVoiceURI(e.target.value);try{localStorage.setItem('clarity.englishVoice',e.target.value);}catch{}}}><option value="">{text('自动选择','Automatic')}</option>{voices.map(voice=><option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} · {voice.lang}</option>)}</select></label>}
       <label>{text('语速','Speed')} <select value={speechRate} onChange={e=>setSpeechRate(Number(e.target.value))}><option value={.85}>{text('稍慢','Slower')}</option><option value={1}>{text('正常','Normal')}</option><option value={1.1}>{text('稍快','Faster')}</option></select></label><EnglishAudioButton playback={playback} target={playbackKey(undefined,'preview')} label={text('试听声音','Preview voice')} className="english-preview-audio" size={17} onClick={()=>speak('Could you give me a hand? I am trying to figure this out.','preview')}>{text('试听声音','Preview voice')}</EnglishAudioButton>
@@ -144,16 +163,18 @@ export default function EnglishNotebook(){
     {batch.length>0&&<section className="english-batch" aria-label={text('生成进度','Generation progress')}><p role="status">{text('生成进度','Progress')}：{batch.filter(item=>item.status==='done'||item.status==='failed').length}/{batch.length} · {text('已保存／打开','Saved or opened')} {batch.filter(item=>item.status==='done').length}</p><ul>{batch.map(item=><li key={item.query}><strong>{item.query}</strong><span>{({pending:text('等待生成','Queued'),working:text('正在生成…','Generating…'),done:text('已保存／打开','Saved or opened'),failed:text('生成失败','Failed')})[item.status]}</span>{item.error&&<span role="alert">{item.error}</span>}{item.status==='failed'&&<button disabled={working} onClick={()=>void lookup(item.query,true)}>{text('重试此项','Retry this item')}</button>}</li>)}</ul></section>}
     {error&&<div className="error-banner" role="alert"><span>{error}</span>{loading?null:<button onClick={()=>void load()}>{text('刷新卡片库','Reload notebook')}</button>}</div>}
     {notice&&<p className="english-status" role="status"><Check size={16}/>{notice}</p>}
-    <div className="english-library-heading"><h2><BookOpen size={20}/>{text('我的英语积累','My English notebook')}</h2><button ref={wallEntry} className="secondary" onClick={enterWall}><Maximize2 size={17}/>{text('全屏卡片','Full-screen cards')}</button></div>
-    {!wallOpen&&<>{voiceSettings}{playbackFeedback}</>}
+    <div className="english-library-heading"><h2><BookOpen size={20}/>{text('我的英语积累','My English notebook')}</h2><div className="english-library-actions">{(enriching||enrichError)&&<button className="secondary" disabled={enriching} title={enrichError} onClick={()=>void enrichLibrary()}>{enriching?<LoaderCircle size={16} className="spin"/>:<Sparkles size={16}/>} {enriching?text(`整理语块 ${enrichProgress.done}/${enrichProgress.total}`,`Preparing chunks ${enrichProgress.done}/${enrichProgress.total}`):text('继续整理语块','Retry chunk preparation')}</button>}<button className="secondary" disabled={!visible.length} onClick={enterReview}><GalleryHorizontalEnd size={17}/>{text('过卡片','Review cards')}</button><button ref={wallEntry} className="secondary" onClick={enterWall}><Maximize2 size={17}/>{text('全屏卡片','Full-screen cards')}</button></div></div>
+    {enrichError&&<p className="english-status" role="alert">{enrichError}</p>}
+    {!wallOpen&&!reviewOpen&&<>{voiceSettings}{playbackFeedback}</>}
     <div className="english-library">
       <aside className="english-card-list" aria-label={text('已保存的英语卡片','Saved English cards')}>
         <label className="english-filter"><Search size={16}/><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder={text('搜索已存的卡片','Search saved cards')} aria-label={text('搜索已存的卡片','Search saved cards')}/></label>
         <div className="english-tabs" role="group" aria-label={text('筛选卡片','Filter cards')}>{(['all','word','expression','favorite'] as const).map(id=><button key={id} aria-pressed={tab===id} className={tab===id?'active':''} onClick={()=>setTab(id)}>{({all:text('全部','All'),word:text('单词','Words'),expression:text('表达','Phrases'),favorite:text('收藏','Starred')})[id]}</button>)}</div>
-        <div className="english-card-scroll" ref={cardList}>{loading?<p role="status" className="english-list-empty">{text('正在读取卡片…','Loading cards…')}</p>:visible.length?visible.map(card=><button className={`english-card-item ${selected===card.id?'active':''}`} key={card.id} aria-pressed={selected===card.id} onClick={()=>{if(playback.part==='reminder')resetPlayback();setSelected(card.id);setNotice('');}}><span><strong lang="en">{displayNumbers.get(card.id)} · {card.term}</strong>{card.favorite&&<Star size={14} fill="currentColor"/>}</span><p>{card.meaning}</p><small>{card.kind==='word'?text('单词','Word'):text('表达','Expression')} · {new Date(card.createdAt).toLocaleDateString(zh?'zh-CN':'en-NZ',{month:'short',day:'numeric'})}</small></button>):<p className="english-list-empty">{cards.length?text('没有符合筛选条件的卡片。','No matching cards.'):text('查过的词和表达会自动出现在这里。','Your words and expressions will appear here.')}</p>}</div>
+        <div className="english-card-scroll" ref={cardList}>{loading?<p role="status" className="english-list-empty">{text('正在读取卡片…','Loading cards…')}</p>:visible.length?visible.map(card=><button className={`english-card-item ${selected===card.id?'active':''}`} key={card.id} aria-pressed={selected===card.id} onClick={()=>{if(playback.part==='reminder')resetPlayback();setSelected(card.id);setNotice('');}}><span><strong lang="en">{displayNumbers.get(card.id)} · {englishTitle(card)}</strong>{card.favorite&&<Star size={14} fill="currentColor"/>}</span><p>{englishMeaning(card)}</p><small>{card.partOfSpeech??(card.kind==='word'?text('词汇语块','Vocabulary chunk'):text('表达语块','Expression chunk'))} · {new Date(card.createdAt).toLocaleDateString(zh?'zh-CN':'en-NZ',{month:'short',day:'numeric'})}</small></button>):<p className="english-list-empty">{cards.length?text('没有符合筛选条件的卡片。','No matching cards.'):text('查过的词和表达会自动出现在这里。','Your words and expressions will appear here.')}</p>}</div>
       </aside>
       {active?<EnglishCardDetail playback={playback} card={active} number={displayNumbers.get(active.id)} editing={editing} working={working} onFavorite={card=>void favorite(card)} onRemove={card=>void remove(card)} onSpeak={readCard} onLookup={term=>void lookup(term,false,false)}/>:<div className="english-welcome"><span className="english-welcome-icon"><BookOpen size={32}/></span><span className="english-kicker">YOUR EVERYDAY WORDS</span><h2>{text('从今天遇到的那个词开始。','Start with a word from your day.')}</h2><p>{text('不必一次学很多。把看过却不会用的表达留在这里，下次遇到，就熟悉一点。','You don’t need a long word list. Save an expression you want to use, and get a little more familiar with it.')}</p><div>{['figure out','I’m down','take your time'].map(term=><button key={term} disabled={working} onClick={()=>void lookup(term,false,false)}>{term}<ArrowUpRight size={14}/></button>)}</div><small>{text('每张卡片：简短意思 · 使用场景 · 例句 · 一个易错点','Each card: meaning · usage · examples · one common pitfall')}</small></div>}
     </div>
-    {wallOpen&&<EnglishCardWall cards={cards} visible={visible} numbers={displayNumbers} filter={filter} onFilter={setFilter} tab={tab} onTab={setTab} loading={loading} editing={editing} working={working} error={error} onReload={()=>void load()} onExit={exitWall} onResetPlayback={resetPlayback} voiceSettings={voiceSettings} playback={playback} playbackFeedback={playbackFeedback} onFavorite={card=>void favorite(card)} onRemove={card=>void remove(card)} onSpeak={readCard} onLookup={term=>{exitWall();void lookup(term,false,false);}}/>}
+    {wallOpen&&!reviewOpen&&<EnglishCardWall cards={cards} visible={visible} numbers={displayNumbers} filter={filter} onFilter={setFilter} tab={tab} onTab={setTab} loading={loading} editing={editing} working={working} error={error} onReload={()=>void load()} onExit={exitWall} onReview={enterReview} onResetPlayback={resetPlayback} voiceSettings={voiceSettings} playback={playback} playbackFeedback={playbackFeedback} onFavorite={card=>void favorite(card)} onRemove={card=>void remove(card)} onSpeak={readCard} onLookup={term=>{exitWall();void lookup(term,false,false);}}/>}
+    {reviewOpen&&visible.length>0&&<EnglishReview cards={visible} numbers={displayNumbers} initialId={selected} playback={playback} feedback={playbackFeedback} onSequence={reviewSequence} onStop={resetPlayback} onExit={exitReview}/>}
   </div>;
 }

@@ -1,3 +1,10 @@
+## 2026-11-17 — Chunk learning, memory cues and card review
+
+- Present everyday reusable chunks as card titles, retain the core lookup term and its contextual part of speech, and generate picture associations plus optional sound/morpheme cues. Link to a dictionary for etymology instead of inventing historical claims.
+- Enrich older cards in validated batches without replacing learner examples, favorites or numbering. Preserve newer edits while AI work is pending and allow retry after explicit failures.
+- Add full-screen card review with a default of three readings, configurable 1–20 repetitions, manual/automatic advance, pause/resume, previous/next, replay and meaning reveal. Advance only on actual speech endings and stop at the last card.
+- Correct redundant vocabulary headings and grammar in learner-written sentences before saving examples, preserve the raw query, explain edits, and deduplicate punctuation variants. Repair the reported old malformed sentence with a private original-payload backup.
+
 ## 2026-11-17 — Duplicate-word reminders and stable playback feedback
 
 - Re-entering a saved word opens the original card and reads a varied playful English reminder followed by its meaning. Cache a genuine AI translation of the saved sense; avoid consecutive repeated openings and retain bounded private message IDs.

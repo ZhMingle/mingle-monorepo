@@ -2,8 +2,8 @@ import {createEnglishSpeaker} from './english-speech.ts';
 import type {SpeechClip} from '../shared/english-audio.ts';
 
 export type PlaybackPhase='idle'|'loading'|'speaking'|'ready'|'done'|'error';
-export type PlaybackState={key:string|null;label:string;phase:PlaybackPhase;cardId?:string;part?:SpeechSelection['part'];failure?:'request'|'audio'|'timeout'|'unsupported';error?:string};
-export type SpeechSelection={key:string;text:string;label?:string;cardId?:string;part:'term'|'example'|'preview'|'reminder';index?:number;reminderId?:string};
+export type PlaybackState={key:string|null;label:string;phase:PlaybackPhase;cardId?:string;part?:SpeechSelection['part'];iteration?:number;repetitions?:number;failure?:'request'|'audio'|'timeout'|'unsupported';error?:string};
+export type SpeechSelection={key:string;text:string;label?:string;cardId?:string;part:'term'|'example'|'preview'|'reminder';index?:number;reminderId?:string;iteration?:number;repetitions?:number};
 type SpeechOptions={engine:'neural'|'browser';voice:string;rate:number};
 type AudioPort=Pick<HTMLAudioElement,'src'|'playbackRate'|'play'|'pause'|'onplaying'|'onwaiting'|'onended'|'onerror'|'onpause'>;
 export const idlePlayback:PlaybackState={key:null,label:'',phase:'idle'};
@@ -45,7 +45,7 @@ export function createEnglishPlayback({loadClip,prepare,createAudio,synth,create
   }
   async function start(selection:SpeechSelection,options:SpeechOptions){
     cancel();last={selection:{...selection},options:{...options}};const ticket=generation;
-    publish({key:selection.key,label:selection.label??selection.text,cardId:selection.cardId,part:selection.part,phase:'loading'});
+    publish({key:selection.key,label:selection.label??selection.text,cardId:selection.cardId,part:selection.part,iteration:selection.iteration,repetitions:selection.repetitions,phase:'loading'});
     const pending=new AbortController();request=pending;
     try{
       if(selection.part==='reminder'&&!selection.reminderId){

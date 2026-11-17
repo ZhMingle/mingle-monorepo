@@ -2,6 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createEnglishPlayback} from '../src/english-playback.ts';
 import type {PlaybackState,SpeechSelection} from '../src/english-playback.ts';
+import {reviewQueue} from '../src/english-review.ts';
+import type {EnglishCard} from '../shared/english.ts';
 
 const selection:SpeechSelection={key:'card-a-term',cardId:'a',part:'term',text:'stem'};
 const options={engine:'neural' as const,voice:'af_heart',rate:1};
@@ -96,4 +98,12 @@ test('cancelled definition preparation never starts speech, and browser reminder
   let spoken='';const synth={cancel(){},resume(){},getVoices(){return [{name:'English',lang:'en-US',voiceURI:'test',localService:true}];},speak(value:SpeechSynthesisUtterance){spoken=value.text;}} as unknown as SpeechSynthesis;
   const browser=createEnglishPlayback({prepare:async item=>({...item,text:'Already forgotten? It means a plant stalk.',reminderId:'saved'}),loadClip:async()=>{throw Error('Browser speech must not request neural audio');},createAudio:()=>fakeAudio().port,synth,createUtterance:text=>({text}) as SpeechSynthesisUtterance,onChange(){}});
   browser.sequence([reminder],{...options,engine:'browser'});await flush();t.mock.timers.tick(60);assert.match(spoken,/It means a plant stalk/);browser.dispose();
+});
+
+test('automatic review advances only after three real endings and stops at the final card',async t=>{
+  t.mock.timers.enable({apis:['setTimeout']});let media=fakeAudio();const starts:string[]=[];
+  const player=createEnglishPlayback({loadClip:async()=>clip,createAudio:()=>{media=fakeAudio();return media.port;},createUtterance:()=>({}) as SpeechSynthesisUtterance,onChange:state=>{if(state.phase==='loading')starts.push(`${state.cardId}:${state.iteration}`);}});
+  player.sequence(reviewQueue([{id:'a',term:'a word'},{id:'b',term:'another word'}] as EnglishCard[],0,3,true),options);await flush();
+  for(let index=0;index<6;index++){assert.equal(player.getState().phase,'loading');assert.equal(player.getState().cardId,index<3?'a':'b');assert.equal(player.getState().iteration,index%3+1);media.audio.onplaying?.();t.mock.timers.tick(100);assert.equal(player.getState().phase,'speaking');media.audio.onended?.();t.mock.timers.tick(900);await flush();}
+  assert.deepEqual(starts,['a:1','a:2','a:3','b:1','b:2','b:3']);assert.equal(player.getState().phase,'idle');player.dispose();
 });
