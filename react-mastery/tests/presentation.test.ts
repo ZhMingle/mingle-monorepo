@@ -35,6 +35,15 @@ test('old durable lesson batches remain reusable after feedback is added',async(
   const requested:string[][]=[];await preparePresentation({...payload,attempts:[{feedback:'New legacy feedback.'}]},'zh',async<T>(prompt:string)=>{const source=JSON.parse(prompt.slice(prompt.lastIndexOf('\n')+1));requested.push(source);return {translations:source.map((text:string)=>'中文 '+text)} as T;},{onlyRequested:true});
   assert.deepEqual(requested,[['New legacy feedback.']]);
 });
+
+test('a visible subset joins the same in-flight background translation without a duplicate model call',async()=>{
+  let release!:()=>void;const gate=new Promise<void>(done=>release=done);let calls=0;
+  const texts=['A shared pending explanation.','A second pending explanation.'];
+  const run=async<T>(prompt:string):Promise<T>=>{calls++;const source=JSON.parse(prompt.slice(prompt.lastIndexOf('\n')+1)) as string[];await gate;return {translations:source.map(text=>'中文 '+text)} as T;};
+  const background=translatePresentation({texts,language:'zh',background:true},run);
+  const visible=translatePresentation({texts:[texts[0]],language:'zh'},run);release();
+  const [full,subset]=await Promise.all([background,visible]);assert.equal(calls,1);assert.equal(subset[texts[0]],full[texts[0]]);assert.deepEqual(Object.keys(subset),[texts[0]]);
+});
 test('translation uses authored component names without reading learner code',()=>{
   const payload={session:{lesson:{coding:{starter:'export default function NameEditor() {}\nfunction save() {}'}},draft:{code:'function LearnerSecret() {}'},attempts:[{input:'function PrivateSubmission() {}'}]}};
   assert.deepEqual(presentationIdentifiers(payload),['NameEditor','save']);
