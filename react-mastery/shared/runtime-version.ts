@@ -1,2 +1,2 @@
 // Bump for server API changes. Catalog changes are checked separately via pathsVersion.
-export const runtimeVersion = '2026.11.17.prepared-presentations.1';
+export const runtimeVersion = '2026.11.17.review-presentation.1';

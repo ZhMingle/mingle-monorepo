@@ -73,6 +73,18 @@ test('choices need no written rationale, coding accepts equivalent implementatio
   assert.equal(studyProgress('typescript').topics['typescript.inference']?.completed,2);
   assert.equal('mastered' in publicStudy(getStudy(id)),false);
 });
+test('validated reviews use their requested language immediately without rewriting the cached lesson',async()=>{
+  const id=await create('typescript.generics');
+  const before=publicStudy(getStudy(id));const texts=presentationStrings(before),identifiers=presentationIdentifiers(before);
+  for(const batch of presentationBatches(texts))await translatePresentation({texts:batch,identifiers,language:'zh'},async<T>(prompt:string)=>({translations:JSON.parse(prompt.slice(prompt.lastIndexOf('\n')+1)).map((text:string)=>'已准备 '+text)} as T));
+  const result=await studyAction('answer',{id,kind:'code',...draft},'zh',async<T>()=>({quote:'return',feedback:'保留了输入对象，返回了新对象。',issues:[],cases:[{id:'c1',passed:true,reason:'返回带有修改值的新对象。'},{id:'c2',passed:true,reason:'原值相同时也会返回新对象。'}]} as T)) as StudyPayload;
+  const prepared=withPreparedPresentations(result).preparedPresentations?.translations.zh;assert.ok(prepared);
+  assert.equal(prepared['保留了输入对象，返回了新对象。'],'保留了输入对象，返回了新对象。');
+  assert.equal(prepared[texts[0]],'已准备 '+texts[0]);
+  const browser=new PresentationCache(async()=>{throw Error('Review needs no second translation');});browser.seed(result,'zh',prepared);
+  await browser.prepare(result,'zh');assert.equal(result.session.attempts.at(-1)?.review?.quote,'return');assert.equal(result.session.draft.code,draft.code);
+});
+
 test('answers and fixtures stay private, references record support without replacing drafts, and exports include sessions',async()=>{
   const id=await create();await studyAction('draft',{id,...draft},'en');await studyAction('step',{id,kind:'code'},'en');
   const before=publicStudy(getStudy(id));assert.deepEqual(before.session.lesson.keywords,[]);assert.equal('correct' in before.session.lesson.choice,false);assert.equal('fixtures' in before.session.lesson.coding,false);assert.deepEqual(before.references,{});

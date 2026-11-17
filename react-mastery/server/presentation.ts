@@ -36,10 +36,10 @@ export function withPreparedPresentations<T extends object>(payload:T):T&{prepar
   const translations=cachedPresentations(payload);
   return Object.keys(translations).length?{...payload,preparedPresentations:{version:'prepared-presentation-v1',translations}}:payload;
 }
-// A newly generated lesson already used the current writing standard. Cache its
-// native-language prose directly; mixed-language authored additions still translate.
-export function cacheGeneratedPresentation(payload:unknown,language:PresentationLanguage){
-  const texts=presentationStrings(payload).filter(text=>language==='zh'?/[\u3400-\u9fff]/.test(text):!/[\u3400-\u9fff]/.test(text));
+// Fresh AI prose already used the current writing standard. Scope new feedback
+// separately so caching it cannot overwrite an older lesson's polished wording.
+export function cacheGeneratedPresentation(payload:unknown,language:PresentationLanguage,content:unknown=payload){
+  const texts=presentationStrings(content).filter(text=>language==='zh'?/[\u3400-\u9fff]/.test(text):!/[\u3400-\u9fff]/.test(text));
   saveItems(texts,language,presentationIdentifiers(payload),Object.fromEntries(texts.map(text=>[text,text])));
 }
 export async function preparePresentation(payload:unknown,language:'en'|'zh',run:typeof runStructured=runStructured,options:{onlyRequested?:boolean;foreground?:boolean}={}){

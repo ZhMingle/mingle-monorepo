@@ -2,6 +2,29 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PresentationCache} from '../src/presentation-cache.ts';
 import {present,presentationStrings} from '../shared/presentation.ts';
+import {studyExercisePresentation} from '../shared/study-presentation.ts';
+import type {StudyPayload} from '../shared/study.ts';
+
+test('review translation pending, failure and retry never invalidate the prepared exercise or draft',async()=>{
+  let release!:()=>void;let fail=true;const requests:string[][]=[];
+  const gate=new Promise<void>(done=>release=done);
+  const cache=new PresentationCache(async texts=>{requests.push(texts);await gate;if(fail)throw Error('Translation unavailable');return Object.fromEntries(texts.map(text=>[text,'中文 '+text]));});
+  const payload={session:{id:'review-session',lesson:{overview:'Read the stable exercise.',coding:{starter:'function checkValue() {}'}},draft:{code:'// keep my unsaved code'},attempts:[]},references:{}} as unknown as StudyPayload;
+  const exercise=studyExercisePresentation(payload)!;
+  cache.seed(exercise,'zh',{'Read the stable exercise.':'读这道题。'});
+  const updated={...payload,session:{...payload.session,attempts:[{kind:'code',feedback:'A new review.'} as StudyPayload['session']['attempts'][number]]},references:{choice:'A newly opened explanation.'}};
+  const pending=cache.prepare(updated,'zh');
+  assert.equal(cache.get(updated,'zh'),undefined);
+  assert.ok(cache.get(studyExercisePresentation(updated),'zh'));
+  release();await assert.rejects(pending,/unavailable/);
+  assert.ok(cache.get(studyExercisePresentation(updated),'zh'));
+  fail=false;await cache.prepare(updated,'zh');
+  assert.ok(cache.get(updated,'zh'));
+  assert.equal(present(exercise,cache.get(exercise,'zh')!).session.lesson.overview,'读这道题。');
+  assert.equal(studyExercisePresentation(updated)!.session.draft.code,'// keep my unsaved code');
+  assert.equal(updated.session.attempts.length,1);assert.deepEqual(payload.session.attempts,[]);
+  assert.deepEqual(requests,[['A new review.','A newly opened explanation.'],['A new review.','A newly opened explanation.']]);
+});
 test('both prepared languages switch synchronously without another request and preserve code',async()=>{
   let calls=0;
   const cache=new PresentationCache(async(texts,language)=>{calls++;return Object.fromEntries(texts.map(text=>[text,language+':'+text]));});
