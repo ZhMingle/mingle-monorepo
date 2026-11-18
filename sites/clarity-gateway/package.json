@@ -1,0 +1,22 @@
+{
+  "name": "clarity-public-gateway",
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "~5.9.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/react": "^19.2.0",
+    "vite": "^7.1.0"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc -p public-demo/tsconfig.json",
+    "test": "node --test gateway.test.mjs",
+    "build": "node scripts/build-gateway.mjs"
+  }
+}

@@ -1,7 +1,9 @@
-# Clarity private gateway
+# Clarity public library and private workspace
 
-The existing owner-private Clarity Site authenticates visitors with ChatGPT, then proxies the app to its Railway backend using a server-only key. Keep the Site audience owner-only. The Railway backend rejects unauthenticated direct access to all assets and APIs except its minimal health probe. Internal migration and Codex bridge routes are never proxied.
+The Site now serves an anonymous public knowledge library at `/`. It contains only authored curriculum, six React lessons and answer-key practice. Visitors can search the catalog, mark topics read in their own browser, and copy a study prompt to continue in their own ChatGPT. There is no shared AI allowance or public server-side learner account. A visitor's ChatGPT plan cannot be used in-site without a separately approved remote-app integration.
 
-Runtime secrets: `CLARITY_BACKEND_ORIGIN`, `CLARITY_PROXY_KEY`. Credentials, learning data and Codex sign-in files are never committed or included in the Site artifact. The original learning app and database remain in `react-mastery` and its attached persistent volume.
+The owner workspace remains at `/?workspace=1`. Sites supplies verified request identity. The gateway requires both an authenticated user ID and an exact match of the verified email to the server-only `CLARITY_OWNER_EMAIL` before forwarding any private request. Missing configuration fails closed. Other visitors cannot access the Railway APIs, saved records, original app assets, bridge or migration endpoints. The existing private database and owner Codex bridge remain unchanged.
 
-Build: `node scripts/build-gateway.mjs`. Publish the matching pushed Site source through the Sites workflow. `.sites-checkout/` contains the separate hosted-source repository and is ignored by the monorepo.
+Runtime settings: `CLARITY_OWNER_EMAIL`, `CLARITY_BACKEND_ORIGIN`, `CLARITY_PROXY_KEY`. Keep values in Sites environment settings. Credentials, learning data and Codex sign-in files are never included in public assets. The original learning app and database remain in `react-mastery` and its attached persistent volume.
+
+Checks: `node --test gateway.test.mjs`, `tsc -p public-demo/tsconfig.json`. Build: `node scripts/build-gateway.mjs`. To refresh the authored public catalog, run `node scripts/export-public-curriculum.mjs <absolute-react-mastery-directory>`. This reads curriculum only, never `data/` or generated AI output. Publish the matching pushed source through the Sites workflow, then set the Site's audience to public only after the protected gateway is deployed. `.sites-checkout/` is the separate hosted-source checkout.
