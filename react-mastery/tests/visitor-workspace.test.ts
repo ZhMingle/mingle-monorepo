@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {visitorBootstrap,visitorOverview,visitorWorkspace} from '../shared/visitor-workspace.ts';
 import {learningPaths} from '../shared/paths.ts';
+import {gzipSync} from 'node:zlib';
 // @ts-expect-error The Worker is plain ESM, shared by local and hosted checks.
 import {createGateway} from '../hosting/gateway.mjs';
 
@@ -26,6 +27,15 @@ test('owner and visitor receive byte-identical original frontend assets and shar
     assert.equal(guest.status,200);assert.equal(await guest.text(),await personal.text());
     assert.equal(guest.headers.get('cache-control'),'private, no-store');
   }
+});
+
+test('packed app assets are decoded before Sites can normalize response headers',async()=>{
+  const original='<div id="root">Original Clarity app</div>';
+  const packed=createGateway({'/index.html':{type:'text/html; charset=utf-8',encoding:'gzip',body:gzipSync(original).toString('base64')}},visitorWorkspace);
+  const response=await packed.fetch(req('/'),env);
+  assert.equal(response.headers.has('content-encoding'),false);
+  assert.equal(await response.text(),original);
+  assert.equal((await packed.fetch(new Request('https://site.example.com/',{method:'HEAD'}),env)).body,null);
 });
 
 test('visitors browse the original app data endpoints without reaching personal storage',async()=>{

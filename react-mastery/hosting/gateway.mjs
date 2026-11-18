@@ -24,9 +24,11 @@ export function createGateway(assets, visitor) {
       if (asset) {
         if (!['GET','HEAD'].includes(request.method)) return json({error:'Method not allowed'},405);
         const headers = {...baseHeaders,'Content-Type':asset.type};
-        if (asset.encoding) headers['Content-Encoding'] = asset.encoding;
         if (asset.type.startsWith('text/html')) headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-src 'self' blob:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self' https://chatgpt.com https://*.chatgpt.com";
-        return new Response(request.method === 'HEAD' ? null : Uint8Array.from(atob(asset.body), c => c.charCodeAt(0)), {headers});
+        const bytes = Uint8Array.from(atob(asset.body), c => c.charCodeAt(0));
+        // Sites may normalize Content-Encoding, so decode packed assets here.
+        const body = asset.encoding === 'gzip' ? new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip')) : bytes;
+        return new Response(request.method === 'HEAD' ? null : body, {headers});
       }
       if (!path.startsWith('/api/')) return json({error:'Not found'},404);
       if (!owner) {
