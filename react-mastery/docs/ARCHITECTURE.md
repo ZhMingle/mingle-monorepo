@@ -1,6 +1,6 @@
 # Architecture and maintenance
 
-The hosted entry page opens the authored learning catalog without login. `sites/clarity-gateway/learning` renders exported path definitions from the personal app, supports direct `#roadmap/<path>` links, and stores visitor reading markers only in their browser. It receives no learner database, generated AI content or credentials. Personal assets and APIs remain behind the gateway's verified owner identity check. `shared/sharing.ts` creates curriculum-only URLs; the private launcher explicitly opens `?workspace=1`.
+The hosted entry page is built from the original `index.html` and `src/main.tsx` by `hosting/build.mjs`. Owners and visitors receive byte-identical app assets, including App, LearningPaths and the original styles. There is no separate display frontend or exported catalog UI. `hosting/gateway.mjs` checks verified identity for data APIs: owner requests proxy to private storage; visitors receive the authored curriculum with empty personal records from `shared/visitor-workspace.ts`. Topic browsing uses the existing MixedPractice component. No learner data, generated AI output or credentials enter the app build. The launcher signs in and returns to the same `/` application. Frontend publication does not redeploy the private Railway service.
 
 ## Keep one deployable, separate responsibilities
 

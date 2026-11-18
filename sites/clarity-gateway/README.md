@@ -1,9 +1,7 @@
-# Clarity learning paths
+# One Clarity application
 
-The Site opens the complete learning path catalog at / and /#roadmap without sign-in. Visitors can search all 27 routes and 642 topics, follow stage goals and official references, read the authored React lessons, and keep reading markers in their own browser. /#roadmap/<path> opens a specific route. There is no separate demo introduction. The catalog is exported from react-mastery/shared, with no learner records, generated AI output or credentials.
+This gateway publishes the original React app from react-mastery/index.html and src/main.tsx. All visitors receive the same App, sidebar, learning desk, LearningPaths, practice workspace and styles. There is no separate display frontend.
 
-The personal workspace stays at /?workspace=1. Sites provides verified request identity; both user ID and an exact configured owner-email match are required before forwarding any personal asset or API to Railway. Bridge and migration endpoints stay blocked. The public catalog never uses the owner's AI bridge. Follow-up prompts explicitly open the visitor's own ChatGPT.
+The implementation lives in react-mastery/hosting. Authenticated owner APIs proxy to the existing Railway service. Visitors receive authored curriculum and empty personal records, with topic goals and references rendered by the original practice component. Personal writes, exports and AI stay owner-only. Sign-in returns to the same / application. No backend deployment is needed to publish frontend updates.
 
-Runtime settings: CLARITY_OWNER_EMAIL, CLARITY_BACKEND_ORIGIN, CLARITY_PROXY_KEY. Keep values in Sites runtime settings.
-
-Checks: node --test gateway.test.mjs and tsc -p learning/tsconfig.json. Build: node scripts/build-gateway.mjs. Refresh the authored catalog with node scripts/export-public-curriculum.mjs <absolute-react-mastery-directory>. Publish the matching pushed source through the Sites workflow.
+From this gateway directory, build with node scripts/build-gateway.mjs and test with node --test gateway.test.mjs. The Site source contains the same original app source and hosting files; build there with node hosting/build.mjs. Publish the matching pushed source through the Sites workflow. Never copy data/, credentials or generated AI records into the Site source.

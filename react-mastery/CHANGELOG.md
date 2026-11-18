@@ -1,7 +1,13 @@
+## 2026-11-19 — Use the original application for everyone
+
+- Remove the independent display frontend. Build the hosted Site from the original index.html, src/main.tsx, App, LearningPaths and styles.
+- Serve identical app assets to owners and visitors. Verified identity controls personal records and AI; visitor bootstrap and progress responses contain no owner data.
+- Keep visitor topic browsing in the existing practice workspace, with authored goals, understanding checks and references. Sign-in returns to the same application.
+
 ## 2026-11-18 — Open shared learning routes directly
 
 - Make the shared homepage the complete 27-path catalog, with search, direct route links, stage goals, all 642 topics and official references. Remove the separate edition introduction.
-- Add a copy-route-link action to personal route pages. Shared links contain no workspace query or learner session identifiers.
+- Add a copy-route-link action to the shared catalog. Shared links contain no workspace query or learner session identifiers; sharing updates deploy independently of the private backend.
 - Keep personal learning APIs, drafts, cards and progress owner-only. Start.bat opens the personal workspace; visitor reading markers remain browser-local.
 
 ## 2026-11-17 — Deliver prepared lessons with ready display text

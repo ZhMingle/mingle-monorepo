@@ -26,6 +26,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
   const {language,t}=useLanguage();const say=(en:string,zh:string)=>language==='zh'?zh:en;
   const [rawPayload,setPayload]=useState<StudyPayload|null>(null);const [loading,setLoading]=useState(true);
   const [showLesson,setShowLesson]=useState(true);
+  const [browsing,setBrowsing]=useState(false);
   const [current,setCurrent]=useState<StudyKind>('choice');const [draft,setDraft]=useState<StudyDraft>({keywords:{},choice:-1,code:''});
   const [revealedReference,setRevealedReference]=useState<{id:string;kind:StudyKind}|null>(null);
   const [busy,setBusy]=useState('');const [error,setError]=useState('');const [savedCode,setSavedCode]=useState<{id:string;code:string}|null>(null);
@@ -54,8 +55,9 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
   }
   useEffect(()=>{
     live.current=true;
-    request<StudyPayload|{session:null}>('study/open',{topicId:topic.id}).then(async next=>{
-      if(!live.current||!next.session)return;
+    request<StudyPayload|{session:null;visitor?:boolean}>('study/open',{topicId:topic.id}).then(async next=>{
+      if(!live.current)return;
+      if(!next.session){setBrowsing(next.visitor===true);return;}
       const requested=location.hash.split('/')[3];
       if((requested==='choice'||requested==='code')&&next.session.current!==requested){
         next=await request<StudyPayload>('study/step',{id:next.session.id,kind:requested});
@@ -146,7 +148,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
     {error&&<div role="alert" className="tp-error">{error}<button disabled={!!busy} onClick={()=>session?void action('load'):location.reload()}>{say('Reload saved practice','重新读取练习')}</button></div>}
     {translating&&<p role="status">{say('Preparing exercise text…','正在准备中文题目…')}</p>}
     {translationError&&<div role="alert" className="tp-error">{say('Translation failed: ','翻译未完成：')}{translationError}<button onClick={retryTranslation}>{say('Retry translation','重试翻译')}</button></div>}
-    {loading?<p role="status">{say('Preparing exercises…','正在准备题目…')}</p>:translating||translationError?null:!session?<div className="tp-card"><h2>{response?say('Choose, then tell your story.','先选择，再讲述你的经历。'):say('Choose, then build.','先选择，再写代码。')}</h2><button className="tp-primary" disabled={!!busy} onClick={()=>void action('new')}>{busy?say('Preparing exercises…','正在准备题目…'):say('Start practice','开始练习')}</button></div>:lesson&&<>
+    {loading?<p role="status">{say('Preparing exercises…','正在准备题目…')}</p>:translating||translationError?null:!session?<div className="tp-card"><h2>{browsing?say('Learning goal','学习目标'):response?say('Choose, then tell your story.','先选择，再讲述你的经历。'):say('Choose, then build.','先选择，再写代码。')}</h2>{browsing?<><p>{topic.goal[language]}</p><h3>{say('Test your understanding','验证理解')}</h3><p>{topic.check[language]}</p><a href={topic.source} target="_blank" rel="noreferrer">{say('Official reference ↗','官方资料 ↗')}</a><p className="tp-meta">{say('Personal exercises, AI and learning records require the owner’s sign-in.','个人练习、AI 与学习记录需要本人登录。')}</p></>:<button className="tp-primary" disabled={!!busy} onClick={()=>void action('new')}>{busy?say('Preparing exercises…','正在准备题目…'):say('Start practice','开始练习')}</button>}</div>:lesson&&<>
 
 
       <div className="tp-practice-controls"><nav className="tp-tabs" aria-label={say('Question types','题型')}><button aria-pressed={showLesson} disabled={!!busy} onClick={()=>setShowLesson(true)}>{say('Explanation & example','讲解与示例')}</button>{studyKinds.map(k=><button key={k} aria-pressed={!showLesson&&current===k} disabled={!!busy} onClick={()=>void navigate(k)}>{labels[k]}{payload.completed.includes(k)&&<span className="tp-tab-complete">{say('Done','已完成')}</span>}</button>)}</nav><div className="tp-toolbar"><span role="status">{payload.completed.length}/2 {say('completed','已完成')}{payload.supported?` · ${say('with support','含辅助练习')}`:''}</span><button disabled={!!busy} onClick={()=>void action('new')}>{say('New variation · Codex','换一组题 · 使用额度')}</button></div></div>

@@ -15,7 +15,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "tsc -p learning/tsconfig.json",
+    "check": "node ../../react-mastery/node_modules/typescript/bin/tsc --noEmit -p ../../react-mastery/tsconfig.json",
     "test": "node --test gateway.test.mjs",
     "build": "node scripts/build-gateway.mjs"
   }

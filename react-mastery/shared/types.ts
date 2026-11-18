@@ -32,7 +32,7 @@ export interface Progress {
   completedAt: string | null; reviewAt: string | null; reviewCount: number; sessionId: string;
 }
 export interface Bootstrap {
-  storage?:'local'|'cloud';
+  storage?:'local'|'cloud'|'browser';
   lessons: Omit<Lesson, 'prediction'>[]; progress: Progress[]; sessions: LearningSession[];
   connection: { available: boolean; provider: string; message: string }; now: string;
 }
