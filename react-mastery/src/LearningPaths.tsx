@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 import { learningPaths, findLearningPath } from '../shared/paths.ts';
 import { useLanguage } from './language.tsx';
 import './learning-paths.css';
+import ShareLearningPath from './ShareLearningPath.tsx';
 
 export function LearningPaths({reactRoadmap}:{reactRoadmap:ReactNode}) {
   const {language}=useLanguage();
@@ -25,6 +26,7 @@ export function LearningPaths({reactRoadmap}:{reactRoadmap:ReactNode}) {
   if(path && topic)return route.split('/')[3]==='previous'?<TopicPractice key={topic.id} topic={topic} pathId={path.id}/>:<MixedPractice key={topic.id} topic={topic} pathId={path.id} reloadProgress={reloadProgress} progress={progress}/>;
   const stages={foundation:say('Foundations','基础'),practice:say('Practice','实践'),advanced:say('Advanced','进阶')};
   return <div className="learning-paths">
+    <ShareLearningPath pathId={path?.id}/>
     {path ? <>
       <a className="path-back" href="#roadmap">← {say('All learning paths','全部学习路线')}</a>
       {path.id==='react'&&<ReactCoverage/>}

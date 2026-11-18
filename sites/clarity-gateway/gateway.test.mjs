@@ -10,10 +10,24 @@ const owner = { 'oai-authenticated-user-id': 'owner-site-id', 'oai-authenticated
 
 test('anonymous visitors can read the library and assets without backend configuration', async () => {
   assert.match(await (await worker.fetch(request(), {})).text(), /Public library/);
-  assert.equal((await worker.fetch(request('/demo-assets/assets/app.js'), {})).status, 200);
-  assert.equal((await worker.fetch(request('/demo-assets/not-found.js'), {})).status, 404);
+  assert.equal((await worker.fetch(request('/learning-assets/assets/app.js'), {})).status, 200);
+  assert.equal((await worker.fetch(request('/learning-assets/not-found.js'), {})).status, 404);
   assert.equal((await worker.fetch(request('/', undefined, 'POST'), {})).status, 405);
   assert.equal((await worker.fetch(request('/', undefined, 'HEAD'), {})).body, null);
+});
+
+test('shared route links open the catalog without reaching personal APIs or requiring sign-in', async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('Curriculum must not call the personal backend'); };
+  try {
+    const catalog = JSON.parse(await readFile(new URL('./learning/catalog.json', import.meta.url), 'utf8'));
+    for (const path of catalog.paths) {
+      const result = await worker.fetch(request(`/#roadmap/${path.id}`), {});
+      assert.equal(result.status, 200);
+      assert.equal(result.headers.get('location'), null);
+      assert.match(await result.text(), /Public library/);
+    }
+  } finally { globalThis.fetch = original; }
 });
 test('anonymous and other signed-in visitors cannot read or mutate personal records', async () => {
   const original = globalThis.fetch; let calls = 0;
@@ -54,7 +68,7 @@ test('owner requests retain private upstream access and strip browser credential
   } finally { globalThis.fetch = original; }
 });
 test('public catalog contains authored, bilingual knowledge and six valid React examples', async () => {
-  const catalog = JSON.parse(await readFile(new URL('./public-demo/catalog.json', import.meta.url), 'utf8'));
+  const catalog = JSON.parse(await readFile(new URL('./learning/catalog.json', import.meta.url), 'utf8'));
   assert.equal(catalog.paths.length, 27);
   assert.equal(catalog.paths.flatMap(p => p.stages.flatMap(s => s.topics)).length, 642);
   assert.equal(catalog.lessons.length, 6);

@@ -1,3 +1,9 @@
+## 2026-11-18 — Open shared learning routes directly
+
+- Make the shared homepage the complete 27-path catalog, with search, direct route links, stage goals, all 642 topics and official references. Remove the separate edition introduction.
+- Add a copy-route-link action to personal route pages. Shared links contain no workspace query or learner session identifiers.
+- Keep personal learning APIs, drafts, cards and progress owner-only. Start.bat opens the personal workspace; visitor reading markers remain browser-local.
+
 ## 2026-11-17 — Deliver prepared lessons with ready display text
 
 - Include cached display-language maps in study responses and seed the browser synchronously, removing the second translation round trip when opening a prepared topic.

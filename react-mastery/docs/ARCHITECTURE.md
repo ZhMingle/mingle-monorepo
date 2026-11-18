@@ -1,5 +1,7 @@
 # Architecture and maintenance
 
+The hosted entry page opens the authored learning catalog without login. `sites/clarity-gateway/learning` renders exported path definitions from the personal app, supports direct `#roadmap/<path>` links, and stores visitor reading markers only in their browser. It receives no learner database, generated AI content or credentials. Personal assets and APIs remain behind the gateway's verified owner identity check. `shared/sharing.ts` creates curriculum-only URLs; the private launcher explicitly opens `?workspace=1`.
+
 ## Keep one deployable, separate responsibilities
 
 This is a modular monolith: a React/TypeScript client and a local Node HTTP server. Node's built-in SQLite module stores durable learning records. Vite handles development and production assets. Browser execution is separated from persistence and AI evaluation.

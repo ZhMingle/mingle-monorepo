@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 import { transform } from 'esbuild';
 
 const root = process.cwd();
-await viteBuild({ configFile: false, root: resolve(root, 'public-demo'), plugins: [react()], base: '/demo-assets/', publicDir: false, build: { outDir: resolve(root, 'dist-demo'), emptyOutDir: true } });
+await viteBuild({ configFile: false, root: resolve(root, 'learning'), plugins: [react()], base: '/learning-assets/', publicDir: false, build: { outDir: resolve(root, 'dist-learning'), emptyOutDir: true } });
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
 const assets = {};
 async function collect(directory, prefix = '') {
@@ -18,7 +18,7 @@ async function collect(directory, prefix = '') {
     }
   }
 }
-await collect(resolve(root, 'dist-demo'));
+await collect(resolve(root, 'dist-learning'));
 if (!assets['/index.html']) throw new Error('Public index is missing');
 await mkdir('dist/server', { recursive: true });
 await mkdir('dist/.openai', { recursive: true });

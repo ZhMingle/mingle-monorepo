@@ -15,7 +15,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "tsc -p public-demo/tsconfig.json",
+    "check": "tsc -p learning/tsconfig.json",
     "test": "node --test gateway.test.mjs",
     "build": "node scripts/build-gateway.mjs"
   }

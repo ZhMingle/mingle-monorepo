@@ -15,7 +15,7 @@ export function createGateway(assets) {
       const owner = Boolean(id && email && ownerEmail && email === ownerEmail);
       const workspace = path === '/' && url.searchParams.get('workspace') === '1';
 
-      let assetPath = path === '/' && !workspace ? '/index.html' : path.startsWith('/demo-assets/') ? path.slice('/demo-assets'.length) : null;
+      let assetPath = path === '/' && !workspace ? '/index.html' : path.startsWith('/learning-assets/') ? path.slice('/learning-assets'.length) : null;
       if (assetPath) {
         if (!['GET', 'HEAD'].includes(request.method)) return plain('Method not allowed', 405);
         const asset = assets[assetPath];

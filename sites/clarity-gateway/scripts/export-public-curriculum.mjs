@@ -14,6 +14,6 @@ const publicLessons = lessons.map(lesson => ({
   prediction: { ...lesson.prediction[0], prompt: bilingual(lesson.prediction[0].prompt),
     choices: lesson.prediction[0].choices.map(bilingual), explanation: bilingual(lesson.prediction[0].explanation) },
 }));
-await mkdir('public-demo', { recursive: true });
-await writeFile('public-demo/catalog.json', JSON.stringify({ version: pathsVersion, paths: learningPaths, lessons: publicLessons }));
+await mkdir('learning', { recursive: true });
+await writeFile('learning/catalog.json', JSON.stringify({ version: pathsVersion, paths: learningPaths, lessons: publicLessons }));
 console.log(`Exported ${learningPaths.length} authored paths and ${publicLessons.length} lessons. No learner records or generated AI content are exported.`);

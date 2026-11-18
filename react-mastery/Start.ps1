@@ -5,7 +5,9 @@ if (Test-Path -LiteralPath 'data/cloud-bridge.json') {
     $cloudSiteUri = [Uri]$cloudConfig.siteOrigin
     if ($cloudSiteUri.Scheme -ne 'https' -or !$cloudSiteUri.Host.EndsWith('.chatgpt.site')) { throw 'Invalid private cloud Site address.' }
     & (Join-Path $PSScriptRoot 'Start-Cloud-Bridge.ps1')
-    Start-Process $cloudSiteUri.AbsoluteUri
+    $workspaceUri = [UriBuilder]$cloudSiteUri
+    $workspaceUri.Query = 'workspace=1'
+    Start-Process $workspaceUri.Uri.AbsoluteUri
     Write-Host 'Opened the private online workspace and started its local Codex bridge.'
     exit
 }
