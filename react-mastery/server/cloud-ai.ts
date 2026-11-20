@@ -22,7 +22,7 @@ export function completeAIJob(input:Record<string,unknown>){
   return {ok:true};
 }
 export async function requestCloudAI<T>(prompt:string,schema:unknown,priority:string):Promise<T>{
-  if(!bridgeOnline())throw Object.assign(new Error('Your computer’s Codex connection is offline. Open Start-Cloud-Bridge.bat on your computer; your draft is saved.'),{status:503});
+  if(!bridgeOnline())throw Object.assign(new Error('Cloud AI is currently unavailable. / 云端 AI 暂不可用，请稍后重试。'),{status:503});
   const id=randomUUID();const deadline=Date.now()+210000;
   db.prepare('INSERT INTO cloud_ai_jobs(id,priority,state,created_at,deadline,payload) VALUES(?,?,?,?,?,?)').run(id,priority,'queued',Date.now(),deadline,JSON.stringify({prompt,schema}));
   try{

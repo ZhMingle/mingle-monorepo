@@ -9,9 +9,11 @@ import { validateAssessment } from '../shared/mastery.ts';
 import { AiQueue } from './ai-queue.ts';
 import { writingStyle } from './writing-style.ts';
 import {requestCloudAI,bridgeOnline} from './cloud-ai.ts';
+import {openAISettings,requestOpenAI} from './openai-ai.ts';
 
 export function aiConnection(){
-  if(process.env.CLARITY_CLOUD==='1')return {available:bridgeOnline(),provider:'Owner computer · Codex',message:bridgeOnline()?'Your computer is connected. AI uses your existing Codex allowance.':'Your computer is offline. Saved lessons remain available. Open Start-Cloud-Bridge.bat on your computer for AI requests.'};
+  if(process.env.CLARITY_CLOUD==='1'&&openAISettings())return {available:true,provider:'OpenAI API',message:'Cloud AI is configured.'};
+  if(process.env.CLARITY_CLOUD==='1')return {available:bridgeOnline(),provider:'Owner computer · Codex',message:bridgeOnline()?'Your computer is connected. AI uses your existing Codex allowance.':'Cloud AI is currently unavailable. Saved lessons remain available.'};
   return {available:!!findCodex(),provider:'Codex local sign-in',message:findCodex()?'CLI detected · connection verified on first assessment':'Codex CLI not found. Sign in locally or set CODEX_BIN.'};
 }
 
@@ -38,7 +40,10 @@ const schema = {
 const queue = new AiQueue();
 export async function runStructured<T>(prompt: string, outputSchema: unknown, priority:'interactive'|'translation'|'background'='interactive'): Promise<T> {
   return queue.run(async()=>{
-  if(process.env.CLARITY_CLOUD==='1')return requestCloudAI<T>(prompt,outputSchema,priority);
+  if(process.env.CLARITY_CLOUD==='1'){
+    const settings=openAISettings();
+    return settings ? requestOpenAI<T>(settings,prompt,outputSchema) : requestCloudAI<T>(prompt,outputSchema,priority);
+  }
   const executable = findCodex();
   if (!executable) throw Object.assign(new Error('Codex was not found. Install it and sign in, or set CODEX_BIN. No AI score was generated.'), { status: 503 });
   const work = resolve(process.env.DATA_DIR ?? 'data', 'coach');

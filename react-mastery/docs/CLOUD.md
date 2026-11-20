@@ -18,7 +18,9 @@ Use the online address for future learning on both phone and computer. The old l
 
 ## AI connection
 
-No paid API is enabled. Run `Start-Cloud-Bridge.bat` on the signed-in computer and keep it awake. A background helper polls authenticated jobs from the backend and uses the existing restricted Codex adapter. Codex login files stay on the computer. Requests retain the interactive/background queue and output validation. The cloud stores short-lived pending jobs and lease tokens, removes completed results, and reports an explicit connection or timeout error when unavailable. Saved lessons, answer keys, drafts and progress remain online when the computer is offline; new generation, translation, review and follow-up need it.
+For browser-only AI, set `OPENAI_API_KEY` and `CLARITY_OPENAI_MODEL` on the private Railway service. Select a model that supports Responses API Structured Outputs with Clarity's schema constraints. Keep the key in Railway runtime secrets. ChatGPT sign-in verifies workspace access. Model requests use the server's OpenAI API project and its billing. The backend requests strict JSON with response storage disabled and retains the existing queue and output validation.
+
+When those variables are absent, the existing operator-managed Codex bridge can still serve this workspace. Saved lessons and drafts remain available when AI is unavailable.
 
 The ignored `data/cloud-bridge.json` stores the bridge origin and scoped bridge key. It cannot access the learning-data APIs or import endpoint. Proxy, bridge and one-time migration keys are distinct. Secrets are configured only in Railway/Sites runtime settings. `/api/bridge/*` and `/api/admin/*` are blocked by the Site proxy.
 

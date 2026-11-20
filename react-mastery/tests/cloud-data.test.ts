@@ -18,7 +18,7 @@ test('migration rolls back broken references, copies complete records and refuse
   assert.throws(()=>importSnapshot(good),/already imported/);assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sessions').get()!.n,1);
 });
 test('AI bridge fails explicitly when offline, validates leases and returns only the completed result',async()=>{
-  await assert.rejects(requestCloudAI('question',{},'interactive'),/offline/);
+  await assert.rejects(requestCloudAI('question',{},'interactive'),/currently unavailable/);
   bridgeHeartbeat();const result=requestCloudAI<{answer:string}>('synthetic question',{type:'object'},'interactive');
   const job=claimAIJob();assert.ok(job);assert.equal(claimAIJob(),null);
   assert.throws(()=>completeAIJob({id:job.id,lease:'wrong',result:{answer:'forged'}}),/expired/);
