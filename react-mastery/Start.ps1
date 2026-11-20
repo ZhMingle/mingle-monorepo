@@ -1,5 +1,6 @@
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
+. (Join-Path $PSScriptRoot 'scripts/Open-ClarityBrowser.ps1')
 if (Test-Path -LiteralPath 'data/cloud-bridge.json') {
     $cloudConfig = Get-Content -LiteralPath 'data/cloud-bridge.json' -Raw | ConvertFrom-Json
     $cloudSiteUri = [Uri]$cloudConfig.siteOrigin
@@ -7,8 +8,12 @@ if (Test-Path -LiteralPath 'data/cloud-bridge.json') {
     & (Join-Path $PSScriptRoot 'Start-Cloud-Bridge.ps1')
     $workspaceUri = [UriBuilder]$cloudSiteUri
     $workspaceUri.Query = 'workspace=1'
-    Start-Process $workspaceUri.Uri.AbsoluteUri
-    Write-Host 'Opened the private online workspace and started its local Codex bridge.'
+    if (Use-ClarityBrowserTab $cloudSiteUri) {
+        Write-Host 'Reused the existing online workspace tab.'
+    } else {
+        Start-Process $workspaceUri.Uri.AbsoluteUri
+        Write-Host 'Opened the private online workspace.'
+    }
     exit
 }
 $bundledNode = Join-Path $env:USERPROFILE '.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe'
@@ -58,7 +63,8 @@ if (!$running) { throw 'The local server did not start. Check data/server-error.
 Start-Sleep -Seconds 2
 $browser = Invoke-RestMethod "$url/api/browser/refresh" -Method Post -ContentType 'application/json' -Body '{}' -Headers @{ Origin=$url; 'X-Clarity-Request'='1' } -TimeoutSec 5
 if ($browser.reused) {
+    $null = Use-ClarityBrowserTab ([Uri]$url) -ActivateOnly
     Write-Host 'Refreshed the existing application tab.'
-} else {
+} elseif (!(Use-ClarityBrowserTab ([Uri]$url))) {
     Start-Process "$url/?launch=$([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())"
 }
