@@ -2,7 +2,7 @@ import {useEffect,useState,useRef} from 'react';
 import {ArrowDownToLine,ArrowUpRight,BookOpen,Check,LoaderCircle,Search,Sparkles,Star,Maximize2,X,GalleryHorizontalEnd} from 'lucide-react';
 import {request} from './api.ts';
 import {useLanguage} from './language.tsx';
-import type {EnglishCard} from '../shared/english.ts';
+import type {EnglishCard,EnglishLookupItem} from '../shared/english.ts';
 import {englishBatchInput,englishTermKey,englishTitle,englishMeaning,hasEnglishLearning} from '../shared/english.ts';
 import {englishVoices,isNaturalVoice} from './english-speech.ts';
 import {createEnglishPlayback,idlePlayback,playbackKey} from './english-playback.ts';
@@ -54,7 +54,7 @@ export default function EnglishNotebook(){
   const [working,setWorking]=useState(false);
   const running=useRef(false);
   const queryInput=useRef<HTMLTextAreaElement>(null);
-  const [batch,setBatch]=useState<{query:string;context:string;status:'pending'|'working'|'done'|'failed';error?:string}[]>([]);
+  const [batch,setBatch]=useState<(EnglishLookupItem&{status:'pending'|'working'|'done'|'failed';error?:string})[]>([]);
   const [editing,setEditing]=useState(false);
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
@@ -98,28 +98,33 @@ export default function EnglishNotebook(){
   const visible=orderedCards.filter(c=>(tab==='all'||(tab==='favorite'?c.favorite:c.kind===tab))&&[String(displayNumbers.get(c.id)),c.term,englishTitle(c),englishMeaning(c),c.partOfSpeech,c.query,c.meaning,c.usage,c.context,...c.examples.flatMap(e=>[e.english,e.chinese])].join(' ').toLocaleLowerCase().includes(filter.toLocaleLowerCase().trim()));
   const today=new Date().toDateString();
   const todayCount=cards.filter(c=>new Date(c.createdAt).toDateString()===today).length;
-  async function lookup(value=query,retry=false,remind=true){
+  async function lookup(value=query,retry:EnglishLookupItem|false=false,remind=true){
     if(loading||running.current||!value.trim())return;
-    let items:ReturnType<typeof englishBatchInput>;
-    try{items=englishBatchInput(value);}catch(e){setError((e as Error).message);return;}
     running.current=true;setWorking(true);setError('');setNotice('');
-    if(retry)setBatch(old=>old.map(item=>item.query===items[0].query?{...item,status:'pending',error:undefined}:item));
-    else{setQuery(value);setBatch(items.map(item=>({...item,status:'pending'})));}
+    if(!retry){setQuery(value);setBatch([]);}
     let completed=0;const reminders:EnglishCard[]=[];
     if(remind)resetPlayback();
     try{
+      let items:EnglishLookupItem[]=retry?[retry]:englishBatchInput(value);
+      if(items.length>1){
+        setNotice(text('正在整理知识点…','Organizing learning points…'));
+        ({items}=await request<{items:EnglishLookupItem[]}>('english/plan',{value}));
+        setNotice('');
+      }
+      if(retry)setBatch(old=>old.map(item=>item.query===retry.query?{...item,status:'pending',error:undefined}:item));
+      else setBatch(items.map(item=>({...item,status:'pending'})));
       for(const item of items){
         const update=(status:'working'|'done'|'failed',error?:string)=>setBatch(old=>old.map(row=>row.query===item.query?{...row,status,error}:row));
         update('working');
         try{
-          const {card,cached}=await request<{card:EnglishCard;cached:boolean}>('english/lookup',{query:item.query,context:item.context});
+          const {card,cached}=await request<{card:EnglishCard;cached:boolean}>('english/lookup',{query:item.query,context:item.context,comparison:item.comparison});
           setCards(old=>[card,...old.filter(c=>c.id!==card.id)]);setSelected(card.id);completed++;update('done');
           if(remind&&cached&&[card.term,card.query].some(value=>englishTermKey(value)===englishTermKey(item.query)))reminders.push(card);
         }catch(e){update('failed',(e as Error).message);}
       }
       if(completed===items.length)setQuery(current=>current===value?'':current);
       setNotice(text(`已保存／打开 ${completed} 张卡片，失败项可单独重试。`,`Saved or opened ${completed} cards. Failed items can be retried individually.`));
-    }finally{running.current=false;setWorking(false);}
+    }catch(e){setNotice('');setError((e as Error).message);}finally{running.current=false;setWorking(false);}
     if(reminders.length&&mounted.current)ensurePlayer().sequence(reminders.map(card=>({key:playbackKey(card.id,'term'),cardId:card.id,part:'reminder',text:card.term,label:card.term})),speechOptions());
   }
   async function favorite(card:EnglishCard){
@@ -157,11 +162,11 @@ export default function EnglishNotebook(){
     <section className="english-search-panel" aria-labelledby="english-search-title">
       <div className="english-search-heading"><div><span className="english-kicker"><Sparkles size={15}/>{text('今天遇到了什么？','What did you come across today?')}</span><h2 id="english-search-title">{text('单词、短语、原句，都能记下来。','Save words, phrases or whole sentences.')}</h2></div><a className="secondary" href="/api/english/export"><ArrowDownToLine size={16}/>{text('导出卡片','Export cards')}</a></div>
       <form onSubmit={e=>{e.preventDefault();void lookup();}}>
-        <div className="english-entry-row"><div className="english-query"><textarea ref={queryInput} aria-label={text('输入单词、短语或英文原句','Enter words, phrases or English sentences')} maxLength={10000} rows={2} disabled={working} value={query} onChange={e=>setQuery(e.target.value)} placeholder={text('输入单词、短语或完整英文句子…','Enter a word, phrase or complete English sentence…')} required/>{query&&<button type="button" className="english-clear" disabled={working} aria-label={text('清空输入','Clear input')} title={text('清空输入','Clear input')} onClick={()=>{setQuery('');setError('');setNotice('');queryInput.current?.focus();}}><X size={18}/></button>}</div><button type="submit" className="dark-button english-generate-button" disabled={loading||working||!query.trim()}>{working?<LoaderCircle className="spin" size={17}/>:<Sparkles size={17}/>} {working?text('正在生成…','Generating…'):text('生成并保存卡片','Generate & save cards')}</button></div>
+        <div className="english-entry-row"><div className="english-query"><textarea ref={queryInput} aria-label={text('输入单词、短语或英文原句','Enter words, phrases or English sentences')} maxLength={10000} rows={2} disabled={working} value={query} onChange={e=>setQuery(e.target.value)} placeholder={text('每行一个单词、短语或原句，也可以用分号分隔…','Enter one word, phrase or sentence per line, or use semicolons…')} required/>{query&&<button type="button" className="english-clear" disabled={working} aria-label={text('清空输入','Clear input')} title={text('清空输入','Clear input')} onClick={()=>{setQuery('');setError('');setNotice('');queryInput.current?.focus();}}><X size={18}/></button>}</div><button type="submit" className="dark-button english-generate-button" disabled={loading||working||!query.trim()}>{working?<LoaderCircle className="spin" size={17}/>:<Sparkles size={17}/>} {working?text('正在生成…','Generating…'):text('生成并保存卡片','Generate & save cards')}</button></div>
       </form>
       <div className="english-search-foot"><span><strong>{todayCount}</strong> {text('张今日新卡片','new today')}<i/> <strong>{cards.length}</strong> {text('张积累','in your notebook')}</span></div>
     </section>
-    {batch.length>0&&<section className="english-batch" aria-label={text('生成进度','Generation progress')}><p role="status">{text('生成进度','Progress')}：{batch.filter(item=>item.status==='done'||item.status==='failed').length}/{batch.length} · {text('已保存／打开','Saved or opened')} {batch.filter(item=>item.status==='done').length}</p><ul>{batch.map(item=><li key={item.query}><strong>{item.query}</strong><span>{({pending:text('等待生成','Queued'),working:text('正在生成…','Generating…'),done:text('已保存／打开','Saved or opened'),failed:text('生成失败','Failed')})[item.status]}</span>{item.error&&<span role="alert">{item.error}</span>}{item.status==='failed'&&<button disabled={working} onClick={()=>void lookup(item.query,true)}>{text('重试此项','Retry this item')}</button>}</li>)}</ul></section>}
+    {batch.length>0&&<section className="english-batch" aria-label={text('生成进度','Generation progress')}><p role="status">{text('生成进度','Progress')}：{batch.filter(item=>item.status==='done'||item.status==='failed').length}/{batch.length} · {text('已保存／打开','Saved or opened')} {batch.filter(item=>item.status==='done').length}</p><ul>{batch.map(item=><li key={item.query}><strong>{item.query}</strong><span>{({pending:text('等待生成','Queued'),working:text('正在生成…','Generating…'),done:text('已保存／打开','Saved or opened'),failed:text('生成失败','Failed')})[item.status]}</span>{item.error&&<span role="alert">{item.error}</span>}{item.status==='failed'&&<button disabled={working} onClick={()=>void lookup(item.query,item)}>{text('重试此项','Retry this item')}</button>}</li>)}</ul></section>}
     {error&&<div className="error-banner" role="alert"><span>{error}</span>{loading?null:<button onClick={()=>void load()}>{text('刷新卡片库','Reload notebook')}</button>}</div>}
     {notice&&<p className="english-status" role="status"><Check size={16}/>{notice}</p>}
     <div className="english-library-heading"><h2><BookOpen size={20}/>{text('我的英语积累','My English notebook')}</h2><div className="english-library-actions">{(enriching||enrichError)&&<button className="secondary" disabled={enriching} title={enrichError} onClick={()=>void enrichLibrary()}>{enriching?<LoaderCircle size={16} className="spin"/>:<Sparkles size={16}/>} {enriching?text(`整理语块 ${enrichProgress.done}/${enrichProgress.total}`,`Preparing chunks ${enrichProgress.done}/${enrichProgress.total}`):text('继续整理语块','Retry chunk preparation')}</button>}<button className="secondary" disabled={!visible.length} onClick={enterReview}><GalleryHorizontalEnd size={17}/>{text('过卡片','Review cards')}</button><button ref={wallEntry} className="secondary" onClick={enterWall}><Maximize2 size={17}/>{text('全屏卡片','Full-screen cards')}</button></div></div>

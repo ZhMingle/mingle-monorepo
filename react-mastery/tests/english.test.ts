@@ -7,6 +7,7 @@ import {englishInput,englishBatchInput,validateEnglishPoint} from '../shared/eng
 const scratch=mkdtempSync(join(tmpdir(),'clarity-english-'));
 process.env.DATA_DIR=scratch;
 const {lookupEnglish,englishCards,updateEnglishCard,deleteEnglishCard}=await import('../server/english.ts');
+const {planEnglishCards}=await import('../server/english-plan.ts');
 const {db}=await import('../server/store.ts');
 
 test('batch inputs preserve phrases, normalize duplicates, and validate everything before generation',()=>{
@@ -29,6 +30,30 @@ test('batch members save independently, failed items retry and successes reuse s
 });
 after(()=>{db.close();rmSync(scratch,{recursive:true,force:true});});
 const point={term:'figure out',kind:'expression',pronunciation:'',meaning:'想明白，弄清楚。',usage:'遇到问题、还在找答案时可以用。',examples:[{english:'I figured out how to fix it.',chinese:'我弄清楚怎么修好了。'},{english:'Let’s figure out where to eat.',chinese:'我们想想去哪儿吃。'}],pitfall:'figure out 强调想出答案，不只是知道一件事。',related:[{term:'work out',meaning:'想出办法'}],inputKind:'expression',sourceTranslation:'',sourceSentence:'',sourceCorrection:'',partOfSpeech:'v.',chunk:{english:'figure out a solution',chinese:'想出解决办法'},memory:{association:'想象把打结的耳机线理顺，终于弄明白解决办法。',sound:'',parts:''}};
+
+test('card planning keeps every item and groups only the selected entries in input order',async()=>{
+  const entries=['I think','root','I reckon','in my opinion','in my view','branch'];
+  const comparison=[entries[0],...entries.slice(2,5)];
+  const batch=entries.join(' / ');
+  const plan=await planEnglishCards(batch,async<T>()=>({groups:[[5],[4,2,0,3],[1]]}) as T);
+  assert.deepEqual(plan.map(item=>item.query),[comparison.join(' / '),'root','branch']);
+  assert.deepEqual(plan[0].comparison,comparison);
+  assert.equal(plan[1].comparison,undefined);
+  await assert.rejects(planEnglishCards(batch,async<T>()=>({groups:[[0,2,3,4],[1],[1]]}) as T),/完整的卡片分组/);
+  assert.equal((await planEnglishCards('I waited; then I left.',async()=>{throw Error('No plan needed');}))[0].query,'I waited; then I left.');
+});
+
+test('comparison cards preserve alternatives even when a standalone card already exists',async()=>{
+  const comparison=['I think','I reckon','in my opinion','in my view'];
+  const run=async<T>()=>({...structuredClone(point),term:'I think',related:comparison.slice(1).map(term=>({term,meaning:'表达看法'}))}) as T;
+  const standalone=await lookupEnglish({query:'I think'},run);
+  const group=await lookupEnglish({comparison},run);
+  assert.notEqual(group.card.id,standalone.card.id);
+  assert.deepEqual(group.card.related.map(item=>item.term),comparison.slice(1));
+  assert.equal((await lookupEnglish({comparison:comparison.toReversed()},async()=>{throw Error('Comparison already saved');})).card.id,group.card.id);
+  assert.equal((await lookupEnglish({query:'I think'})).card.id,standalone.card.id);
+  await assert.rejects(lookupEnglish({comparison:['in my opinion','I believe']},run),/完整保留对照表达/);
+});
 test('lookup deduplicates simultaneous requests and persists reusable cards without calling AI again',async()=>{
   let calls=0;const run=async<T>()=>{calls++;return structuredClone(point) as T;};
   const [a,b]=await Promise.all([lookupEnglish({query:'  figure   out  '},run),lookupEnglish({query:'FIGURE OUT'},run)]);

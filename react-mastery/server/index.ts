@@ -23,6 +23,7 @@ import { pathsVersion } from '../shared/paths.ts';
 import { tutorReply } from './tutor.ts';
 import {topicImportance} from './topic-importance.ts';
 import {englishCards,lookupEnglish,updateEnglishCard,deleteEnglishCard} from './english.ts';
+import {planEnglishCards} from './english-plan.ts';
 import {englishReminder} from './english-reminder.ts';
 import {enrichEnglish} from './english-enrichment.ts';
 import {englishAudio,speechAudio,speechRange,speechStatus,speechHeartbeat,claimSpeechJob,completeSpeechJob} from './english-audio.ts';
@@ -96,6 +97,7 @@ const server = createServer(async (req, res) => {
       if(url.pathname==='/api/english/reminder'){send(res,200,await englishReminder(input));return;}
       if(url.pathname==='/api/english/enrich'){send(res,200,await enrichEnglish(input));return;}
       if (url.pathname === '/api/topic-importance') { send(res, 200, await topicImportance(input)); return; }
+      if (url.pathname === '/api/english/plan') { send(res, 200, {items:await planEnglishCards(input.value)}); return; }
       if (url.pathname === '/api/english/lookup') { send(res, 200, await lookupEnglish(input)); return; }
       if (url.pathname === '/api/english/update') { send(res, 200, {card:updateEnglishCard(input)}); return; }
       if (url.pathname === '/api/english/delete') { send(res, 200, deleteEnglishCard(input)); return; }

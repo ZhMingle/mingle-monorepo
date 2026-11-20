@@ -12,7 +12,8 @@ export type EnglishPoint={
   memory?:{association:string;sound:string;parts:string};
 };
 export type EnglishSource={input:string;english:string;chinese:string;note:string};
-export type EnglishCard=EnglishPoint&{id:string;number:number;query:string;context:string;createdAt:string;favorite:boolean;sourceNote?:string;sources?:EnglishSource[]};
+export type EnglishLookupItem={query:string;context:string;comparison?:string[]};
+export type EnglishCard=EnglishPoint&EnglishLookupItem&{id:string;number:number;createdAt:string;favorite:boolean;sourceNote?:string;sources?:EnglishSource[]};
 export const englishTermKey=(term:string)=>term.normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
 export const englishTitle=(card:EnglishPoint)=>card.chunk?.english??card.term;
 export const englishMeaning=(card:EnglishPoint)=>card.chunk?.chinese??card.meaning;
@@ -33,8 +34,8 @@ export function hasEnglishLearning(card:EnglishPoint){try{validateEnglishChunk(c
 
 export function englishBatchInput(value:string,context=''){
   if(value.length>10000)throw new Error('一次输入最多 10000 个字符。');
-  // A punctuated sentence keeps its internal semicolons; word lists still split.
-  const queries=value.split(/\r?\n/).flatMap(line=>/[.!?…]["'’”)]?\s*$/.test(line)?[line]:line.split(/[;；]+/)).map(query=>query.trim()).filter(Boolean);
+  // Preserve internal punctuation in complete sentences.
+  const queries=value.split(/\r?\n/).flatMap(line=>/[.!?…]["'’”)]?\s*$/.test(line)?[line]:line.split(/[;；]+|\s+\/\s+/)).map(query=>query.trim()).filter(Boolean);
   if(!queries.length)throw new Error('请输入单词或表达，每行一个，或用分号分隔。');
   const unique=new Map<string,ReturnType<typeof englishInput>>();
   for(const query of queries){const item=englishInput({query,context});unique.set(item.key,item);}
