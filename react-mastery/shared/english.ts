@@ -23,7 +23,7 @@ export type EnglishSource={input:string;english:string;chinese:string;note:strin
 export type EnglishLookupItem={query:string;context:string;comparison?:string[]};
 export function needsEnglishPlan(items:EnglishLookupItem[]){
   const candidates=items.filter(item=>!item.comparison);
-  return candidates.length>1||candidates.some(item=>/\s|[,，;；…]/.test(item.query));
+  return items.length>1||candidates.some(item=>/\s|[,，;；…]/.test(item.query));
 }
 export type EnglishCard=EnglishPoint&EnglishLookupItem&{id:string;number:number;createdAt:string;favorite:boolean;sourceNote?:string;sources?:EnglishSource[]};
 export const englishTermKey=(term:string)=>term.normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
@@ -44,24 +44,24 @@ export function validateEnglishMemory(raw:unknown):NonNullable<EnglishPoint['mem
 }
 export function hasEnglishLearning(card:EnglishPoint){try{validateEnglishChunk(card);validateEnglishMemory(card.memory);return true;}catch{return false;}}
 
-function comparisonPair(query:string):string[]|undefined{
+function comparisonTerms(query:string):string[]|undefined{
   const parts=query.split(/\s+vs\.?\s+/i).map(part=>part.trim());
-  if(parts.length!==2||parts.some(part=>!part||/[,，;；!?]/.test(part)))return;
-  parts[1]=parts[1].replace(/\.$/,'');
-  if(parts[1]&&englishTermKey(parts[0])!==englishTermKey(parts[1]))return parts;
+  if(parts.length<2||parts.length>4||parts.some(part=>!part||/[,，;；!?]/.test(part)))return;
+  parts[parts.length-1]=parts.at(-1)!.replace(/\.$/,'');
+  if(parts.at(-1)&&new Set(parts.map(englishTermKey)).size===parts.length)return parts;
 }
 
 function batchLine(line:string):string[]{
   const entries=line.split(/[;；]+|\s+\/\s+/);
   // An explicit comparison marks a list even if the last entry is a complete sentence.
   const beforeComma=(entry:string)=>entry.split(/[,，]/,1)[0];
-  if(!entries.some(entry=>comparisonPair(beforeComma(entry)))&&/[.!?…]["'’”)]?\s*$/.test(line))return [line];
+  if(!entries.some(entry=>comparisonTerms(beforeComma(entry)))&&/[.!?…]["'’”)]?\s*$/.test(line))return [line];
   return entries.flatMap(entry=>{
     const parts:string[]=[];
     let remaining=entry;
     while(true){
       const first=beforeComma(remaining);
-      if(first===remaining||!comparisonPair(first))break;
+      if(first===remaining||!comparisonTerms(first))break;
       parts.push(first);
       remaining=remaining.slice(first.length+1);
     }
@@ -76,7 +76,7 @@ export function englishBatchInput(value:string,context=''){
   const unique=new Map<string,EnglishLookupItem>();
   for(const query of queries){
     const item=englishInput({query,context});
-    const comparison=comparisonPair(item.query);
+    const comparison=comparisonTerms(item.query);
     unique.set(item.key,comparison?{...item,comparison}:item);
   }
   if(unique.size>50)throw new Error('一次最多生成 50 张卡片，请分批输入。');

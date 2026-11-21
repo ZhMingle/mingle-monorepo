@@ -1,2 +1,2 @@
 // Bump for server API changes. Catalog changes are checked separately via pathsVersion.
-export const runtimeVersion = '2026.11.21.english-meaning-connection.1';
+export const runtimeVersion = '2026.11.21.english-comparison-retry.1';

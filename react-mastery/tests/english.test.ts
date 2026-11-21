@@ -54,13 +54,31 @@ test('explicit comparisons survive a mixed line ending in a punctuated source',a
   ];
   const summaries=(items:ReturnType<typeof englishBatchInput>)=>items.map(item=>[item.query,item.comparison]);
   assert.deepEqual(summaries(englishBatchInput(input)),expected);
-  assert.deepEqual(summaries(await planEnglishCards(input,async<T>()=>({groups:[[{index:2,text:expected[2][0]}]]}) as T)),expected);
-  assert.deepEqual(summaries(await planEnglishCards('root\nshare vs. stock\nbranch',async<T>()=>({groups:[[{index:2,text:'branch'}],[{index:0,text:'root'}]]}) as T)),[
+  assert.deepEqual(summaries(await planEnglishCards(input,async<T>()=>({groups:expected.map(([text],index)=>[{index,text}])}) as T)),expected);
+  assert.deepEqual(summaries(await planEnglishCards('root\nshare vs. stock\nbranch',async<T>()=>({groups:[[{index:2,text:'branch'}],[{index:0,text:'root'}],[{index:1,text:'share vs. stock'}]]}) as T)),[
     ['root',undefined],['share vs. stock',['share','stock']],['branch',undefined],
   ]);
   assert.deepEqual(summaries(englishBatchInput('I called him; then I waited, but he never answered.')),[
     ['I called him; then I waited, but he never answered.',undefined],
   ]);
+});
+
+test('a degree comparison includes a related adjective and recovers from an invalid first chunk',async()=>{
+  const comparison=['very','exceptionally','extreme'];
+  const plan=await planEnglishCards('very VS exceptionally\nextreme',async<T>()=>({
+    groups:[[{index:0,text:'very VS exceptionally'},{index:1,text:'extreme'}]],
+  }) as T);
+  assert.deepEqual(plan.map(item=>item.comparison),[comparison]);
+  assert.deepEqual(englishBatchInput('very vs exceptionally vs extreme')[0].comparison,comparison);
+  let calls=0;
+  const {card}=await lookupEnglish(plan[0],async<T>()=>({
+    ...point,term:'very',partOfSpeech:'adv.',
+    chunk:{english:++calls===1?'very':'very cold',chinese:'很冷'},
+    related:comparison.slice(1).map(term=>({term,meaning:'用法说明'})),
+  }) as T);
+  assert.equal(calls,2);
+  assert.equal(card.chunk?.english,'very cold');
+  assert.deepEqual(card.comparison,comparison);
 });
 
 test('planning infers loose boundaries and rejects output that skips words',async()=>{
