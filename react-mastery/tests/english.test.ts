@@ -35,12 +35,43 @@ test('card planning keeps every item and groups only the selected entries in inp
   const entries=['I think','root','I reckon','in my opinion','in my view','branch'];
   const comparison=[entries[0],...entries.slice(2,5)];
   const batch=entries.join(' / ');
-  const plan=await planEnglishCards(batch,async<T>()=>({groups:[[5],[4,2,0,3],[1]]}) as T);
+  const response=(groups:number[][])=>({groups:groups.map(group=>group.map(index=>({index,text:entries[index]})))});
+  const plan=await planEnglishCards(batch,async<T>()=>response([[5],[4,2,0,3],[1]]) as T);
   assert.deepEqual(plan.map(item=>item.query),[comparison.join(' / '),'root','branch']);
   assert.deepEqual(plan[0].comparison,comparison);
   assert.equal(plan[1].comparison,undefined);
-  await assert.rejects(planEnglishCards(batch,async<T>()=>({groups:[[0,2,3,4],[1],[1]]}) as T),/完整的卡片分组/);
-  assert.equal((await planEnglishCards('I waited; then I left.',async()=>{throw Error('No plan needed');}))[0].query,'I waited; then I left.');
+  await assert.rejects(planEnglishCards(batch,async<T>()=>response([[0,2,3,4],[1],[1]]) as T),/完整的卡片分组/);
+  const sentence='I waited; then I left.';
+  assert.equal((await planEnglishCards(sentence,async<T>()=>({groups:[[{index:0,text:sentence}]]}) as T))[0].query,sentence);
+});
+
+test('explicit comparisons survive a mixed line ending in a punctuated source',async()=>{
+  const input="theatrical Vs drama; share VS stock, About the crash in Hartes' share prices.";
+  const expected=[
+    ['theatrical Vs drama',['theatrical','drama']],
+    ['share VS stock',['share','stock']],
+    ["About the crash in Hartes' share prices.",undefined],
+  ];
+  const summaries=(items:ReturnType<typeof englishBatchInput>)=>items.map(item=>[item.query,item.comparison]);
+  assert.deepEqual(summaries(englishBatchInput(input)),expected);
+  assert.deepEqual(summaries(await planEnglishCards(input,async<T>()=>({groups:[[{index:2,text:expected[2][0]}]]}) as T)),expected);
+  assert.deepEqual(summaries(await planEnglishCards('root\nshare vs. stock\nbranch',async<T>()=>({groups:[[{index:2,text:'branch'}],[{index:0,text:'root'}]]}) as T)),[
+    ['root',undefined],['share vs. stock',['share','stock']],['branch',undefined],
+  ]);
+  assert.deepEqual(summaries(englishBatchInput('I called him; then I waited, but he never answered.')),[
+    ['I called him; then I waited, but he never answered.',undefined],
+  ]);
+});
+
+test('planning infers loose boundaries and rejects output that skips words',async()=>{
+  const input='generous stingy, branch';
+  const grouped=[{index:0,text:'generous'},{index:0,text:'stingy'}];
+  const branch={index:0,text:'branch'};
+  const items=await planEnglishCards(input,async<T>()=>({groups:[[branch],grouped]}) as T);
+  assert.deepEqual(items.map(item=>[item.query,item.comparison]),[
+    ['generous / stingy',['generous','stingy']],['branch',undefined],
+  ]);
+  await assert.rejects(planEnglishCards(input,async<T>()=>({groups:[[branch]]}) as T),/完整的卡片分组/);
 });
 
 test('comparison cards preserve alternatives even when a standalone card already exists',async()=>{

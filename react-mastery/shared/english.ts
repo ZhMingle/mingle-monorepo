@@ -13,6 +13,10 @@ export type EnglishPoint={
 };
 export type EnglishSource={input:string;english:string;chinese:string;note:string};
 export type EnglishLookupItem={query:string;context:string;comparison?:string[]};
+export function needsEnglishPlan(items:EnglishLookupItem[]){
+  const candidates=items.filter(item=>!item.comparison);
+  return candidates.length>1||candidates.some(item=>/\s|[,，;；…]/.test(item.query));
+}
 export type EnglishCard=EnglishPoint&EnglishLookupItem&{id:string;number:number;createdAt:string;favorite:boolean;sourceNote?:string;sources?:EnglishSource[]};
 export const englishTermKey=(term:string)=>term.normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
 export const englishTitle=(card:EnglishPoint)=>card.chunk?.english??card.term;
@@ -32,13 +36,41 @@ export function validateEnglishMemory(raw:unknown):NonNullable<EnglishPoint['mem
 }
 export function hasEnglishLearning(card:EnglishPoint){try{validateEnglishChunk(card);validateEnglishMemory(card.memory);return true;}catch{return false;}}
 
+function comparisonPair(query:string):string[]|undefined{
+  const parts=query.split(/\s+vs\.?\s+/i).map(part=>part.trim());
+  if(parts.length!==2||parts.some(part=>!part||/[,，;；!?]/.test(part)))return;
+  parts[1]=parts[1].replace(/\.$/,'');
+  if(parts[1]&&englishTermKey(parts[0])!==englishTermKey(parts[1]))return parts;
+}
+
+function batchLine(line:string):string[]{
+  const entries=line.split(/[;；]+|\s+\/\s+/);
+  // An explicit comparison marks a list even if the last entry is a complete sentence.
+  const beforeComma=(entry:string)=>entry.split(/[,，]/,1)[0];
+  if(!entries.some(entry=>comparisonPair(beforeComma(entry)))&&/[.!?…]["'’”)]?\s*$/.test(line))return [line];
+  return entries.flatMap(entry=>{
+    const parts:string[]=[];
+    let remaining=entry;
+    while(true){
+      const first=beforeComma(remaining);
+      if(first===remaining||!comparisonPair(first))break;
+      parts.push(first);
+      remaining=remaining.slice(first.length+1);
+    }
+    return [...parts,remaining];
+  });
+}
+
 export function englishBatchInput(value:string,context=''){
   if(value.length>10000)throw new Error('一次输入最多 10000 个字符。');
-  // Preserve internal punctuation in complete sentences.
-  const queries=value.split(/\r?\n/).flatMap(line=>/[.!?…]["'’”)]?\s*$/.test(line)?[line]:line.split(/[;；]+|\s+\/\s+/)).map(query=>query.trim()).filter(Boolean);
+  const queries=value.split(/\r?\n/).flatMap(batchLine).map(query=>query.trim()).filter(Boolean);
   if(!queries.length)throw new Error('请输入单词或表达，每行一个，或用分号分隔。');
-  const unique=new Map<string,ReturnType<typeof englishInput>>();
-  for(const query of queries){const item=englishInput({query,context});unique.set(item.key,item);}
+  const unique=new Map<string,EnglishLookupItem>();
+  for(const query of queries){
+    const item=englishInput({query,context});
+    const comparison=comparisonPair(item.query);
+    unique.set(item.key,comparison?{...item,comparison}:item);
+  }
   if(unique.size>50)throw new Error('一次最多生成 50 张卡片，请分批输入。');
   return [...unique.values()];
 }

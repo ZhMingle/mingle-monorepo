@@ -3,7 +3,7 @@ import {ArrowDownToLine,ArrowUpRight,BookOpen,Check,LoaderCircle,Search,Sparkles
 import {request} from './api.ts';
 import {useLanguage} from './language.tsx';
 import type {EnglishCard,EnglishLookupItem} from '../shared/english.ts';
-import {englishBatchInput,englishTermKey,englishTitle,englishMeaning,hasEnglishLearning} from '../shared/english.ts';
+import {englishBatchInput,englishTermKey,englishTitle,englishMeaning,hasEnglishLearning,needsEnglishPlan} from '../shared/english.ts';
 import {englishVoices,isNaturalVoice} from './english-speech.ts';
 import {createEnglishPlayback,idlePlayback,playbackKey} from './english-playback.ts';
 import type {PlaybackState} from './english-playback.ts';
@@ -106,7 +106,7 @@ export default function EnglishNotebook(){
     if(remind)resetPlayback();
     try{
       let items:EnglishLookupItem[]=retry?[retry]:englishBatchInput(value);
-      if(items.length>1){
+      if(!retry&&needsEnglishPlan(items)){
         setNotice(text('正在整理知识点…','Organizing learning points…'));
         ({items}=await request<{items:EnglishLookupItem[]}>('english/plan',{value}));
         setNotice('');
