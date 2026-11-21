@@ -21,7 +21,7 @@ export default function EnglishCardDetail({card,number,editing,working,headingId
     <section className="english-usage"><h3>{text('什么时候用','When to use it')}</h3><p>{card.usage}</p></section>
     <section className="english-examples"><h3>{text('放进句子里','In a sentence')}</h3>{card.examples.map((example,i)=><div key={i}><span className="english-example-number">{String(i+1).padStart(2,'0')}</span><div><p lang="en">{example.english}</p><span>{example.chinese}</span></div><EnglishAudioButton playback={playback} target={playbackKey(card.id,'example',i)} label={text(`朗读例句 ${i+1}`,`Read example ${i+1} aloud`)} onClick={()=>onSpeak(card,'example',i)}/></div>)}</section>
     {formation&&(formation.etymology||formation.root||formation.affixes)&&<section className="english-memory"><h3>{text('词源与构词','Word origin & formation')}</h3><dl>
-      {formation.etymology&&<div><dt>{text('词源','Etymology')}</dt><dd>{formation.etymology}</dd></div>}
+      <div><dt>{text('词源','Etymology')}</dt><dd>{formation.etymology||text('暂无可靠的词源说明。','No reliable origin note available.')}</dd></div>
       {formation.root&&<div><dt>{text('词根或词基','Root or base')}</dt><dd>{formation.root}</dd></div>}
       {formation.affixes&&<div><dt>{text('词缀','Affixes')}</dt><dd>{formation.affixes}</dd></div>}
     </dl>{etymologyLink}</section>}
