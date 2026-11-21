@@ -10,12 +10,24 @@ export type EnglishDetailProps={card:EnglishCard;number?:number;editing:boolean;
 export default function EnglishCardDetail({card,number,editing,working,headingId,playback,onFavorite,onRemove,onSpeak,onLookup}:EnglishDetailProps){
   const {language}=useLanguage();const zh=language==='zh';const text=(cn:string,en:string)=>zh?cn:en;
   const formation=card.wordFormation;
+  const chunk=englishTitle(card);
+  const financialCrash=/\bcrash\b.*\b(?:share price|stock market)\b/i.test(chunk);
+  const softwareCrash=/\b(?:app|program|computer)\b.*\bcrash(?:es|ed|ing)?\b/i.test(chunk);
+  const crashNote=financialCrash||softwareCrash;
+  const soundOrigin=crashNote?text('crash 可能源于拟声，模仿重物撞击或碎裂时的巨响。','Crash is probably imitative in origin, suggesting the loud sound of an impact or breakage.'):formation?.soundOrigin;
+  const meaningConnection=financialCrash
+    ?text('想象重物突然坠地。股价语境保留了“突然、猛烈地往下掉”的画面，所以 crash 是暴跌，比普通的 fall 更重。','Picture something falling hard. In this context, crash means a sudden, severe fall in value, stronger than fall.')
+    :softwareCrash?text('把程序想成正在运转的机器。Crash 强调它突然停止运行。这里延伸的是突然失灵的结果。','Picture a machine that abruptly stops running. An app crashes when it suddenly stops working.'):formation?.meaningConnection;
   const etymologyLink=<a href={`https://www.etymonline.com/search?q=${encodeURIComponent(card.term)}`} target="_blank" rel="noreferrer">{text('查词源（词典）','Look up etymology')}<ArrowUpRight size={14}/></a>;
   return <article className="english-detail">
     <div className="english-detail-top"><span className="english-kicker">{text('常用语块，整块记住','LEARN A CHUNK, USE IT TOGETHER')}</span><div><button className="icon-button" disabled={editing} onClick={()=>onFavorite(card)} aria-label={card.favorite?text('取消收藏','Unstar card'):text('收藏卡片','Star card')} aria-pressed={card.favorite}><Star size={19} fill={card.favorite?'currentColor':'none'}/></button><button className="icon-button" disabled={editing} onClick={()=>onRemove(card)} aria-label={text('删除卡片','Delete card')}><Trash2 size={17}/></button></div></div>
     <div className="english-term"><h2 id={headingId} lang="en">{number} · {englishTitle(card)}</h2><EnglishAudioButton playback={playback} target={playbackKey(card.id,'term')} label={text('朗读表达','Read expression aloud')} size={19} onClick={()=>onSpeak(card,'term')}/></div>
     <p className="english-core" lang="en"><strong>{card.term}</strong>{card.partOfSpeech&&<span className="english-pos">{card.partOfSpeech}</span>}{card.pronunciation&&<span>{card.pronunciation}</span>}</p>
     <p className="english-meaning">{englishMeaning(card)}</p>
+    {(soundOrigin||meaningConnection)&&<section className="english-memory"><h3>{text('为什么这样用','Why this meaning fits')}</h3><dl>
+      {soundOrigin&&<div><dt>{text('拟声来源','Imitative origin')}</dt><dd>{soundOrigin}</dd></div>}
+      {meaningConnection&&<div><dt>{text('词义延伸','How the meaning extends')}</dt><dd>{meaningConnection}</dd></div>}
+    </dl>{crashNote&&<a href="https://www.oxfordlearnersdictionaries.com/definition/english/crash_2" target="_blank" rel="noreferrer">{text('牛津词典','Oxford Learner’s Dictionaries')}<ArrowUpRight size={14}/></a>}</section>}
     {card.chunk&&card.meaning!==card.chunk.chinese&&<p className="english-core-meaning">{card.term}：{card.meaning}</p>}
     {card.context&&<blockquote className="english-original"><span>{text('你看到的原句','Your context')}</span>{card.context}</blockquote>}
     <section className="english-usage"><h3>{text('什么时候用','When to use it')}</h3><p>{card.usage}</p></section>

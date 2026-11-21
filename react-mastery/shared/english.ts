@@ -12,12 +12,12 @@ export type EnglishPoint={
   memory?:{association:string;sound:string;parts:string};
   wordFormation?:EnglishWordFormation;
 };
-export type EnglishWordFormation={etymology:string;root:string;affixes:string};
-export const englishWordFormationFields=['etymology','root','affixes'] as const;
+export type EnglishWordFormation={etymology:string;root:string;affixes:string;soundOrigin?:string;meaningConnection?:string};
+export const englishWordFormationFields=['etymology','root','affixes','soundOrigin','meaningConnection'] as const;
 export function validateEnglishWordFormation(raw:unknown):EnglishWordFormation{
   const value=raw as EnglishWordFormation;
   if(!value||englishWordFormationFields.some(key=>typeof value[key]!=='string'||value[key].length>300))throw new Error('AI 返回的词源或构词信息不完整，请重试。');
-  return {etymology:value.etymology.trim(),root:value.root.trim(),affixes:value.affixes.trim()};
+  return Object.fromEntries(englishWordFormationFields.map(key=>[key,value[key]!.trim()])) as EnglishWordFormation;
 }
 export type EnglishSource={input:string;english:string;chinese:string;note:string};
 export type EnglishLookupItem={query:string;context:string;comparison?:string[]};

@@ -10,7 +10,7 @@ const {lookupEnglish,englishCards,deleteEnglishCard}=await import('../server/eng
 const {englishReminder,reminderText}=await import('../server/english-reminder.ts');
 const {speechInput}=await import('../server/english-audio.ts');
 after(()=>{db.close();rmSync(scratch,{recursive:true,force:true});});
-const point={term:'stem',kind:'word',pronunciation:'/stem/',meaning:'植物的茎，也可以指花梗。',usage:'说植物的茎。',examples:[{english:'Cut the stem.',chinese:'剪掉花梗。'},{english:'The stem is green.',chinese:'茎是绿色的。'}],pitfall:'这里是名词。',related:[],inputKind:'word',sourceTranslation:'',sourceSentence:'',sourceCorrection:'',partOfSpeech:'n.',chunk:{english:'a flower stem',chinese:'花梗'},wordFormation:{etymology:'',root:'',affixes:''},memory:{association:'想象一根花梗托着一朵花。',sound:'',parts:''}};
+const point={term:'stem',kind:'word',pronunciation:'/stem/',meaning:'植物的茎，也可以指花梗。',usage:'说植物的茎。',examples:[{english:'Cut the stem.',chinese:'剪掉花梗。'},{english:'The stem is green.',chinese:'茎是绿色的。'}],pitfall:'这里是名词。',related:[],inputKind:'word',sourceTranslation:'',sourceSentence:'',sourceCorrection:'',partOfSpeech:'n.',chunk:{english:'a flower stem',chinese:'花梗'},wordFormation:{etymology:'',root:'',affixes:'',soundOrigin:'',meaningConnection:''},memory:{association:'想象一根花梗托着一朵花。',sound:'',parts:''}};
 
 test('duplicate reminder varies its English tease, caches the saved sense, and preserves the notebook',async()=>{
   const {card}=await lookupEnglish({query:'stem'},async<T>()=>point as T);

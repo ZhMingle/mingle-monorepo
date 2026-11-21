@@ -29,7 +29,7 @@ test('batch members save independently, failed items retry and successes reuse s
   await lookupEnglish(items[0],async()=>{throw Error('Saved success must not regenerate');});
 });
 after(()=>{db.close();rmSync(scratch,{recursive:true,force:true});});
-const point={term:'figure out',kind:'expression',pronunciation:'',meaning:'想明白，弄清楚。',usage:'遇到问题、还在找答案时可以用。',examples:[{english:'I figured out how to fix it.',chinese:'我弄清楚怎么修好了。'},{english:'Let’s figure out where to eat.',chinese:'我们想想去哪儿吃。'}],pitfall:'figure out 强调想出答案，不只是知道一件事。',related:[{term:'work out',meaning:'想出办法'}],inputKind:'expression',sourceTranslation:'',sourceSentence:'',sourceCorrection:'',partOfSpeech:'v.',chunk:{english:'figure out a solution',chinese:'想出解决办法'},wordFormation:{etymology:'',root:'',affixes:''},memory:{association:'想象把打结的耳机线理顺，终于弄明白解决办法。',sound:'',parts:''}};
+const point={term:'figure out',kind:'expression',pronunciation:'',meaning:'想明白，弄清楚。',usage:'遇到问题、还在找答案时可以用。',examples:[{english:'I figured out how to fix it.',chinese:'我弄清楚怎么修好了。'},{english:'Let’s figure out where to eat.',chinese:'我们想想去哪儿吃。'}],pitfall:'figure out 强调想出答案，不只是知道一件事。',related:[{term:'work out',meaning:'想出办法'}],inputKind:'expression',sourceTranslation:'',sourceSentence:'',sourceCorrection:'',partOfSpeech:'v.',chunk:{english:'figure out a solution',chinese:'想出解决办法'},wordFormation:{etymology:'',root:'',affixes:'',soundOrigin:'',meaningConnection:''},memory:{association:'想象把打结的耳机线理顺，终于弄明白解决办法。',sound:'',parts:''}};
 
 test('card planning keeps every item and groups only the selected entries in input order',async()=>{
   const entries=['I think','root','I reckon','in my opinion','in my view','branch'];
@@ -87,9 +87,9 @@ test('comparison cards preserve alternatives even when a standalone card already
 });
 
 test('new cards persist separate etymology, root and affix notes',async()=>{
-  const wordFormation={etymology:' 描述历史来源。 ',root:' 词基说明。 ',affixes:' 前后缀说明。 '};
+  const wordFormation={etymology:' 描述历史来源。 ',root:' 词基说明。 ',affixes:' 前后缀说明。 ',soundOrigin:' 拟声说明。 ',meaningConnection:' 词义延伸。 '};
   const {card}=await lookupEnglish({query:'word-formation-fixture'},async<T>()=>({...point,term:'word-formation-fixture',wordFormation}) as T);
-  assert.deepEqual(card.wordFormation,{etymology:'描述历史来源。',root:'词基说明。',affixes:'前后缀说明。'});
+  assert.deepEqual(card.wordFormation,{etymology:'描述历史来源。',root:'词基说明。',affixes:'前后缀说明。',soundOrigin:'拟声说明。',meaningConnection:'词义延伸。'});
   assert.deepEqual(englishCards().find(saved=>saved.id===card.id)?.wordFormation,card.wordFormation);
   await assert.rejects(lookupEnglish({query:'incomplete-word-formation'},async<T>()=>({...point,wordFormation:{root:'partial'}}) as T),/词源或构词信息不完整/);
 });
