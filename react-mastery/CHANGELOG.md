@@ -1,3 +1,9 @@
+## 2026-11-26 — Show the current English search result
+
+- Rank headword and chunk matches before meanings, historical queries, and examples, so searching `mani` prefers `manifest` over a newer card with an incidental note match.
+- Derive the active detail from current candidates and keep manual search selection separate from background generation and speech. Remove the selection effect, keep list highlighting and review entry aligned, and reset the detail when its card changes.
+- Cover ranked results, category and number searches, empty results, and stale selections with regression cases.
+
 ## 2026-11-25 — Keep the English input editable during generation
 
 - Allow typing, line breaks, and clearing the input while a batch is generating, with the next submission available after it finishes.

@@ -13,6 +13,8 @@ import EnglishCardDetail from './EnglishCardDetail.tsx';
 import EnglishCardWall from './EnglishCardWall.tsx';
 import EnglishReview from './EnglishReview.tsx';
 import type {SpeechSelection} from './english-playback.ts';
+import {searchEnglishCards,visibleEnglishCard} from './english-search.ts';
+import type {EnglishCardFilter} from './english-search.ts';
 import './english-notebook.css';
 
 export function EnglishNotebookHeading(){
@@ -25,6 +27,7 @@ export default function EnglishNotebook(){
   const text=(cn:string,en:string)=>zh?cn:en;
   const [cards,setCards]=useState<EnglishCard[]>([]);
   const [selected,setSelected]=useState('');
+  const [searchSelected,setSearchSelected]=useState('');
   const [wallOpen,setWallOpen]=useState(false);
   const [reviewOpen,setReviewOpen]=useState(false);
   const [enriching,setEnriching]=useState(false),[enrichProgress,setEnrichProgress]=useState({done:0,total:0}),[enrichError,setEnrichError]=useState('');
@@ -51,7 +54,9 @@ export default function EnglishNotebook(){
   const queryRevision=useRef(0);
   function editQuery(value:string){queryRevision.current++;setQuery(value);}
   const [filter,setFilter]=useState('');
-  const [tab,setTab]=useState<'all'|'word'|'expression'|'favorite'>('all');
+  const [tab,setTab]=useState<EnglishCardFilter>('all');
+  function changeFilter(value:string){setFilter(value);setSearchSelected('');setSelected('');}
+  function changeTab(value:EnglishCardFilter){setTab(value);setSearchSelected('');setSelected('');}
   const [loading,setLoading]=useState(true);
   const [working,setWorking]=useState(false);
   const running=useRef(false);
@@ -96,11 +101,9 @@ export default function EnglishNotebook(){
   // Stored numbers preserve insertion order; visible ordinals close deletion gaps.
   const orderedCards=cards.toSorted((a,b)=>b.number-a.number);
   const displayNumbers=new Map(orderedCards.map((card,index)=>[card.id,orderedCards.length-index]));
-  const active=cards.find(c=>c.id===selected);
-  const visible=orderedCards.filter(c=>(tab==='all'||(tab==='favorite'?c.favorite:c.kind===tab))&&[String(displayNumbers.get(c.id)),c.term,englishTitle(c),englishMeaning(c),c.partOfSpeech,c.query,c.meaning,c.usage,c.context,...c.examples.flatMap(e=>[e.english,e.chinese])].join(' ').toLocaleLowerCase().includes(filter.toLocaleLowerCase().trim()));
-  const firstVisibleId=visible[0]?.id??'';
-  // A changed search opens its first result; manual selection lasts until the results change.
-  useEffect(()=>{setSelected(firstVisibleId);},[filter,tab,firstVisibleId]);
+  const visible=searchEnglishCards(orderedCards,filter,tab,displayNumbers);
+  // Background generation and speech may select a card, but cannot replace a search result.
+  const active=visibleEnglishCard(visible,filter.trim()||tab!=='all'?searchSelected:selected);
   const today=new Date().toDateString();
   const todayCount=cards.filter(c=>new Date(c.createdAt).toDateString()===today).length;
   async function lookup(value=query,retry:EnglishLookupItem|false=false,remind=true){
@@ -185,13 +188,13 @@ export default function EnglishNotebook(){
     {!wallOpen&&!reviewOpen&&<>{voiceSettings}{playbackFeedback}</>}
     <div className="english-library">
       <aside className="english-card-list" aria-label={text('已保存的英语卡片','Saved English cards')}>
-        <label className="english-filter"><Search size={16}/><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder={text('搜索已存的卡片','Search saved cards')} aria-label={text('搜索已存的卡片','Search saved cards')}/></label>
-        <div className="english-tabs" role="group" aria-label={text('筛选卡片','Filter cards')}>{(['all','word','expression','favorite'] as const).map(id=><button key={id} aria-pressed={tab===id} className={tab===id?'active':''} onClick={()=>setTab(id)}>{({all:text('全部','All'),word:text('单词','Words'),expression:text('表达','Phrases'),favorite:text('收藏','Starred')})[id]}</button>)}</div>
-        <div className="english-card-scroll" ref={cardList}>{loading?<p role="status" className="english-list-empty">{text('正在读取卡片…','Loading cards…')}</p>:visible.length?visible.map(card=><button className={`english-card-item ${selected===card.id?'active':''}`} key={card.id} aria-pressed={selected===card.id} onClick={()=>{if(playback.part==='reminder')resetPlayback();setSelected(card.id);setNotice('');}}><span><strong lang="en">{displayNumbers.get(card.id)} · {englishTitle(card)}</strong>{card.favorite&&<Star size={14} fill="currentColor"/>}</span><p>{englishMeaning(card)}</p><small>{card.partOfSpeech??(card.kind==='word'?text('词汇语块','Vocabulary chunk'):text('表达语块','Expression chunk'))} · {new Date(card.createdAt).toLocaleDateString(zh?'zh-CN':'en-NZ',{month:'short',day:'numeric'})}</small></button>):<p className="english-list-empty">{cards.length?text('没有符合筛选条件的卡片。','No matching cards.'):text('查过的词和表达会自动出现在这里。','Your words and expressions will appear here.')}</p>}</div>
+        <label className="english-filter"><Search size={16}/><input value={filter} onChange={e=>changeFilter(e.target.value)} placeholder={text('搜索已存的卡片','Search saved cards')} aria-label={text('搜索已存的卡片','Search saved cards')}/></label>
+        <div className="english-tabs" role="group" aria-label={text('筛选卡片','Filter cards')}>{(['all','word','expression','favorite'] as const).map(id=><button key={id} aria-pressed={tab===id} className={tab===id?'active':''} onClick={()=>changeTab(id)}>{({all:text('全部','All'),word:text('单词','Words'),expression:text('表达','Phrases'),favorite:text('收藏','Starred')})[id]}</button>)}</div>
+        <div className="english-card-scroll" ref={cardList}>{loading?<p role="status" className="english-list-empty">{text('正在读取卡片…','Loading cards…')}</p>:visible.length?visible.map(card=><button className={`english-card-item ${active?.id===card.id?'active':''}`} key={card.id} aria-pressed={active?.id===card.id} onClick={()=>{if(playback.part==='reminder')resetPlayback();setSelected(card.id);setSearchSelected(card.id);setNotice('');}}><span><strong lang="en">{displayNumbers.get(card.id)} · {englishTitle(card)}</strong>{card.favorite&&<Star size={14} fill="currentColor"/>}</span><p>{englishMeaning(card)}</p><small>{card.partOfSpeech??(card.kind==='word'?text('词汇语块','Vocabulary chunk'):text('表达语块','Expression chunk'))} · {new Date(card.createdAt).toLocaleDateString(zh?'zh-CN':'en-NZ',{month:'short',day:'numeric'})}</small></button>):<p className="english-list-empty">{cards.length?text('没有符合筛选条件的卡片。','No matching cards.'):text('查过的词和表达会自动出现在这里。','Your words and expressions will appear here.')}</p>}</div>
       </aside>
-      {active?<EnglishCardDetail playback={playback} card={active} number={displayNumbers.get(active.id)} editing={editing} working={working} onFavorite={card=>void favorite(card)} onRemove={card=>void remove(card)} onSpeak={readCard} onLookup={term=>void lookup(term,false,false)}/>:<div className="english-welcome"><span className="english-welcome-icon"><BookOpen size={32}/></span><span className="english-kicker">YOUR EVERYDAY WORDS</span><h2>{text('从今天遇到的那个词开始。','Start with a word from your day.')}</h2><p>{text('不必一次学很多。把看过却不会用的表达留在这里，下次遇到，就熟悉一点。','You don’t need a long word list. Save an expression you want to use, and get a little more familiar with it.')}</p><div>{['figure out','I’m down','take your time'].map(term=><button key={term} disabled={working} onClick={()=>void lookup(term,false,false)}>{term}<ArrowUpRight size={14}/></button>)}</div><small>{text('每张卡片：简短意思 · 使用场景 · 例句 · 一个易错点','Each card: meaning · usage · examples · one common pitfall')}</small></div>}
+      {active?<EnglishCardDetail key={active.id} playback={playback} card={active} number={displayNumbers.get(active.id)} editing={editing} working={working} onFavorite={card=>void favorite(card)} onRemove={card=>void remove(card)} onSpeak={readCard} onLookup={term=>void lookup(term,false,false)}/>:<div className="english-welcome"><span className="english-welcome-icon"><BookOpen size={32}/></span><span className="english-kicker">YOUR EVERYDAY WORDS</span><h2>{text('从今天遇到的那个词开始。','Start with a word from your day.')}</h2><p>{text('不必一次学很多。把看过却不会用的表达留在这里，下次遇到，就熟悉一点。','You don’t need a long word list. Save an expression you want to use, and get a little more familiar with it.')}</p><div>{['figure out','I’m down','take your time'].map(term=><button key={term} disabled={working} onClick={()=>void lookup(term,false,false)}>{term}<ArrowUpRight size={14}/></button>)}</div><small>{text('每张卡片：简短意思 · 使用场景 · 例句 · 一个易错点','Each card: meaning · usage · examples · one common pitfall')}</small></div>}
     </div>
-    {wallOpen&&!reviewOpen&&<EnglishCardWall cards={cards} visible={visible} numbers={displayNumbers} filter={filter} onFilter={setFilter} tab={tab} onTab={setTab} loading={loading} editing={editing} working={working} error={error} onReload={()=>void load()} onExit={exitWall} onReview={enterReview} onResetPlayback={resetPlayback} voiceSettings={voiceSettings} playback={playback} playbackFeedback={playbackFeedback} onFavorite={card=>void favorite(card)} onRemove={card=>void remove(card)} onSpeak={readCard} onLookup={term=>{exitWall();void lookup(term,false,false);}}/>}
-    {reviewOpen&&visible.length>0&&<EnglishReview cards={visible} numbers={displayNumbers} initialId={selected} playback={playback} feedback={playbackFeedback} onSequence={reviewSequence} onStop={resetPlayback} onExit={exitReview}/>}
+    {wallOpen&&!reviewOpen&&<EnglishCardWall cards={cards} visible={visible} numbers={displayNumbers} filter={filter} onFilter={changeFilter} tab={tab} onTab={changeTab} loading={loading} editing={editing} working={working} error={error} onReload={()=>void load()} onExit={exitWall} onReview={enterReview} onResetPlayback={resetPlayback} voiceSettings={voiceSettings} playback={playback} playbackFeedback={playbackFeedback} onFavorite={card=>void favorite(card)} onRemove={card=>void remove(card)} onSpeak={readCard} onLookup={term=>{exitWall();void lookup(term,false,false);}}/>}
+    {reviewOpen&&visible.length>0&&<EnglishReview cards={visible} numbers={displayNumbers} initialId={active?.id??''} playback={playback} feedback={playbackFeedback} onSequence={reviewSequence} onStop={resetPlayback} onExit={exitReview}/>}
   </div>;
 }
