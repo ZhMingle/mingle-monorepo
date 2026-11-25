@@ -2,6 +2,7 @@
 
 - This is a long-term local React learning platform. Keep curriculum, pure mastery rules, persistence, AI providers, and browser execution separate.
 - After each completed coding task, run the checks appropriate to that change, create a Git commit, and push it to the tracked remote branch. The user has requested remote pushes after every task. Stage only relevant files.
+- The user has explicitly authorized publishing this and future routine Clarity UI fixes to the existing production Site after validation. Publish these frontend updates without asking again, preserving the current Site and access settings. This standing authorization does not include unrelated backend, account, billing, or access changes.
 - After each project update, run `Start.bat` yourself and refresh/open the latest local page. Do not leave restarting or refreshing to the user. The launcher opens a cache-busted page after checking the server and catalog versions.
 - Preserve learner data under `data/`. Never commit personal learning records, generated AI output, tokens, or API keys.
 - Use genuine AI output or explicit connection errors. Never substitute static feedback while labeling it as an AI assessment.
