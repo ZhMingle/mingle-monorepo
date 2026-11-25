@@ -1,3 +1,8 @@
+## 2026-11-25 — Keep the English input editable during generation
+
+- Allow typing, line breaks, and clearing the input while a batch is generating, with the next submission available after it finishes.
+- Track draft edits so a completed batch cannot clear a newer draft, even when its text matches the submitted text. Retrying a failed item leaves the input untouched.
+
 ## 2026-11-25 — Open the first saved-card search result
 
 - Automatically select the first candidate when the notebook search or category changes, while preserving manual selection until the search results change. Clear stale details when there are no matches, and select the first card again when the search is cleared.

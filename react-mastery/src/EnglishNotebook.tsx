@@ -48,6 +48,8 @@ export default function EnglishNotebook(){
     });
   }
   const [query,setQuery]=useState('');
+  const queryRevision=useRef(0);
+  function editQuery(value:string){queryRevision.current++;setQuery(value);}
   const [filter,setFilter]=useState('');
   const [tab,setTab]=useState<'all'|'word'|'expression'|'favorite'>('all');
   const [loading,setLoading]=useState(true);
@@ -105,6 +107,7 @@ export default function EnglishNotebook(){
     if(loading||running.current||!value.trim())return;
     running.current=true;setWorking(true);setError('');setNotice('');
     if(!retry){setQuery(value);setBatch([]);}
+    const submittedRevision=queryRevision.current;
     let completed=0;const reminders:EnglishCard[]=[];
     if(remind)resetPlayback();
     try{
@@ -125,7 +128,7 @@ export default function EnglishNotebook(){
           if(remind&&cached&&[card.term,card.query].some(value=>englishTermKey(value)===englishTermKey(item.query)))reminders.push(card);
         }catch(e){update('failed',(e as Error).message);}
       }
-      if(completed===items.length)setQuery(current=>current===value?'':current);
+      if(!retry&&completed===items.length)setQuery(current=>queryRevision.current===submittedRevision&&current===value?'':current);
       setNotice(text(`已保存／打开 ${completed} 张卡片，失败项可单独重试。`,`Saved or opened ${completed} cards. Failed items can be retried individually.`));
     }catch(e){setNotice('');setError((e as Error).message);}finally{running.current=false;setWorking(false);}
     if(reminders.length&&mounted.current)ensurePlayer().sequence(reminders.map(card=>({key:playbackKey(card.id,'term'),cardId:card.id,part:'reminder',text:card.term,label:card.term})),speechOptions());
@@ -165,12 +168,12 @@ export default function EnglishNotebook(){
     <section className="english-search-panel" aria-labelledby="english-search-title">
       <div className="english-search-heading"><div><span className="english-kicker"><Sparkles size={15}/>{text('今天遇到了什么？','What did you come across today?')}</span><h2 id="english-search-title">{text('单词、短语、原句，都能记下来。','Save words, phrases or whole sentences.')}</h2></div><a className="secondary" href="/api/english/export"><ArrowDownToLine size={16}/>{text('导出卡片','Export cards')}</a></div>
       <form onSubmit={e=>{e.preventDefault();void lookup();}}>
-        <div className="english-entry-row"><div className="english-query"><textarea ref={queryInput} aria-label={text('输入单词、短语或英文原句','Enter words, phrases or English sentences')} maxLength={10000} rows={2} disabled={working} value={query} onChange={e=>setQuery(e.target.value)}
+        <div className="english-entry-row"><div className="english-query"><textarea ref={queryInput} aria-label={text('输入单词、短语或英文原句','Enter words, phrases or English sentences')} maxLength={10000} rows={2} value={query} onChange={e=>editQuery(e.target.value)}
           onKeyDown={event=>{
-            if(event.key!=='Enter'||event.shiftKey||event.nativeEvent.isComposing||event.keyCode===229)return;
+            if(event.key!=='Enter'||event.shiftKey||event.nativeEvent.isComposing||event.keyCode===229||working)return;
             event.preventDefault();
             if(!event.repeat&&!loading&&!working&&query.trim())event.currentTarget.form?.requestSubmit();
-          }} placeholder={text('每行一个单词、短语或原句，也可以用分号分隔…','Enter one word, phrase or sentence per line, or use semicolons…')} required/>{query&&<button type="button" className="english-clear" disabled={working} aria-label={text('清空输入','Clear input')} title={text('清空输入','Clear input')} onClick={()=>{setQuery('');setError('');setNotice('');queryInput.current?.focus();}}><X size={18}/></button>}</div><button type="submit" className="dark-button english-generate-button" disabled={loading||working||!query.trim()}>{working?<LoaderCircle className="spin" size={17}/>:<Sparkles size={17}/>} {working?text('正在生成…','Generating…'):text('生成并保存卡片','Generate & save cards')}</button></div>
+          }} placeholder={working?text('可以继续输入下一批单词、短语或原句…','Keep typing the next words, phrases or sentences…'):text('每行一个单词、短语或原句，也可以用分号分隔…','Enter one word, phrase or sentence per line, or use semicolons…')} required/>{query&&<button type="button" className="english-clear" aria-label={text('清空输入','Clear input')} title={text('清空输入','Clear input')} onClick={()=>{editQuery('');setError('');setNotice('');queryInput.current?.focus();}}><X size={18}/></button>}</div><button type="submit" className="dark-button english-generate-button" disabled={loading||working||!query.trim()}>{working?<LoaderCircle className="spin" size={17}/>:<Sparkles size={17}/>} {working?text('正在生成…','Generating…'):text('生成并保存卡片','Generate & save cards')}</button></div>
       </form>
       <div className="english-search-foot"><span><strong>{todayCount}</strong> {text('张今日新卡片','new today')}<i/> <strong>{cards.length}</strong> {text('张积累','in your notebook')}</span></div>
     </section>
