@@ -18,7 +18,7 @@ test('visitor bootstrap contains authored lessons and no personal learning recor
   assert.deepEqual(value.sessions,[]);assert.deepEqual(value.progress,[]);assert.equal(value.connection.available,false);
   assert.ok(value.lessons.every(lesson=>!('prediction' in lesson)));
   const progress=visitorOverview();
-  assert.equal(Object.keys(progress.paths).length,learningPaths.length);assert.equal(progress.overall.totalTopics,642);assert.equal(progress.overall.completedChecks,0);
+  assert.equal(Object.keys(progress.paths).length,learningPaths.length);assert.equal(progress.overall.totalTopics,714);assert.equal(progress.overall.completedChecks,0);
 });
 
 test('owner and visitor receive byte-identical original frontend assets and shared route links',async()=>{

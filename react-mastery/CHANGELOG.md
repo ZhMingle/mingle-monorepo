@@ -1,3 +1,9 @@
+## 2026-11-25 — Add Redis, Elasticsearch, and Spring / Spring Boot
+
+- Add three bilingual learning paths with 24 topics each, three project stages, prerequisites, learning goals, self-checks, and official references. The catalog now contains 30 paths, 714 topics, and 1,428 practice checks; existing topic IDs and learning records are preserved.
+- Add versioned, topic-specific AI generation contracts for Redis commands, Elasticsearch REST/JSON, and Spring Java/configuration. Require primary and transfer cases, rubrics, and correct/incorrect fixtures. These paths use AI review without host or browser code execution.
+- Verify catalog, progress, visitor access, editor selection, and generation boundaries. Add `verify-study.ts --data-services` for real Codex generation and correct/incorrect sample reviews in isolated storage.
+
 ## 2026-11-19 — Use the original application for everyone
 
 - Remove the independent display frontend. Build the hosted Site from the original index.html, src/main.tsx, App, LearningPaths and styles.

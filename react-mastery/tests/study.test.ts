@@ -24,9 +24,26 @@ async function create(topicId='typescript.inference'){return (await studyAction(
 async function legacyCreate(){const id=await create();const s=getStudy(id);s.version='mixed-practice-v1';s.current='keywords';s.lesson.keywords=structuredClone(lesson.keywords);saveStudy(s);return id;}
 const draft={keywords:{k1:'idempotency',k2:'immutability'},choice:1,code:lesson.coding.fixtures.correct};
 
+test('data-service generation receives its own versioned contract and stays outside the browser runner',async()=>{
+  const samples=[['redis.expiry','REDIS PRACTICE','Redis Open Source 7.2','Redis commands'],['elasticsearch.text-keyword','ELASTICSEARCH PRACTICE','Elasticsearch 8.15','Elasticsearch REST / JSON'],['spring.proxies','SPRING / SPRING BOOT PRACTICE','Spring Boot 3.5','Java 21']];
+  for(const [topicId,marker,version,language] of samples){
+    let calls=0;
+    const result=await studyAction('new',{topicId},'en',async<T>(prompt:string)=>{
+      calls++;assert.ok(prompt.includes(marker));assert.ok(prompt.includes(version));
+      assert.match(prompt,/second transfer case/);assert.match(prompt,/correct\/incorrect fixtures/);
+      assert.match(prompt,/never browser React labs/);assert.match(prompt,/Never require a running/);
+      const sample=structuredClone(lesson);sample.coding.language=language;return sample as T;
+    }) as StudyPayload;
+    assert.equal(calls,1);assert.equal(result.session.topicId,topicId);
+    assert.equal(result.session.lesson.coding.language,language);assert.equal(result.session.lesson.coding.execution,undefined);
+    assert.deepEqual(result.completed,[]);assert.equal('fixtures' in result.session.lesson.coding,false);
+    assert.equal(getStudy(result.session.id).lesson.coding.fixtures.incorrect,lesson.coding.fixtures.incorrect);
+  }
+});
+
 test('every expanded stage and cloud topic can start without being mistaken for a static React lab',async()=>{
   for(const path of learningPaths){
-    const topics=(path.category==='cloud'||path.category==='tools'||path.category==='career'||['nextjs','django','angular','aspnet-core','ef-core','frontend-performance','backend-performance'].includes(path.id))?path.stages.flatMap(s=>s.topics):path.stages.flatMap(s=>s.topics.slice(-4));
+    const topics=(path.category==='cloud'||path.category==='tools'||path.category==='career'||['nextjs','django','angular','aspnet-core','ef-core','frontend-performance','backend-performance','redis','elasticsearch','spring'].includes(path.id))?path.stages.flatMap(s=>s.topics):path.stages.flatMap(s=>s.topics.slice(-4));
     for(const topic of topics){
       const id=await create(topic.id);const saved=getStudy(id);
       assert.equal(saved.topicId,topic.id);assert.equal(saved.lesson.coding.execution,undefined);

@@ -12,11 +12,13 @@ This is a modular monolith: a React/TypeScript client and a local Node HTTP serv
 - `server/coach.ts`: Codex discovery and evaluation adapter. Keep provider-specific code here so an authenticated API adapter can replace it later.
 - `server/index.ts`: request validation and stage boundaries. Re-read sessions after long AI work so concurrent hint/draft changes are not overwritten; reject an assessment against superseded code.
 - `src/sandbox/runner.tsx`: actual React rendering, behavior tests, and error/loop reporting.
-- `shared/paths.ts`: the versioned catalog of 27 learning paths, including mappings from original React topics to the common topic model. Performance and career topics are authored in `paths-performance.ts` and `paths-career.ts`.
+- `shared/paths.ts`: the versioned catalog of 30 learning paths, including mappings from original React topics to the common topic model. Performance and career topics are authored in `paths-performance.ts` and `paths-career.ts`.
 - `shared/study.ts`, `server/study.ts`: current choice/code practice. The shared layer owns semantic alias rules, result validation, public projections, and per-format completion. The server owns generated content, answer keys, Codex calls, and durable sessions. Choices use stored keys without a model call. New React code tasks carry an authored challenge descriptor and run in the existing browser sandbox; matching-code reports are validated before saving. Other languages use AI code review. Old keyword grading remains only for compatibility and does not contribute to current progress.
 - `shared/topic-practice.ts`, `server/topic-practice.ts`: version-one reasoning sessions, kept readable for existing history. New practice uses `/api/study/*` and a separate table rather than rewriting historical records.
 
 ## Durable evidence
+
+`shared/paths-data-services.ts` adds Redis, Elasticsearch, and Spring / Spring Boot as three bilingual, 24-topic paths. Their metadata uses stable IDs and the shared choice/code flow; no learner-data migration is needed. `dataServiceGuidance` in `server/study-prompts.ts` constrains generation to topic-specific commands, REST/JSON, Java, or configuration with explicit teaching versions, supplied dependency contracts, primary/transfer cases, rubric, and correct/incorrect fixtures. None receives a browser execution contract or host runner. Java source uses the existing Java editor; command sequences, REST blocks, and configuration retain plain-text editing. `scripts/verify-study.ts --data-services` optionally reviews real generated samples in isolated smoke-test storage.
 
 Store the original code, test results, learner explanation, hints, AI rubric version, curriculum version, and evaluation time. Update the session and evidence/progress transactionally. Do not change historical grades when an authored rubric changes; create a fresh assessment under the new version.
 

@@ -31,6 +31,12 @@ test('path dialect takes priority and unknown/C# text never goes through a JS pa
   assert.equal(codeFlavor('ASP.NET Core','aspnet-core'),'csharp');
   assert.equal(codeFlavor('EF Core','ef-core'),'csharp');
   assert.equal(codeFlavor('Django','django'),'python');
+  assert.equal(codeFlavor('Java 21','spring'),'java');
+  assert.equal(codeFlavor('Spring Boot','spring'),'java');
+  assert.equal(codeFlavor('YAML','spring'),'text');
+  assert.equal(codeFlavor('Spring Boot application.properties','spring'),'text');
+  assert.equal(codeFlavor('Redis commands','redis'),'text');
+  assert.equal(codeFlavor('Elasticsearch REST / JSON','elasticsearch'),'text');
   assert.equal(codeFlavor('Angular','angular'),'typescript');
   assert.equal(codeFlavor('Node.js','nodejs'),'javascript');assert.equal(codeFlavor('SQL','mysql'),'mysql');assert.equal(codeFlavor('SQL','postgresql'),'postgresql');assert.equal(codeFlavor('SQL','sqlserver'),'tsql');assert.equal(codeFlavor('TypeScript'),'typescript');assert.equal(codeFlavor('TSX'),'tsx');assert.equal(codeFlavor('C#'),'csharp');assert.equal(codeFlavor('CSS','html-css'),'css');assert.equal(codeFlavor('HTML/CSS','html-css'),'html');
   await assert.rejects(formatSource('class Program {}','csharp'),/indentation/);assert.equal(codeFlavor('unknown'),'text');
