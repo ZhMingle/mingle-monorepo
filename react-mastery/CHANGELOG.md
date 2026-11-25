@@ -1,3 +1,8 @@
+## 2026-11-25 — Open the first saved-card search result
+
+- Automatically select the first candidate when the notebook search or category changes, while preserving manual selection until the search results change. Clear stale details when there are no matches, and select the first card again when the search is cleared.
+- Keep focus in the search field and leave saved cards and learning records unchanged.
+
 ## 2026-11-25 — Add Redis, Elasticsearch, and Spring / Spring Boot
 
 - Add three bilingual learning paths with 24 topics each, three project stages, prerequisites, learning goals, self-checks, and official references. The catalog now contains 30 paths, 714 topics, and 1,428 practice checks; existing topic IDs and learning records are preserved.

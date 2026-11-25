@@ -96,6 +96,9 @@ export default function EnglishNotebook(){
   const displayNumbers=new Map(orderedCards.map((card,index)=>[card.id,orderedCards.length-index]));
   const active=cards.find(c=>c.id===selected);
   const visible=orderedCards.filter(c=>(tab==='all'||(tab==='favorite'?c.favorite:c.kind===tab))&&[String(displayNumbers.get(c.id)),c.term,englishTitle(c),englishMeaning(c),c.partOfSpeech,c.query,c.meaning,c.usage,c.context,...c.examples.flatMap(e=>[e.english,e.chinese])].join(' ').toLocaleLowerCase().includes(filter.toLocaleLowerCase().trim()));
+  const firstVisibleId=visible[0]?.id??'';
+  // A changed search opens its first result; manual selection lasts until the results change.
+  useEffect(()=>{setSelected(firstVisibleId);},[filter,tab,firstVisibleId]);
   const today=new Date().toDateString();
   const todayCount=cards.filter(c=>new Date(c.createdAt).toDateString()===today).length;
   async function lookup(value=query,retry:EnglishLookupItem|false=false,remind=true){
