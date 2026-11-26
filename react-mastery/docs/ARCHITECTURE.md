@@ -12,11 +12,13 @@ This is a modular monolith: a React/TypeScript client and a local Node HTTP serv
 - `server/coach.ts`: Codex discovery and evaluation adapter. Keep provider-specific code here so an authenticated API adapter can replace it later.
 - `server/index.ts`: request validation and stage boundaries. Re-read sessions after long AI work so concurrent hint/draft changes are not overwritten; reject an assessment against superseded code.
 - `src/sandbox/runner.tsx`: actual React rendering, behavior tests, and error/loop reporting.
-- `shared/paths.ts`: the versioned catalog of 30 learning paths, including mappings from original React topics to the common topic model. Performance and career topics are authored in `paths-performance.ts` and `paths-career.ts`.
+- `shared/paths.ts`: the versioned catalog of 36 learning paths, including mappings from original React topics to the common topic model. Performance and career topics are authored in `paths-performance.ts` and `paths-career.ts`.
 - `shared/study.ts`, `server/study.ts`: current choice/code practice. The shared layer owns semantic alias rules, result validation, public projections, and per-format completion. The server owns generated content, answer keys, Codex calls, and durable sessions. Choices use stored keys without a model call. New React code tasks carry an authored challenge descriptor and run in the existing browser sandbox; matching-code reports are validated before saving. Other languages use AI code review. Old keyword grading remains only for compatibility and does not contribute to current progress.
 - `shared/topic-practice.ts`, `server/topic-practice.ts`: version-one reasoning sessions, kept readable for existing history. New practice uses `/api/study/*` and a separate table rather than rewriting historical records.
 
 ## Durable evidence
+
+`shared/paths-marketing.ts` groups all ten supplied Search Marketing modules into six response-mode paths with 123 topics and a dedicated `marketing` category. These paths are appended without expanding them into generic engineering exercises; stage sizes follow the subject. `server/marketing-prompts.ts` handles generation, review and tutoring with supplied business datasets, explicit metric definitions, primary and changed-constraint cases, rubric and correct/incorrect fixtures. It uses the existing plain-text response format and second progress slot, without migrations or changing behavioral interview prompts. No advertising, analytics, SEO-tool or tag execution is performed. `scripts/verify-study.ts --marketing` optionally checks real generated fixtures in separate smoke-test storage.
 
 `shared/paths-data-services.ts` adds Redis, Elasticsearch, and Spring / Spring Boot as three bilingual, 24-topic paths. Their metadata uses stable IDs and the shared choice/code flow; no learner-data migration is needed. `dataServiceGuidance` in `server/study-prompts.ts` constrains generation to topic-specific commands, REST/JSON, Java, or configuration with explicit teaching versions, supplied dependency contracts, primary/transfer cases, rubric, and correct/incorrect fixtures. None receives a browser execution contract or host runner. Java source uses the existing Java editor; command sequences, REST blocks, and configuration retain plain-text editing. `scripts/verify-study.ts --data-services` optionally reviews real generated samples in isolated smoke-test storage.
 
@@ -55,7 +57,7 @@ Add identity and per-user authorization, account data isolation, a managed secre
 3. Add correct and intentionally wrong code fixtures.
 4. Verify behavior and edge cases in the browser harness.
 5. Check that assistance and partial evidence cannot award mastery.
-6. Update the content version and changelog; commit the completed small task locally.
+6. Update the content version and changelog; commit and push only the completed task to the tracked remote branch.
 
 ## Next milestones
 

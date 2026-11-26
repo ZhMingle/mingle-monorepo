@@ -1,3 +1,9 @@
+## 2026-11-26 — Search Marketing learning paths
+
+- Group all ten supplied marketing modules into six bilingual paths and a Search Marketing category, with 123 topics, shared study order, prerequisites, stage projects and current reference links.
+- Add scenario choices and plain-text marketing cases with metric calculations, primary and transfer checks, rubric, correct/incorrect fixtures and dedicated generation, review and tutoring prompts. Preserve existing records and behavioral interview practice.
+- Cover path completeness, hidden assessment material, transfer failures, assistance, connection failures and cumulative progress; update the catalog version and maintenance docs.
+
 ## 2026-11-26 — Independent rejection journal
 
 - Added the standalone `sites/rejection-journal` site for company, position, rejection stage, date and reasons, with a 100-attempt goal.

@@ -1,6 +1,6 @@
 # Private online Clarity
 
-Application: https://clarity-learning-lab-mingle.minglezhang7.chatgpt.site/. Everyone loads the original app, sidebar, learning desk, LearningPaths and styles from one build. There is no separate display page. Anyone can open all 30 paths and 714 topics without signing in; `/#roadmap/git` opens that route directly.
+Application: https://clarity-learning-lab-mingle.minglezhang7.chatgpt.site/. Everyone loads the original app, sidebar, learning desk, LearningPaths and styles from one build. There is no separate display page. Anyone can open all 36 paths and 837 topics without signing in; `/#roadmap/git` opens that route directly.
 
 `Start.bat` starts the configured bridge, then activates and refreshes an existing browser tab for the configured Clarity site. It opens a new tab through `?workspace=1` only when it finds no matching tab, initiating the owner's ChatGPT sign-in before returning to `/`. The gateway serves the same frontend to the owner and other visitors. Verified ownership gates personal API data, not a different page. Anonymous bootstrap/progress endpoints contain authored curriculum and no personal records; personal writes, exports and AI are unavailable without owner identity. Visitor topic browsing stays in the original practice workspace and displays authored goals, understanding checks and references without fabricating an AI exercise.
 

@@ -6,3 +6,5 @@ public/ocr/
 *.log
 .env
 .env.local
+.sites-publish/
+clarity-marketing-site.tgz

@@ -3,22 +3,22 @@ import assert from 'node:assert/strict';
 import { learningPaths, findLearningPath } from '../shared/paths.ts';
 
 test('catalog includes all requested paths with complete bilingual study guides',()=>{
-  assert.deepEqual(learningPaths.map(p=>p.id),['react','typescript','html-css','dotnet','nodejs','java','python','go','mysql','sqlserver','postgresql','shopify','wordpress','react-native','azure','aws-cicd','nextjs','django','angular','docker','kubernetes','git','aspnet-core','ef-core','frontend-performance','backend-performance','behavioral-interviews','redis','elasticsearch','spring']);
+  assert.deepEqual(learningPaths.map(p=>p.id),['react','typescript','html-css','dotnet','nodejs','java','python','go','mysql','sqlserver','postgresql','shopify','wordpress','react-native','azure','aws-cicd','nextjs','django','angular','docker','kubernetes','git','aspnet-core','ef-core','frontend-performance','backend-performance','behavioral-interviews','redis','elasticsearch','spring','marketing-fundamentals','google-ads','seo','marketing-analytics','ecommerce-marketing','ai-search-reporting']);
   const ids=new Set<string>();
   for(const path of learningPaths){
     assert.ok(path.name.en && path.name.zh && path.prerequisite.en && path.prerequisite.zh);
     assert.deepEqual(path.stages.map(s=>s.id),['foundation','practice','advanced']);
     for(const stage of path.stages){
       assert.ok(stage.project.en && stage.project.zh);
-      assert.equal(stage.topics.length,path.id==='react'?6:8);
+      if(path.category==='marketing')assert.ok(stage.topics.length>0);else assert.equal(stage.topics.length,path.id==='react'?6:8);
       for(const topic of stage.topics){
         assert.ok(!ids.has(topic.id));ids.add(topic.id);
         for(const field of [topic.title,topic.goal,topic.check])assert.ok(field.en && field.zh);
-        assert.ok(['react.dev','www.typescriptlang.org','developer.mozilla.org','learn.microsoft.com','dev.mysql.com','www.postgresql.org','nodejs.org','dev.java','docs.python.org','go.dev','shopify.dev','developer.wordpress.org','reactnative.dev','docs.aws.amazon.com','nextjs.org','docs.djangoproject.com','angular.dev','docs.docker.com','kubernetes.io','git-scm.com','web.dev','opentelemetry.io','amazon.jobs','careers.microsoft.com','redis.io','www.elastic.co','docs.spring.io'].includes(new URL(topic.source).hostname));
+        assert.ok(['react.dev','www.typescriptlang.org','developer.mozilla.org','learn.microsoft.com','dev.mysql.com','www.postgresql.org','nodejs.org','dev.java','docs.python.org','go.dev','shopify.dev','developer.wordpress.org','reactnative.dev','docs.aws.amazon.com','nextjs.org','docs.djangoproject.com','angular.dev','docs.docker.com','kubernetes.io','git-scm.com','web.dev','opentelemetry.io','amazon.jobs','careers.microsoft.com','redis.io','www.elastic.co','docs.spring.io','skillshop.withgoogle.com','support.google.com','developers.google.com','help.shopify.com','www.semrush.com','ahrefs.com','www.screamingfrog.co.uk','developer.chrome.com','docs.cloud.google.com','firebase.google.com'].includes(new URL(topic.source).hostname));
       }
     }
   }
-  assert.equal(ids.size,714);
+  assert.equal(ids.size,837);
   assert.equal(findLearningPath('missing'),undefined);
   assert.equal(findLearningPath('postgresql')?.category,'database');
   assert.equal(findLearningPath('redis')?.category,'database');
