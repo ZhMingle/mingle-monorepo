@@ -1,3 +1,8 @@
+## 2026-11-26 — Independent rejection journal
+
+- Added the standalone `sites/rejection-journal` site for company, position, rejection stage, date and reasons, with a 100-attempt goal.
+- Included browser-local persistence, duplicate prevention, editing, filtering, search, undo and JSON backup import/export. No personal records are bundled or sent to the server.
+
 ## 2026-11-26 — Paste images into the English notebook and recognize text
 
 - Accept pasted screenshots and image files with local English/Simplified Chinese OCR, editable results, cancellation, progress, and retry. Append confirmed text to the latest draft without generating cards automatically.
