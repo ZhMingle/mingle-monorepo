@@ -11,8 +11,9 @@ import {marketingLesson} from './marketing-fixtures.ts';
 const scratch=mkdtempSync(join(tmpdir(),'clarity-study-test-'));process.env.DATA_DIR=scratch;
 const {db,exportData}=await import('../server/store.ts');
 const {studyAction,getStudy,saveStudy,studyProgress,openStudy}=await import('../server/study.ts');
-const {translatePresentation,withPreparedPresentations}=await import('../server/presentation.ts');
+const {translatePresentation,withPreparedPresentations,preparePresentation}=await import('../server/presentation.ts');
 const {PresentationCache}=await import('../src/presentation-cache.ts');
+const {studyExercisePresentation,studyResultPresentation}=await import('../shared/study-presentation.ts');
 const {presentationStrings,presentationIdentifiers,presentationBatches}=await import('../shared/presentation.ts');
 after(()=>{db.close();for(const name of ['learning.sqlite','learning.sqlite-wal','learning.sqlite-shm'])rmSync(join(scratch,name),{force:true});rmdirSync(scratch);});
 const lesson:StudyLesson={overview:'Repeat-safe updates can set a value without mutating the input.',example:'const done = {...item, done: true};',pitfall:'Incrementing is not the same as setting.',keywords:[
@@ -24,6 +25,60 @@ function translated<T>(prompt:string):T{return {translations:JSON.parse(prompt.s
 async function create(topicId='typescript.inference'){return (await studyAction('new',{topicId},'en',generate) as StudyPayload).session.id;}
 async function legacyCreate(){const id=await create();const s=getStudy(id);s.version='mixed-practice-v1';s.current='keywords';s.lesson.keywords=structuredClone(lesson.keywords);saveStudy(s);return id;}
 const draft={keywords:{k1:'idempotency',k2:'immutability'},choice:1,code:lesson.coding.fixtures.correct};
+
+test('choice feedback and references are prepared before use in both languages without recording assistance',async()=>{
+  const id=await create('typescript.unions');
+  const initial=publicStudy(getStudy(id));
+  assert.equal(initial.preparedChoice?.feedback,lesson.choice.explanation);
+  assert.equal(initial.preparedChoice?.reference,lesson.choice.explanation);
+  assert.deepEqual(initial.references,{});assert.deepEqual(initial.session.helped,[]);
+  assert.deepEqual(initial.completed,[]);assert.equal(initial.supported,false);
+  const initialSession=structuredClone(getStudy(id));
+  await preparePresentation(initial,'zh',async<T>(prompt:string)=>({translations:JSON.parse(prompt.slice(prompt.lastIndexOf('\n')+1)).map((text:string)=>'已准备 '+text)} as T));
+  assert.deepEqual(getStudy(id),initialSession);
+  const prepared=withPreparedPresentations(initial).preparedPresentations!;
+  const noAI=async<T>():Promise<T>=>{throw Error('Choice actions must not request AI');};
+  const cache=new PresentationCache(noAI);
+  for(const language of ['zh','en'] as const){
+    assert.ok(prepared.translations[language]);
+    cache.seed(studyExercisePresentation(initial),language,prepared.translations[language]!);
+  }
+  for(const choice of [0,1]){
+    const answer=await studyAction('answer',{id,kind:'choice',...draft,choice},'zh',noAI) as StudyPayload;
+    assert.equal(answer.session.attempts.at(-1)?.accepted,choice===1);
+    for(const language of ['zh','en'] as const){
+      const result=studyResultPresentation(answer,'choice');
+      assert.ok(cache.get(result,language));await cache.prepare(result,language);
+    }
+  }
+  const revealed=await studyAction('reference',{id,kind:'choice'},'zh',noAI) as StudyPayload;
+  assert.equal(revealed.references.choice,initial.preparedChoice?.reference);
+  assert.equal(revealed.supported,true);assert.deepEqual(revealed.session.helped,['choice']);
+  assert.deepEqual(revealed.session.draft,{...draft,keywords:{}});
+  for(const language of ['zh','en'] as const){
+    const result=studyResultPresentation(revealed,'choice');
+    assert.ok(cache.get(result,language));await cache.prepare(result,language);
+  }
+  const assisted=await studyAction('answer',{id,kind:'choice',...draft},'en',noAI) as StudyPayload;
+  assert.equal(assisted.session.attempts.at(-1)?.supported,true);
+});
+
+test('saved exercises open while AI wording is blocked and historical reviews need translation',async()=>{
+  const topic=learningPaths.find(path=>path.id==='html-css')!.stages.at(-1)!.topics.at(-1)!;
+  const id=await create(topic.id);const session=getStudy(id);
+  session.attempts.push({kind:'code',at:new Date().toISOString(),input:'// saved input',accepted:false,supported:false,feedback:'Historical review that has not been translated.'});
+  saveStudy(session);
+  let release!:()=>void;const gate=new Promise<void>(done=>release=done);
+  const run=async<T>(prompt:string):Promise<T>=>{await gate;return translated(prompt);};
+  let timer:ReturnType<typeof setTimeout>|undefined;
+  try{
+    const opened=await Promise.race([openStudy(topic.id,'zh',run),new Promise<null>(done=>{timer=setTimeout(()=>done(null),250);})]);
+    assert.ok(opened,'saved work must not wait for any AI request');
+    assert.equal(opened.session?.id,id);
+    assert.equal(opened.session?.attempts.at(-1)?.feedback,session.attempts[0].feedback);
+    assert.deepEqual(getStudy(id),session);
+  }finally{clearTimeout(timer);release();await preparePresentation(studyExercisePresentation(publicStudy(session)),'zh',run,{onlyRequested:true});}
+});
 
 test('data-service generation receives its own versioned contract and stays outside the browser runner',async()=>{
   const samples=[['redis.expiry','REDIS PRACTICE','Redis Open Source 7.2','Redis commands'],['elasticsearch.text-keyword','ELASTICSEARCH PRACTICE','Elasticsearch 8.15','Elasticsearch REST / JSON'],['spring.proxies','SPRING / SPRING BOOT PRACTICE','Spring Boot 3.5','Java 21']];
@@ -103,7 +158,7 @@ test('validated reviews use their requested language immediately without rewriti
   await browser.prepare(result,'zh');assert.equal(result.session.attempts.at(-1)?.review?.quote,'return');assert.equal(result.session.draft.code,draft.code);
 });
 
-test('answers and fixtures stay private, references record support without replacing drafts, and exports include sessions',async()=>{
+test('grading keys and code fixtures stay private, references record support without replacing drafts, and exports include sessions',async()=>{
   const id=await create();await studyAction('draft',{id,...draft},'en');await studyAction('step',{id,kind:'code'},'en');
   const before=publicStudy(getStudy(id));assert.deepEqual(before.session.lesson.keywords,[]);assert.equal('correct' in before.session.lesson.choice,false);assert.equal('fixtures' in before.session.lesson.coding,false);assert.deepEqual(before.references,{});
   const result=await studyAction('reference',{id,kind:'code'},'en') as StudyPayload;assert.equal(result.supported,true);assert.equal(result.references.code,lesson.coding.reference);assert.equal(result.session.draft.code,draft.code);assert.equal(result.session.current,'code');

@@ -57,9 +57,10 @@ function visit(value:unknown,path:string[],map:(text:string)=>string,response=fa
     const inDraft=path.includes('draft')||path.includes('drafts');
     const learnerReason=(key==='reason'&&!path.includes('cases'))||(key==='explanation'&&path.includes('attempts'));
     const reference=path.includes('references')&&(key!=='code'||response);
+    const preparedChoiceReference=path.includes('preparedChoice')&&key==='reference';
     const responseText=response&&path.includes('coding')&&(key==='starter'||key==='input'&&path.includes('cases'));
     const explanatoryExample=key==='example'&&!isSourceExample(value);
-    return !inDraft&&!learnerReason&&(prose.has(key)||reference||explanatoryExample||responseText)?mapProse(value,map):value;
+    return !inDraft&&!learnerReason&&(prose.has(key)||reference||preparedChoiceReference||explanatoryExample||responseText)?mapProse(value,map):value;
   }
   if(Array.isArray(value))return value.map(item=>visit(item,path,map,response));
   if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,visit(item,[...path,key],map,response)]));

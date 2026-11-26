@@ -8,7 +8,7 @@ import { displayCode,isSourceExample } from '../shared/rich-text.ts';
 import LearningText, { Inline } from './LearningText.tsx';
 import OptionContent from './OptionContent.tsx';
 import { usePresentation } from './usePresentation.ts';
-import { studyExercisePresentation } from '../shared/study-presentation.ts';
+import { studyExercisePresentation,studyResultPresentation } from '../shared/study-presentation.ts';
 import ExerciseTutor from './ExerciseTutor.tsx';
 import CodeEditor from './CodeEditor.tsx';
 import { runCode } from './sandbox.ts';
@@ -25,6 +25,7 @@ import { topicNeighbors } from '../shared/learning-progress.ts';
 export default function MixedPractice({topic,pathId,reloadProgress,progress}:{topic:PathTopic;pathId:string;reloadProgress:()=>void;progress:Record<string,TopicProgress>}){
   const {language,t}=useLanguage();const say=(en:string,zh:string)=>language==='zh'?zh:en;
   const [rawPayload,setPayload]=useState<StudyPayload|null>(null);const [loading,setLoading]=useState(true);
+  const [loadRetry,setLoadRetry]=useState(0);
   const [showLesson,setShowLesson]=useState(true);
   const [browsing,setBrowsing]=useState(false);
   const [current,setCurrent]=useState<StudyKind>('choice');const [draft,setDraft]=useState<StudyDraft>({keywords:{},choice:-1,code:''});
@@ -35,7 +36,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
   const savedDraft=useRef('');
 
   const {view:payload,translating,translationError,retryTranslation}=usePresentation(studyExercisePresentation(rawPayload),language);
-  const {view:result,translating:preparingResult,translationError:resultError,retryTranslation:retryResult}=usePresentation(rawPayload,language);
+  const {view:result,translating:preparingResult,translationError:resultError,retryTranslation:retryResult}=usePresentation(studyResultPresentation(rawPayload,current),language);
   const session=payload?.session;const lesson=session?.lesson;
   // Historical assistance is evidence, not permission to reveal answers on open.
   const referenceVisible=revealedReference?.id===session?.id&&revealedReference?.kind===current;
@@ -55,18 +56,24 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
     }
   }
   useEffect(()=>{
-    live.current=true;
-    request<StudyPayload|{session:null;visitor?:boolean}>('study/open',{topicId:topic.id}).then(async next=>{
-      if(!live.current)return;
+    live.current=true;let active=true;const controller=new AbortController();
+    setLoading(true);setError('');
+    const timer=setTimeout(()=>controller.abort(),45000);
+    // Read saved work first; opening may also generate or polish AI wording.
+    request<StudyPayload|{session:null;visitor?:boolean}>('study/latest',{topicId:topic.id},controller.signal).then(async latest=>{
+      const next=latest.session?latest:await request<StudyPayload|{session:null;visitor?:boolean}>('study/open',{topicId:topic.id},controller.signal);
+      return next;
+    }).then(async next=>{
+      if(!active)return;
       if(!next.session){setBrowsing(next.visitor===true);return;}
       const requested=location.hash.split('/')[3];
       if((requested==='choice'||requested==='code')&&next.session.current!==requested){
-        next=await request<StudyPayload>('study/step',{id:next.session.id,kind:requested});
+        next=await request<StudyPayload>('study/step',{id:next.session.id,kind:requested},controller.signal);
       }
-      if(live.current)apply(next as StudyPayload,true);
-    }).catch(e=>{if(live.current)setError(e.message);}).finally(()=>{if(live.current)setLoading(false);});
-    return()=>{live.current=false;};
-  },[topic.id]);
+      if(active)apply(next as StudyPayload,true);
+    }).catch(e=>{if(active)setError(controller.signal.aborted?say('Exercise loading timed out. Retry to read saved work; your progress is preserved.','读取题目超时，请重试读取已保存的练习，学习记录仍保留。'):e.message);}).finally(()=>{clearTimeout(timer);if(active)setLoading(false);});
+    return()=>{active=false;live.current=false;clearTimeout(timer);controller.abort();};
+  },[topic.id,loadRetry]);
   function saveDraft(id:string,value:StudyDraft){
     const snapshot=JSON.stringify({id,...value});
     saving.current=saving.current.catch(()=>{}).then(async()=>{
@@ -135,7 +142,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
     await openTopic(journey.next?.id);
   }
   const attempts=result?.session.attempts.filter(a=>a.kind===current)??[];const latest=attempts.at(-1);
-  const resultVisible=!preparingResult&&!resultError;
+  const resultVisible=current==='choice'||!preparingResult&&!resultError;
   const canSubmit=current==='choice'?draft.choice>=0:draft.code.trim().length>=4;
   return <div className="practice-workspace"><TopicDirectory docked path={path} current={topic.id} progress={progress} disabled={!!busy} onNavigate={id=>void openTopic(id)}/><section className="topic-practice mixed-practice">
     {session&&journey.next&&<div className="tp-next-preparation" role="status"><span>{nextPreparation==='ready'?say('Next topic and display languages are ready.','下一知识点和显示语言已备好。'):nextPreparation==='error'?say('Next-topic preparation failed. Retry when ready.','下一知识点准备未完成，请重试。'):say('Preparing the next topic in the background…','正在后台准备下一知识点…')}</span>{nextPreparation==='error'&&<button onClick={()=>setPrepareRetry(value=>value+1)}>{say('Retry preparation','重试准备')}</button>}</div>}
@@ -146,10 +153,10 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
       <span>{journey.index+1}/{journey.topics.length}</span><TopicDirectory path={path} current={topic.id} progress={progress} disabled={!!busy} onNavigate={id=>void openTopic(id)}/>
       {journey.next&&<button disabled={!!busy} onClick={()=>void continueTopic()}>{say('Next topic','下一知识点')} →</button>}
     </nav>
-    {error&&<div role="alert" className="tp-error">{error}<button disabled={!!busy} onClick={()=>session?void action('load'):location.reload()}>{say('Reload saved practice','重新读取练习')}</button></div>}
-    {translating&&<p role="status">{say('Preparing exercise text…','正在准备中文题目…')}</p>}
+    {error&&<div role="alert" className="tp-error">{error}<button disabled={!!busy} onClick={()=>session?void action('load'):setLoadRetry(value=>value+1)}>{say('Reload saved practice','重新读取练习')}</button></div>}
+    {translating&&<p role="status">{say('Preparing the selected language in the background. The original exercise is available below.','正在后台准备所选语言，下方可先阅读原题。')}</p>}
     {translationError&&<div role="alert" className="tp-error">{say('Translation failed: ','翻译未完成：')}{translationError}<button onClick={retryTranslation}>{say('Retry translation','重试翻译')}</button></div>}
-    {loading?<p role="status">{say('Preparing exercises…','正在准备题目…')}</p>:translating||translationError?null:!session?<div className="tp-card"><h2>{browsing?say('Learning goal','学习目标'):marketing?say('Choose, then solve the case.','先选择，再分析案例。'):response?say('Choose, then tell your story.','先选择，再讲述你的经历。'):say('Choose, then build.','先选择，再写代码。')}</h2>{browsing?<><p>{topic.goal[language]}</p><h3>{say('Test your understanding','验证理解')}</h3><p>{topic.check[language]}</p><a href={topic.source} target="_blank" rel="noreferrer">{say('Official reference ↗','官方资料 ↗')}</a><p className="tp-meta">{say('Personal exercises, AI and learning records require the owner’s sign-in.','个人练习、AI 与学习记录需要本人登录。')}</p></>:<button className="tp-primary" disabled={!!busy} onClick={()=>void action('new')}>{busy?say('Preparing exercises…','正在准备题目…'):say('Start practice','开始练习')}</button>}</div>:lesson&&<>
+    {loading?<p role="status">{say('Loading saved exercises…','正在读取题目…')}</p>:!session?!error&&<div className="tp-card"><h2>{browsing?say('Learning goal','学习目标'):marketing?say('Choose, then solve the case.','先选择，再分析案例。'):response?say('Choose, then tell your story.','先选择，再讲述你的经历。'):say('Choose, then build.','先选择，再写代码。')}</h2>{browsing?<><p>{topic.goal[language]}</p><h3>{say('Test your understanding','验证理解')}</h3><p>{topic.check[language]}</p><a href={topic.source} target="_blank" rel="noreferrer">{say('Official reference ↗','官方资料 ↗')}</a><p className="tp-meta">{say('Personal exercises, AI and learning records require the owner’s sign-in.','个人练习、AI 与学习记录需要本人登录。')}</p></>:<button className="tp-primary" disabled={!!busy} onClick={()=>void action('new')}>{busy?say('Preparing exercises…','正在准备题目…'):say('Start practice','开始练习')}</button>}</div>:lesson&&<>
 
 
       <div className="tp-practice-controls"><nav className="tp-tabs" aria-label={say('Question types','题型')}><button aria-pressed={showLesson} disabled={!!busy} onClick={()=>setShowLesson(true)}>{say('Explanation & example','讲解与示例')}</button>{studyKinds.map(k=><button key={k} aria-pressed={!showLesson&&current===k} disabled={!!busy} onClick={()=>void navigate(k)}>{labels[k]}{payload.completed.includes(k)&&<span className="tp-tab-complete">{say('Done','已完成')}</span>}</button>)}</nav><div className="tp-toolbar"><span role="status">{payload.completed.length}/2 {say('completed','已完成')}{payload.supported?` · ${say('with support','含辅助练习')}`:''}</span><button disabled={!!busy} onClick={()=>void action('new')}>{say('New variation · Codex','换一组题 · 使用额度')}</button></div></div>
@@ -160,7 +167,7 @@ export default function MixedPractice({topic,pathId,reloadProgress,progress}:{to
         {['react.props','react.snapshot','react.immutable','react.keys','react.derived','react.reducer'].includes(topic.id)&&!lesson.coding.execution&&current==='code'&&<p className="tp-meta">{say('This saved task uses AI review. Start a new variation for browser execution checks; your earlier work stays saved.','这道旧题使用 AI 评审。换一组题即可使用浏览器运行检查；原有作答仍会保留。')}</p>}
         {current==='choice'?<><LearningText text={lesson.choice.scenario} pathId={pathId}/>{lesson.choice.code&&(pathId==='git'?<GitScenario source={lesson.choice.code}/>:<CodeBlock code={lesson.choice.code} language={lesson.coding.language} pathId={pathId} label={say('Question code','题目代码')}/>)}<h2 className="learning-text"><Inline text={lesson.choice.question}/></h2><fieldset disabled={!!busy}><legend>{say('Choose one answer','选择一个答案')}</legend>{lesson.choice.options.map((option,i)=><label className="tp-choice" key={i}><input type="radio" name={`choice-${session.id}`} checked={draft.choice===i} onChange={()=>{const next={...draft,choice:i};setDraft(next);void action('answer',next);}}/><div className="tp-option-body"><span>{String.fromCharCode(65+i)}.</span><OptionContent text={option} pathId={pathId}/></div></label>)}</fieldset></>:<><LearningText text={t(lesson.coding.scenario)} language={lesson.coding.language} pathId={pathId}/><ul className="learning-text">{lesson.coding.requirements.map(r=><li key={r}><LearningText text={t(r)} language={lesson.coding.language} pathId={pathId}/></li>)}</ul>{lesson.coding.cases.length>0&&<details><summary>{response?say('Answer checks & follow-up','回答检查与追问'):say('Example cases','示例用例')}</summary>{lesson.coding.cases.map(c=><div key={c.id}><strong>{c.id}</strong>{response?<><LearningText text={c.input}/><LearningText text={c.expected}/></>:<pre>{c.input}{'\n→ '}{c.expected}</pre>}</div>)}</details>}{response?<label className="tp-response-label">{say('Your answer','你的回答')}<textarea className="tp-response" value={draft.code} disabled={!!busy} maxLength={12000} rows={12} onChange={event=>setDraft(previous=>({...previous,code:event.target.value}))}/></label>:<CodeEditor key={session.id} language={lesson.coding.language} pathId={pathId} value={draft.code} starter={displayCode(lesson.coding.starter).code} label={say('Your code','你的代码')} disabled={!!busy} maxLength={12000} onChange={code=>setDraft(previous=>previous.code===code?previous:{...previous,code})}/>}{response&&<p className="tp-meta">{marketing?say('Use the supplied case data. Explain your decision and the changed constraint; AI feedback does not establish real campaign results.','使用题目提供的数据，说明决策及条件变化；AI 反馈不代表真实投放结果。'):say('Use true examples and anonymize names. AI feedback assesses this answer; it cannot verify events or predict interview success.','请使用真实经历并隐去姓名。AI 反馈只评估这次回答，不能核实事件或预测面试结果。')}</p>}{lesson.coding.execution&&<p className="tp-meta">{say('Runs in an isolated browser and checks actual behavior.','在隔离浏览器运行，并检查实际行为。')}</p>}</>}
         <div className="tp-actions">{(current==='code'&&codeChanged||busy==='answer'||busy==='reference')&&<span role="status">{busy==='reference'?say('Opening answer…','正在打开答案…'):busy==='answer'?say('Checking…','正在检查…'):saved?say('Draft saved','草稿已保存'):say('Saving draft…','正在保存草稿…')}</span>}{(current==='code'||!!error||!!latest?.error)&&<button className="tp-primary" disabled={!!busy||!canSubmit} onClick={()=>void action('answer')}>{busy==='answer'?(current==='code'&&!lesson.coding.execution?say('Reviewing…','正在评审…'):say('Checking…','正在检查…')):current==='code'?(lesson.coding.execution?say('Run checks','运行验证'):response?say('Review my answer','评审回答'):say('Review my code','评审代码')):say('Check answer','检查答案')}</button>}<button disabled={!!busy} onClick={()=>void action('reference')}>{busy==='reference'?say('Opening answer…','正在打开答案…'):say('View answer','查看答案')}</button></div>
-        {(latest||referenceVisible)&&preparingResult&&<p role="status">{say('Preparing feedback and answer text…','正在准备反馈和答案文字…')}</p>}
+        {(latest||referenceVisible)&&preparingResult&&<p role="status">{current==='choice'?say('Preparing the selected language in the background. The stored explanation is shown below.','正在后台准备所选语言，下方先显示已存讲解。'):say('Preparing feedback and answer text…','正在准备反馈和答案文字…')}</p>}
         {(latest||referenceVisible)&&resultError&&<div role="alert" className="tp-error">{say('Feedback translation failed: ','反馈翻译未完成：')}{resultError}<button onClick={retryResult}>{say('Retry translation','重试翻译')}</button></div>}
         {resultVisible&&latest&&!latest.error&&<div className="tp-feedback" role="status"><h3>{say('Last submission: ','上次提交：')}{latest.accepted?say('Correct','回答正确'):say('Try once more','再试一次')}</h3>{latest.blanks?.map((r,i)=><p key={r.id}>{i+1}. {r.accepted?'✓':'○'} {r.feedback}</p>)}{latest.feedback&&!(current==='choice'&&referenceVisible&&result?.references[current])&&<LearningText text={latest.feedback} language={lesson.coding.language} pathId={pathId}/>}{latest.execution&&<><small>{say('Actual browser execution','浏览器实际运行结果')}</small>{latest.execution.error&&<p>{latest.execution.error}</p>}{latest.execution.tests.map(test=><p key={test.name}>{test.passed?'✓':'○'} {t(test.name)}: {t(test.detail)}</p>)}</>}{latest.review&&<><small>{marketing?say('AI review of your case response','案例回答的 AI 评审'):response?say('AI feedback on your answer · events are unverified','回答的 AI 反馈 · 不核实经历真实性'):say('AI review of submitted code · no execution','上次提交代码的 AI 评审 · 未执行')}</small><blockquote>{latest.review.quote}</blockquote>{latest.review.issues.map(issue=><p key={issue}>{issue}</p>)}{latest.review.cases.map(c=><p key={c.id}>{c.passed?'✓':'○'} {c.id}: {c.reason}</p>)}</>}</div>}
         {latest?.error&&<p role="alert">{say('The check failed. Your answers are saved; retry when ready.','检查未完成，答案已保存，可以重试。')}</p>}

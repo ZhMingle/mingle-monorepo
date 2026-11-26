@@ -28,6 +28,7 @@ export type PublicStudyLesson=Pick<StudyLesson,'overview'|'example'|'pitfall'> &
 };
 export interface StudyPayload {
   session:Omit<StudySession,'lesson'> & {lesson:PublicStudyLesson};
+  preparedChoice?:{feedback:string;reference:string};
   references:Partial<Record<StudyKind,string>>;completed:StudyKind[];supported:boolean;
 }
 export const studyKinds:StudyKind[]=['choice','code'];
@@ -77,7 +78,7 @@ export function publicStudy(s:StudySession):StudyPayload {
   const {overview,example,pitfall}=s.lesson;
   const {correct:_correct,explanation:_explanation,...choice}=s.lesson.choice;
   const {reference:_reference,rubric:_rubric,fixtures:_fixtures,...coding}=s.lesson.coding;
-  return {session:{...s,current:s.current==='keywords'?'choice':s.current,lesson:{overview,example,pitfall,keywords:[],choice,coding}},references:Object.fromEntries(s.helped.filter(kind=>studyKinds.includes(kind)).map(kind=>[kind,kind==='keywords'?s.lesson.keywords.map(b=>`${b.prompt}\n${b.answer}\n${b.explanation}`).join('\n\n'):kind==='choice'?choiceReference(s.lesson.choice):s.lesson.coding.reference])),completed:completedKinds(s),supported:s.helped.some(k=>studyKinds.includes(k))||s.attempts.some(a=>studyKinds.includes(a.kind)&&a.supported)};
+  return {session:{...s,current:s.current==='keywords'?'choice':s.current,lesson:{overview,example,pitfall,keywords:[],choice,coding}},preparedChoice:{feedback:s.lesson.choice.explanation,reference:choiceReference(s.lesson.choice)},references:Object.fromEntries(s.helped.filter(kind=>studyKinds.includes(kind)).map(kind=>[kind,kind==='keywords'?s.lesson.keywords.map(b=>`${b.prompt}\n${b.answer}\n${b.explanation}`).join('\n\n'):kind==='choice'?choiceReference(s.lesson.choice):s.lesson.coding.reference])),completed:completedKinds(s),supported:s.helped.some(k=>studyKinds.includes(k))||s.attempts.some(a=>studyKinds.includes(a.kind)&&a.supported)};
 }
 
 export function validateExecution(raw:unknown,code:string,challenge:Challenge):RunReport {

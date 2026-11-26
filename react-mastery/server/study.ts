@@ -13,6 +13,7 @@ import { sessionList } from './store.ts';
 import { preparePresentation,cacheGeneratedPresentation,withPreparedPresentations } from './presentation.ts';
 import { dataServiceGuidance, performanceGuidance, responseLessonPrompt, responseReviewPrompt } from './study-prompts.ts';
 import { validateResponseLesson } from '../shared/study.ts';
+import {studyExercisePresentation} from '../shared/study-presentation.ts';
 
 const str={type:'string'};const strings={type:'array',items:str};
 const object=(properties:Record<string,unknown>)=>({type:'object',additionalProperties:false,properties,required:Object.keys(properties)});
@@ -49,13 +50,18 @@ export function studyOverview(){
   return learningOverview(learningPaths,sessions,sessionList(true));
 }
 export async function openStudy(topicId:string,language:'en'|'zh',run:typeof runStructured=runStructured){
+  const existing=latestStudy(topicId);
   const payload=await studyAction('open',{topicId},language,run);
-  // Do not hand the browser a lesson which needs another AI translation request.
-  await preparePresentation(payload,language,run,{onlyRequested:true,foreground:true});
+  const exercise='session' in payload&&payload.session?studyExercisePresentation(payload as StudyPayload):payload;
+  // Saved work is readable even while AI wording or historical reviews are slow.
+  // New exercises still prepare their questions AND choice answers together.
+  const preparation=preparePresentation(exercise,language,run,{onlyRequested:true,foreground:!existing});
+  if(existing)void preparation.catch(()=>{});else await preparation;
   // Start before the browser has rendered this topic. The client also retries
   // this idempotent request if a transient connection or AI failure occurs.
   void studyAction('prefetch',{topicId},language,run).catch(()=>{});
-  return withPreparedPresentations(payload);
+  const prepared=withPreparedPresentations(exercise??{});
+  return withPreparedPresentations({...payload,...('preparedPresentations' in prepared?{preparedPresentations:prepared.preparedPresentations}:{})});
 }
 function draftFor(s:StudySession,input:Record<string,unknown>):StudyDraft {
   const raw=input.keywords;

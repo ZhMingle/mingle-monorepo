@@ -48,6 +48,7 @@ test('visitors browse the original app data endpoints without reaching personal 
       assert.deepEqual(await (await gateway.fetch(req('/api/english',headers),env)).json(),{cards:[]});
       assert.equal((await gateway.fetch(req('/api/study/overview',headers,true),env)).status,200);
       assert.deepEqual(await (await gateway.fetch(req('/api/study/open',headers,true),env)).json(),{session:null,visitor:true});
+      assert.deepEqual(await (await gateway.fetch(req('/api/study/latest',headers,true),env)).json(),{session:null,visitor:true});
       for(const path of ['/api/export','/api/session?id=private','/api/study/draft','/api/english/lookup','/api/runtime']) assert.equal((await gateway.fetch(req(path,headers),env)).status,401,path);
     }
     assert.equal(calls,0);

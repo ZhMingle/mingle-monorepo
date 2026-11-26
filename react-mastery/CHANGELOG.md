@@ -1,3 +1,10 @@
+## 2026-11-26 — Prepare choice answers with the exercise
+
+- Include stored choice feedback and reference explanations in exercise presentation preparation and both language caches before the learner answers or opens a reference.
+- Isolate result presentation by exercise kind, preserving drafts and explicit assistance recording while preventing unrelated code review translations from blocking choices.
+- Read saved exercises before generation, keep stored text visible during translation, and add a 45-second opening timeout with an in-place retry.
+- Verify immediate cached choice results, correct and incorrect grading, language switching, and assistance in isolated regression storage.
+
 ## 2026-11-26 — Search Marketing learning paths
 
 - Group all ten supplied marketing modules into six bilingual paths and a Search Marketing category, with 123 topics, shared study order, prerequisites, stage projects and current reference links.

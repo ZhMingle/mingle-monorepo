@@ -35,11 +35,11 @@ export function createGateway(assets, visitor) {
         if (request.method === 'GET' && path === '/api/bootstrap') return json(visitor.bootstrap());
         if (request.method === 'GET' && path === '/api/english') return json({cards:[]});
         if (request.method === 'GET' && path === '/api/english/speech/status') return json({ready:false,model:'kokoro-local-v1'});
-        const reads = ['/api/study/overview','/api/study/progress','/api/study/open'];
+        const reads = ['/api/study/overview','/api/study/progress','/api/study/open','/api/study/latest'];
         if (reads.includes(path) && request.method === 'POST') {
           if (request.headers.get('origin') !== url.origin || request.headers.get('x-clarity-request') !== '1' || !request.headers.get('content-type')?.startsWith('application/json')) return json({error:'Only requests from Clarity are accepted'},403);
           if (path === '/api/study/overview') return json(visitor.overview());
-          if (path === '/api/study/open') return json({session:null,visitor:true});
+          if (path === '/api/study/open' || path === '/api/study/latest') return json({session:null,visitor:true});
           let input;
           try { input = await request.json(); } catch { return json({error:'Invalid request'},400); }
           const progress = visitor.overview().paths[input?.pathId];

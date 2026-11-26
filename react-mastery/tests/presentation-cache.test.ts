@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PresentationCache} from '../src/presentation-cache.ts';
 import {present,presentationStrings} from '../shared/presentation.ts';
-import {studyExercisePresentation} from '../shared/study-presentation.ts';
+import {studyExercisePresentation,studyResultPresentation} from '../shared/study-presentation.ts';
 import type {StudyPayload} from '../shared/study.ts';
 
 test('review translation pending, failure and retry never invalidate the prepared exercise or draft',async()=>{
@@ -70,4 +70,22 @@ test('new feedback reuses lesson text while changed authored identifiers remain 
 test('a prepared bundle cannot corrupt protected code or mark incomplete text ready',()=>{
   const payload={question:'Check `a.name` and choose.'};const cache=new PresentationCache(async()=>({}));
   const [text]=presentationStrings(payload);cache.seed(payload,'zh',{[text]:'丢失代码。'});assert.equal(cache.get(payload,'zh'),undefined);
+});
+
+test('unprepared code reviews never block choice results or references',async()=>{
+  const cache=new PresentationCache(async()=>{throw Error('Code review translation is offline');});
+  const payload={session:{id:'choice-session',lesson:{choice:{question:'Choose an answer.'},coding:{starter:'function choose() {}'}},draft:{code:'// keep my draft'},attempts:[]},preparedChoice:{feedback:'Use `ROLLBACK`.',reference:'Use `ROLLBACK` to end the transaction.'},references:{}} as unknown as StudyPayload;
+  const texts=presentationStrings(payload);
+  assert.ok(texts.includes('Use ⟦CLARITY_CODE_0⟧ to end the transaction.'));
+  cache.seed(payload,'zh',Object.fromEntries(texts.map(text=>[text,'中文 '+text])));
+  const updated={...payload,session:{...payload.session,attempts:[{kind:'code',feedback:'Untranslated code review.'},{kind:'choice',feedback:payload.preparedChoice!.feedback}] as StudyPayload['session']['attempts']},references:{code:'Untranslated code reference.',choice:payload.preparedChoice!.reference}};
+  assert.equal(cache.get(updated,'zh'),undefined);
+  const choice=studyResultPresentation(updated,'choice')!;
+  assert.ok(cache.get(choice,'zh'));await cache.prepare(choice,'zh');
+  assert.equal(present(choice,cache.get(choice,'zh')!).references.choice,'中文 Use `ROLLBACK` to end the transaction.');
+  assert.equal(choice.session.draft.code,'// keep my draft');
+  assert.deepEqual(choice.session.attempts.map(attempt=>attempt.kind),['choice']);
+  assert.equal(choice.references.code,undefined);
+  assert.equal(updated.session.attempts.length,2);
+  assert.equal(cache.get(studyResultPresentation(updated,'code'),'zh'),undefined);
 });
