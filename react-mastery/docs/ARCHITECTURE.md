@@ -38,6 +38,8 @@ This is a personal learning sandbox, **not a hardened hostile-code execution ser
 
 ## AI boundary
 
+Image text recognition is a separate browser feature. `EnglishImageInput` owns paste/file previews and editable OCR output; `english-ocr.ts` validates files, bounds jobs, and appends confirmed text to the current draft. A dedicated browser worker runs Tesseract.js and owns its engine worker. Cancellation and unmount terminate the job and discard late messages. `scripts/build-ocr.mjs` packages the worker, one portable LSTM core, and English/Simplified Chinese models from locked dependencies under ignored `public/ocr/`; the portable core keeps the self-contained Site artifact compact. All OCR assets are same-origin, so the gateway keeps `connect-src 'self'`. Only trained language data is cached; images are not stored in the server or learning database. OCR has no AI provider, credentials, or API route. Confirmed text enters the existing card-generation flow only when the learner submits it.
+
 Assessments use ephemeral Codex CLI invocations, shell tools off, web search disabled, empty MCP configuration, and a read-only sandbox. Student text is untrusted data. Schema validation, evidence quote verification, and application-owned gate calculations are required even if the AI says a learner passed. The adapter fails closed on authentication, quota, invalid output, or timeout errors.
 
 ## Before public hosting

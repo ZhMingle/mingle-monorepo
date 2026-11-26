@@ -4,13 +4,15 @@ import {fileURLToPath} from 'node:url';
 import {build as viteBuild} from 'vite';
 import {build} from 'esbuild';
 import {gzipSync} from 'node:zlib';
+import {buildOcrAssets} from '../scripts/build-ocr.mjs';
 
 const appRoot = fileURLToPath(new URL('../', import.meta.url));
 const outputRoot = resolve(process.argv[2] || '.');
+await buildOcrAssets();
 await build({absWorkingDir:appRoot,entryPoints:['src/sandbox/runner.tsx'],outfile:'public/sandbox-runner.js',bundle:true,format:'iife',minify:true,define:{'process.env.NODE_ENV':'"production"'},logLevel:'warning'});
 // This is the original app entry, components and styles. No second frontend.
 await viteBuild({root:appRoot, configFile:resolve(appRoot,'vite.config.ts'), build:{outDir:resolve(outputRoot,'dist-client'),emptyOutDir:true}});
-const types = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2'};
+const types = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.gz':'application/gzip','.txt':'text/plain; charset=utf-8'};
 const assets = {};
 async function collect(directory, prefix = '') {
   for (const entry of await readdir(directory,{withFileTypes:true})) {

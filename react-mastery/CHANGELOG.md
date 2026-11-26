@@ -1,3 +1,9 @@
+## 2026-11-26 — Paste images into the English notebook and recognize text
+
+- Accept pasted screenshots and image files with local English/Simplified Chinese OCR, editable results, cancellation, progress, and retry. Append confirmed text to the latest draft without generating cards automatically.
+- Bundle Tesseract.js 7, a portable LSTM core, and compact language models with the application. Images remain in the browser; no external OCR service or AI provider is enabled.
+- Add input and worker lifecycle regression checks, and include OCR assets in local launch and Site builds.
+
 ## 2026-11-26 — Show the current English search result
 
 - Rank headword and chunk matches before meanings, historical queries, and examples, so searching `mani` prefers `manifest` over a newer card with an incidental note match.

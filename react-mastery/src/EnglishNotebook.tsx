@@ -12,6 +12,8 @@ import {speechVoices,type SpeechVoice,type SpeechClip} from '../shared/english-a
 import EnglishCardDetail from './EnglishCardDetail.tsx';
 import EnglishCardWall from './EnglishCardWall.tsx';
 import EnglishReview from './EnglishReview.tsx';
+import EnglishImageInput from './EnglishImageInput.tsx';
+import {appendOcrText,clipboardImage} from './english-ocr.ts';
 import type {SpeechSelection} from './english-playback.ts';
 import {searchEnglishCards,visibleEnglishCard} from './english-search.ts';
 import type {EnglishCardFilter} from './english-search.ts';
@@ -51,6 +53,7 @@ export default function EnglishNotebook(){
     });
   }
   const [query,setQuery]=useState('');
+  const [ocrImage,setOcrImage]=useState<File|null>(null);
   const queryRevision=useRef(0);
   function editQuery(value:string){queryRevision.current++;setQuery(value);}
   const [filter,setFilter]=useState('');
@@ -171,13 +174,14 @@ export default function EnglishNotebook(){
     <section className="english-search-panel" aria-labelledby="english-search-title">
       <div className="english-search-heading"><div><span className="english-kicker"><Sparkles size={15}/>{text('今天遇到了什么？','What did you come across today?')}</span><h2 id="english-search-title">{text('单词、短语、原句，都能记下来。','Save words, phrases or whole sentences.')}</h2></div><a className="secondary" href="/api/english/export"><ArrowDownToLine size={16}/>{text('导出卡片','Export cards')}</a></div>
       <form onSubmit={e=>{e.preventDefault();void lookup();}}>
-        <div className="english-entry-row"><div className="english-query"><textarea ref={queryInput} aria-label={text('输入单词、短语或英文原句','Enter words, phrases or English sentences')} maxLength={10000} rows={2} value={query} onChange={e=>editQuery(e.target.value)}
+        <div className="english-entry-row"><div className="english-query"><textarea ref={queryInput} aria-label={text('输入单词、短语或英文原句','Enter words, phrases or English sentences')} maxLength={10000} rows={2} value={query} onChange={e=>editQuery(e.target.value)} onPaste={event=>{const image=clipboardImage(event.clipboardData.items);if(image){event.preventDefault();setOcrImage(image);}}}
           onKeyDown={event=>{
             if(event.key!=='Enter'||event.shiftKey||event.nativeEvent.isComposing||event.keyCode===229||working)return;
             event.preventDefault();
             if(!event.repeat&&!loading&&!working&&query.trim())event.currentTarget.form?.requestSubmit();
           }} placeholder={working?text('可以继续输入下一批单词、短语或原句…','Keep typing the next words, phrases or sentences…'):text('每行一个单词、短语或原句，也可以用分号分隔…','Enter one word, phrase or sentence per line, or use semicolons…')} required/>{query&&<button type="button" className="english-clear" aria-label={text('清空输入','Clear input')} title={text('清空输入','Clear input')} onClick={()=>{editQuery('');setError('');setNotice('');queryInput.current?.focus();}}><X size={18}/></button>}</div><button type="submit" className="dark-button english-generate-button" disabled={loading||working||!query.trim()}>{working?<LoaderCircle className="spin" size={17}/>:<Sparkles size={17}/>} {working?text('正在生成…','Generating…'):text('生成并保存卡片','Generate & save cards')}</button></div>
       </form>
+      <EnglishImageInput image={ocrImage} onImage={setOcrImage} onText={value=>{editQuery(appendOcrText(query,value));setOcrImage(null);queryInput.current?.focus();}}/>
       <div className="english-search-foot"><span><strong>{todayCount}</strong> {text('张今日新卡片','new today')}<i/> <strong>{cards.length}</strong> {text('张积累','in your notebook')}</span></div>
     </section>
     {batch.length>0&&<section className="english-batch" aria-label={text('生成进度','Generation progress')}><p role="status">{text('生成进度','Progress')}：{batch.filter(item=>item.status==='done'||item.status==='failed').length}/{batch.length} · {text('已保存／打开','Saved or opened')} {batch.filter(item=>item.status==='done').length}</p><ul>{batch.map(item=><li key={item.query}><strong>{item.query}</strong><span>{({pending:text('等待生成','Queued'),working:text('正在生成…','Generating…'),done:text('已保存／打开','Saved or opened'),failed:text('生成失败','Failed')})[item.status]}</span>{item.error&&<span role="alert">{item.error}</span>}{item.status==='failed'&&<button disabled={working} onClick={()=>void lookup(item.query,item)}>{text('重试此项','Retry this item')}</button>}</li>)}</ul></section>}

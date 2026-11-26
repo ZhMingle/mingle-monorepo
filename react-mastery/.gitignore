@@ -2,6 +2,7 @@ node_modules/
 dist/
 data/
 public/sandbox-runner.js
+public/ocr/
 *.log
 .env
 .env.local
