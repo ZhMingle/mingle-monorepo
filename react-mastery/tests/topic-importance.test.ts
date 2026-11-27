@@ -8,8 +8,8 @@ const scratch=mkdtempSync(join(tmpdir(),'clarity-importance-'));process.env.DATA
 const {topicImportance}=await import('../server/topic-importance.ts');
 const {db}=await import('../server/store.ts');
 after(()=>{db.close();rmSync(scratch,{recursive:true,force:true});});
-test('CSS fundamentals and common SQL topics have stable five-star ratings in both languages',async()=>{
-  for(const id of ['html-css.box-model','html-css.flexbox','html-css.grid',...['mysql','postgresql','sqlserver'].flatMap(path=>['joins','constraints','transactions','indexes','aggregation'].map(key=>`${path}.${key}`))]){
+test('CSS fundamentals, accessible interaction and common SQL topics have stable five-star ratings in both languages',async()=>{
+  for(const id of ['html-css.focus-states','html-css.box-model','html-css.flexbox','html-css.grid',...['mysql','postgresql','sqlserver'].flatMap(path=>['joins','constraints','transactions','indexes','aggregation'].map(key=>`${path}.${key}`))]){
     for(const language of ['zh','en'] as const){
       const result=await topicImportance({topicId:id,language},async()=>{throw Error('Authored ratings must not call AI');});
       assert.equal(result.stars,5,id);assert.ok(result.why);assert.equal(result.uses.length,2);
